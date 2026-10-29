@@ -42,7 +42,9 @@ body {
   margin: 0; background: var(--paper); color: var(--ink);
   font-family: var(--f-body); font-size: 18px; line-height: 1.6;
 }
-body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); }
+/* cover the status-bar area: newer iPhone Safari draws the page behind it and may report a 0 safe area,
+   so this strip also reaches 120px above the top edge */
+body::before { content: ""; position: fixed; left: 0; right: 0; top: -120px; height: calc(120px + env(safe-area-inset-top, 0px)); z-index: 10; background: var(--paper); pointer-events: none; }
 /* paper grain over everything */
 body::after {
   content: ""; position: fixed; inset: 0; z-index: 40; pointer-events: none; opacity: var(--grain);
