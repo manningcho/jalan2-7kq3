@@ -67,7 +67,7 @@ window.TRIP = {
     vanbloemen:{ n: "Van Bloemen 1881", a: "Kembanglimus, Borobudur", q: "Van Bloemen 1881", map: "https://maps.app.goo.gl/uuxdTvYpVJ73pdULA" },
     yia:   { n: "Yogyakarta International Airport (YIA)", a: "Kulon Progo", q: "Yogyakarta International Airport" },
     dps:   { n: "Bandara I Gusti Ngurah Rai (DPS)", a: "Tuban, Badung, Bali", q: "Ngurah Rai International Airport" },
-    casa:  { n: "Casa Adem", a: "Gang Lange, Seminyak, Bali", q: "Casa Adem Gg. Lange No.6 Seminyak" },
+    casa:  { n: "Casa Adem", a: "Gang Lange, Seminyak, Bali", q: "Casa Adem, Gang Lange, Seminyak, Bali" },
     monkey:{ n: "Ubud Monkey Forest", a: "Ubud, Gianyar", q: "Ubud Monkey Forest" },
     tegalalang:{ n: "Tegalalang Rice Terrace", a: "Tegalalang, Gianyar", q: "Tegalalang Rice Terrace" },
     sanur: { n: "Pelabuhan Sanur", a: "Sanur, Denpasar", q: "Sanur Harbour Bali" },

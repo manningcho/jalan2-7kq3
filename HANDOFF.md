@@ -17,7 +17,8 @@
 - `build-preview.py` 產生的單檔預覽不會內嵌 `img/`，claude.ai 預覽裡看到的會是圖片載不到；GitHub Pages 上正常。
 
 ## 之後的工作
-- 推到 GitHub 並開 GitHub Pages。repo 名稱取難猜一點，網站已加上 `noindex`。
+- 已放上 GitHub Pages（2026/10/30）：repo `manningcho/jalan2-7kq3`（公開，名字故意取難猜），網址 https://manningcho.github.io/jalan2-7kq3/ 。從 `main` 分支根目錄發布，push 後約 1–10 分鐘更新。`.nojekyll` 讓 GitHub 不跑 Jekyll。
+- 峇里島 Casa Adem 的地圖搜尋字串拿掉了門牌，改成 `Casa Adem, Gang Lange, Seminyak, Bali`，**還沒確認 Google 地圖找得到同一個地方**（Claude 的瀏覽器擋 Google）。若不準，請使用者給 Google 地圖分享連結，填進 `places.casa.map`。
 - 還缺的資料：12/15 去程航班號碼、12/16 雅加達到普禾加多的火車車次與車站。拿到後更新 `data.js`。
 - 行程上的提醒（目前在網站上用橘色標示）：12/23 日惹王宮約 14:30 關門、水宮約 15:00 關門，排的時間可能進不去；12/31 太晚到機場（15:45 的國際線，14:30 才到）。使用者和家人還在調整。
 

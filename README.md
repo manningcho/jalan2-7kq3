@@ -9,9 +9,9 @@
 - `index.html`：入口
 - `build-preview.py`、`head.html`、`dist/`：產生 claude.ai 預覽用的單一檔案，GitHub 上用不到
 
-## 放到 GitHub Pages
-1. 建一個 repo（名字取難猜一點），把這個資料夾的檔案推上去
-2. repo 的 Settings → Pages → Source 選 `main` 分支、根目錄
-3. 幾分鐘後網址會是 `https://<帳號>.github.io/<repo 名稱>/`
+## 網址
+https://manningcho.github.io/jalan2-7kq3/
 
-網站有加 `noindex`，搜尋引擎不會收錄，但知道網址的人都能看。
+由 GitHub Pages 從 `main` 分支的根目錄發布。改完 push 之後，大約 1–10 分鐘手機上才會看到新版。
+
+網站有加 `noindex`，搜尋引擎不會收錄，但知道網址的人都能看；這個 repo 是公開的，在 GitHub 上也看得到全部內容。
