@@ -4,9 +4,9 @@
   var LANGS = ["zh", "id", "en"];
   var lang = "zh";
   try { var saved = localStorage.getItem("trip-lang"); if (LANGS.indexOf(saved) >= 0) lang = saved; } catch (e) {}
-  var motion = true;
-  try { motion = localStorage.getItem("trip-motion") !== "off"; } catch (e) {}
-  document.documentElement.classList.toggle("motion", motion);
+  // 動畫一律開啟（使用者決定拿掉開關，也不跟系統的「減少動態效果」）
+  document.documentElement.classList.add("motion");
+  try { localStorage.removeItem("trip-motion"); } catch (e) {} // 以前開關留下的紀錄
 
   // 介面文字
   var UI = {
@@ -67,7 +67,6 @@
     mDay: ["第幾天", "Hari ke", "Day"], mCity: ["城市", "Kota", "City"], mTime: ["時間", "Waktu", "Time"],
     mPages: ["頁數", "Halaman", "Pages"], mPlaces: ["地點", "Tempat", "Places"], mItems: ["項目", "Item", "Items"],
     indonesia: ["印尼", "Indonesia", "Indonesia"],
-    motion: ["動畫", "Animasi", "Motion"],
     photoTitle: ["關於插畫", "Tentang ilustrasi", "About the illustrations"],
     artNote: ["每天的插畫都是 AI（OpenAI Codex）畫的，只是示意，建築和風景的細節不一定跟實景一樣。", "Semua ilustrasi dibuat oleh AI (OpenAI Codex), hanya gambaran; detail bangunan dan pemandangan bisa berbeda dari aslinya.", "All illustrations were made by AI (OpenAI Codex) and are only impressions; details may differ from the real places."]
   };
@@ -178,9 +177,6 @@
       return '<button type="button" data-lang="' + l + '" aria-pressed="' + (l === lang) + '">' + names[i] + "</button>";
     }).join("") + "</div>";
   }
-  function motionBtn() {
-    return '<button type="button" class="motion-btn" data-motion="1" aria-pressed="' + motion + '"><i aria-hidden="true"></i>' + esc(u("motion")) + "</button>";
-  }
   function bar(label, backTo) {
     return '<header class="bar"><div class="bar-in">' +
       '<a class="back" href="#' + backTo + '">' + ICON.left + "<span>" + esc(backTo === "home" ? u("home") : u("back")) + "</span></a>" +
@@ -196,7 +192,7 @@
     var route = ["tw", "jkt", "pwt", "yk", "bali", "tw"].map(function (c) { return "<li>" + esc(L(T.cities[c])) + "</li>"; }).join("");
     var over = '<p class="by">' + esc(u("madeFor")) + "</p>" + flowers();
     return '<main class="wrap cover">' +
-      '<div class="cover-bar r">' + STAR + '<div class="cover-tools">' + motionBtn() + langSwitch() + "</div></div>" +
+      '<div class="cover-bar r">' + STAR + langSwitch() + "</div>" +
       meta([[u("mTrip"), u("indonesia")], [u("mDate"), "14–31.12"], [u("mDays"), "18"], [u("mNo"), "#2026"]]) +
       hero("jalan²", "stupa", over) +
       '<section class="cover-body r"><p class="vert" aria-hidden="true">印尼之旅・二〇二六</p>' +
@@ -219,7 +215,7 @@
       '<nav class="menu">' + rows.map(function (x) {
         return '<a class="mrow r' + (x[1] === "today" ? " is-today" : "") + '" href="#' + x[0] + '">' + SPARK +
           '<span class="mrow-t"><b>' + esc(u(x[1])) + "</b><small>" + esc(x[3] || u(x[2])) + "</small></span>" + ICON.arrow + "</a>";
-      }).join("") + "</nav>" + flowers() + '<div class="menu-foot">' + motionBtn() + "</div></main>";
+      }).join("") + "</nav>" + flowers() + "</main>";
   }
 
   // ---------- 日期列表 ----------
@@ -465,12 +461,7 @@
   document.addEventListener("click", function (e) {
     var t = e.target.closest("button");
     if (!t) return;
-    if (t.dataset.motion) {
-      motion = !motion;
-      try { localStorage.setItem("trip-motion", motion ? "on" : "off"); } catch (err) {}
-      document.documentElement.classList.toggle("motion", motion);
-      document.querySelectorAll("[data-motion]").forEach(function (b) { b.setAttribute("aria-pressed", motion); });
-    } else if (t.dataset.lang) {
+    if (t.dataset.lang) {
       lang = t.dataset.lang;
       try { localStorage.setItem("trip-lang", lang); } catch (err) {}
       render();

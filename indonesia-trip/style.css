@@ -322,7 +322,7 @@ button { font: inherit; color: inherit; }
 .drv-acts { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
 
 /* ---------- motion ---------- */
-/* animations run while <html> has .motion (toggle on the cover and menu) */
+/* animations run while <html> has .motion, which is always on */
 .motion .r { animation: rise .7s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--d, 0) * 55ms); }
 .motion .hw-in span { animation: letter .9s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(120ms + var(--i) * 45ms); }
 .motion .hero-art .art { animation: settle 1.2s cubic-bezier(.2, .7, .2, 1) both; }
@@ -359,16 +359,6 @@ button { font: inherit; color: inherit; }
 @keyframes fly { from { transform: translate(-60px, 140px); } to { transform: translate(430px, 40px); } }
 @keyframes flyr { from { transform: translate(420px, 70px); } to { transform: translate(-80px, 30px); } }
 
-.motion-btn {
-  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px;
-  border: 0; background: var(--card); font-size: 15px; font-weight: 700; cursor: pointer;
-}
-.motion-btn i { width: 30px; height: 18px; border-radius: 999px; background: var(--muted); position: relative; transition: background .2s; }
-.motion-btn i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--paper); transition: transform .2s; }
-.motion-btn[aria-pressed="true"] i { background: var(--blue); }
-.motion-btn[aria-pressed="true"] i::after { transform: translateX(12px); }
-.cover-tools { display: flex; align-items: center; gap: 8px; }
-.menu-foot { display: flex; justify-content: center; }
 .motion .a-kb { animation: kb 26s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 50%; }
 @keyframes kb { from { transform: scale(1); } to { transform: scale(1.14) translateY(-2%); } }
 .credits li { padding: 10px 0; font-size: 14px; color: var(--muted); }
@@ -379,8 +369,4 @@ button { font: inherit; color: inherit; }
 /* kept at the end so it wins over the rules above */
 @media (max-width: 359px) {
   .meta dd { font-size: 12px; }                 /* "Indonesia" fits its column */
-  .cover-bar .star { width: 30px; height: 30px; }
-  .cover-tools { gap: 6px; }
-  .motion-btn { gap: 6px; padding: 0 10px; }
-  .lang button { min-width: 36px; }
 }
