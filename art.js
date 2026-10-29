@@ -190,7 +190,8 @@
   };
 
   window.ART = {
-    topColor: function (name) { return (PAL[name] || [C.skyTop])[0]; },
+    // 大字的顏色：有插畫就用插畫自己的天空色，字和天空才接得起來
+    topColor: function (name) { var ph = (window.TRIP && TRIP.photos || {})[name]; return (ph && ph.top) || (PAL[name] || [C.skyTop])[0]; },
     svg: function (name, label, plain) {
       var id = "a" + (++uid);
       var photo = (window.TRIP && TRIP.photos || {})[name];
@@ -198,7 +199,7 @@
       var body;
       if (photo) {
         // 照片：上緣漸層成大字的顏色，讓字看起來融進圖裡
-        var top = p[0] || C.skyTop;
+        var top = photo.top || p[0] || C.skyTop;
         body = '<image class="a-kb" href="' + photo.src + '" x="0" y="0" width="360" height="260" preserveAspectRatio="xMidYMid slice"' +
           (photo.focus ? ' style="transform-origin:' + photo.focus + '"' : "") + "/>" +
           (plain ? '<rect width="360" height="260" fill="url(#g' + id + ')" opacity=".55"/>' : '<rect width="360" height="110" fill="url(#g' + id + ')"/>');

@@ -21,21 +21,21 @@ window.TRIP = {
     yk: { src: "img/band-yk.jpg" },
     bali: { src: "img/band-bali.jpg" }
   },
-  // 插畫：OpenAI Codex 生成（2026/10），1280×924 JPG
+  // 插畫：OpenAI Codex 生成（2026/10），1280×924 JPG；top 是圖片上緣 20% 的平均天空色，大字和漸層用它才不會有色差
   photos: {
-    stupa: { src: "img/stupa.jpg", what: "Borobudur", by: "AI (OpenAI Codex)" },
-    tamansari: { src: "img/tamansari.jpg", what: "Taman Sari", by: "AI (OpenAI Codex)" },
-    slamet: { src: "img/slamet.jpg", what: "Gunung Slamet", by: "AI (OpenAI Codex)" },
-    city: { src: "img/city.jpg", what: "Monas, Jakarta", by: "AI (OpenAI Codex)" },
-    gate: { src: "img/gate.jpg", what: "Candi bentar", by: "AI (OpenAI Codex)" },
-    terrace: { src: "img/terrace.jpg", what: "Tegalalang", by: "AI (OpenAI Codex)" },
-    sea: { src: "img/sea.jpg", what: "Kelingking, Nusa Penida", by: "AI (OpenAI Codex)" },
-    cliff: { src: "img/cliff.jpg", what: "Uluwatu", by: "AI (OpenAI Codex)" },
-    volcano: { src: "img/volcano.jpg", what: "Gunung Batur", by: "AI (OpenAI Codex)" },
-    lake: { src: "img/lake.jpg", what: "Pura Ulun Danu Beratan", by: "AI (OpenAI Codex)" },
-    wedding: { src: "img/wedding.jpg", what: "Pernikahan", by: "AI (OpenAI Codex)" },
-    plane: { src: "img/plane.jpg", what: "Berangkat", by: "AI (OpenAI Codex)" },
-    home: { src: "img/home.jpg", what: "Pulang", by: "AI (OpenAI Codex)" }
+    stupa: { src: "img/stupa.jpg", what: "Borobudur", by: "AI (OpenAI Codex)", top: "#587bbb" },
+    tamansari: { src: "img/tamansari.jpg", what: "Taman Sari", by: "AI (OpenAI Codex)", top: "#5c84c0" },
+    slamet: { src: "img/slamet.jpg", what: "Gunung Slamet", by: "AI (OpenAI Codex)", top: "#5b7fbe" },
+    city: { src: "img/city.jpg", what: "Monas, Jakarta", by: "AI (OpenAI Codex)", top: "#587aba" },
+    gate: { src: "img/gate.jpg", what: "Candi bentar", by: "AI (OpenAI Codex)", top: "#5677b5" },
+    terrace: { src: "img/terrace.jpg", what: "Tegalalang", by: "AI (OpenAI Codex)", top: "#537ac0" },
+    sea: { src: "img/sea.jpg", what: "Kelingking, Nusa Penida", by: "AI (OpenAI Codex)", top: "#6081bf" },
+    cliff: { src: "img/cliff.jpg", what: "Uluwatu", by: "AI (OpenAI Codex)", top: "#577bb6" },
+    volcano: { src: "img/volcano.jpg", what: "Gunung Batur", by: "AI (OpenAI Codex)", top: "#547abb" },
+    lake: { src: "img/lake.jpg", what: "Pura Ulun Danu Beratan", by: "AI (OpenAI Codex)", top: "#4e77bc" },
+    wedding: { src: "img/wedding.jpg", what: "Pernikahan", by: "AI (OpenAI Codex)", top: "#a25d30" },
+    plane: { src: "img/plane.jpg", what: "Berangkat", by: "AI (OpenAI Codex)", top: "#5279be" },
+    home: { src: "img/home.jpg", what: "Pulang", by: "AI (OpenAI Codex)", top: "#557ab6" }
   },
   end: "2026-12-31",
 
