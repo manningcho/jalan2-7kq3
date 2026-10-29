@@ -80,7 +80,8 @@ button { font: inherit; color: inherit; }
 .star { width: 40px; height: 40px; color: var(--blue); }
 .barcode { width: 120px; height: 26px; color: var(--blue); }
 .spark { width: 14px; height: 14px; color: var(--gold); }
-.meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(68px, 1fr)); gap: 8px; margin: 0; }
+/* always one row: columns share the width instead of wrapping on small phones */
+.meta { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin: 0; }
 .meta div { min-width: 0; text-align: center; }
 .meta dt { font-weight: 700; font-size: 15px; line-height: 1.3; }
 .meta dd { margin: 0; font-family: var(--f-mono); font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -373,3 +374,13 @@ button { font: inherit; color: inherit; }
 .credits li { padding: 10px 0; font-size: 14px; color: var(--muted); }
 .credits b { color: var(--ink); font-size: 15px; }
 .credits a { color: var(--blue); }
+
+/* ---------- small phones (iPhone SE, 320px) ---------- */
+/* kept at the end so it wins over the rules above */
+@media (max-width: 359px) {
+  .meta dd { font-size: 12px; }                 /* "Indonesia" fits its column */
+  .cover-bar .star { width: 30px; height: 30px; }
+  .cover-tools { gap: 6px; }
+  .motion-btn { gap: 6px; padding: 0 10px; }
+  .lang button { min-width: 36px; }
+}
