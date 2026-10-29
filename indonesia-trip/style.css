@@ -103,12 +103,14 @@ button { font: inherit; color: inherit; }
 .hero .hw { position: relative; z-index: 1; margin-bottom: -.16em; }
 .hero-art { position: relative; }
 .art { display: block; width: 100%; height: auto; max-width: 100%; }
-.hero-over { position: absolute; left: 0; right: 0; bottom: 18px; display: flex; flex-direction: column; align-items: center; gap: 10px; color: #fff; }
-.hero-over .flowers { color: #fff; }
-.hero-over .by { text-shadow: 0 1px 2px rgba(20, 24, 40, .7), 0 0 12px rgba(20, 24, 40, .5); }
-.hero-over .flowers svg { filter: drop-shadow(0 1px 3px rgba(20, 24, 40, .5)); }
-.hero-over .flowers svg circle { fill: #262c3e; }
-.by { margin: 0; font-family: var(--f-mono); font-size: 13px; letter-spacing: .04em; }
+/* cover tagline: a small signature in the sky's top-right, under the "²" */
+.hero-over { position: absolute; top: 13%; right: 20px; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; color: #fff; }
+.hero-over .flowers { color: #fff; gap: 4px; opacity: .6; }
+.hero-over .flowers .dash { display: none; }
+.hero-over .flowers svg { width: 9px; height: 9px; }
+.hero-over .flowers svg circle { fill: #5677ae; }
+.hero-over .by { font-family: var(--f-body); font-size: 12px; font-weight: 400; letter-spacing: .16em; opacity: .82; }
+.by { margin: 0; }
 
 /* ---------- cover ---------- */
 .cover { padding-top: 20px; }
