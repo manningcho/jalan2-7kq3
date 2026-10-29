@@ -331,6 +331,17 @@ button { font: inherit; color: inherit; }
 .phrases { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .ph { display: grid; grid-template-columns: 30px 1fr; column-gap: 8px; padding: 14px 0; border-bottom: 1px solid var(--line); }
 .ph-no { grid-row: 1 / span 3; font-family: var(--f-mono); font-size: 12px; color: var(--muted); padding-top: 8px; }
+.ph-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.say {
+  flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--blue-soft); color: var(--blue);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.say svg { width: 20px; height: 20px; }
+.say:active { transform: scale(.94); }
+.say.is-playing { background: var(--blue); color: var(--paper); }
+.motion .say.is-playing .wave1 { animation: wave 1s ease-in-out infinite; }
+.motion .say.is-playing .wave2 { animation: wave 1s ease-in-out .2s infinite; }
+@keyframes wave { 50% { opacity: .25; } }
 .ph-id { font-family: var(--f-display); font-weight: 400; font-size: 24px; color: var(--blue); line-height: 1.25; letter-spacing: -.01em; }
 .ph-say { font-size: 18px; font-weight: 700; }
 .ph-mean { font-size: 16px; color: var(--muted); }

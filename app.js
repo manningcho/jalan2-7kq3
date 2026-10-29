@@ -69,6 +69,7 @@
     close: ["關閉", "Tutup", "Close"],
     vert: ["印尼之旅・二〇二六", "JALAN-JALAN · 2026", "INDONESIA · 2026"],
     jumpTo: ["跳到其他天", "Pilih hari lain", "Jump to another day"],
+    listen: ["聽發音", "Dengarkan", "Listen"],
     openMap: ["打開地圖", "Buka peta", "Open map"],
     tzJava: ["比台灣慢 1 小時", "1 jam lebih lambat dari Taiwan", "1 hour behind Taiwan"],
     tzBali: ["跟台灣同時間", "Sama dengan waktu Taiwan", "Same time as Taiwan"],
@@ -155,6 +156,7 @@
     arrow: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     left: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     cal: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="14" r="1.1" fill="currentColor"/><circle cx="12" cy="14" r="1.1" fill="currentColor"/><circle cx="16" cy="14" r="1.1" fill="currentColor"/><circle cx="8" cy="17.3" r="1.1" fill="currentColor"/><circle cx="12" cy="17.3" r="1.1" fill="currentColor"/></svg>',
+    speaker: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path class="wave1" d="M15.5 9.2a4 4 0 0 1 0 5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="wave2" d="M18.2 6.6a7.6 7.6 0 0 1 0 10.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
     x: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
     warn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.1" fill="currentColor"/></svg>'
   };
@@ -459,12 +461,38 @@
       kicker([esc(u("mItems")) + " " + pad(T.packing.length), esc(u("mChecked")) + ' <b class="pk-n">' + pad(packCount()) + "</b>"], true) +
       '<section class="tword r">' + word("koper") + "</section>" + packTool() + flowers() + "</main>";
   }
+  // 用手機內建的印尼文語音念出來（iPhone 是 Damayanti），不用另外放錄音檔
+  var canSpeak = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+  if (canSpeak) try { speechSynthesis.getVoices(); } catch (e) {} // 先讓瀏覽器載入語音清單
+  function idVoice() {
+    try { return speechSynthesis.getVoices().filter(function (v) { return /^id([-_]|$)/i.test(v.lang); })[0] || null; } catch (e) { return null; }
+  }
+  function stopSpeaking() {
+    if (!canSpeak) return;
+    try { speechSynthesis.cancel(); } catch (e) {}
+    document.querySelectorAll(".say.is-playing").forEach(function (b) { b.classList.remove("is-playing"); });
+  }
+  function speak(btn) {
+    var again = btn.classList.contains("is-playing");
+    stopSpeaking();
+    if (again) return; // 正在念的那顆再按一次＝停止
+    var ut = new SpeechSynthesisUtterance(btn.dataset.say);
+    ut.lang = "id-ID";
+    var v = idVoice();
+    if (v) ut.voice = v;
+    ut.rate = .85; // 放慢一點比較好跟著唸
+    ut.onend = ut.onerror = function () { btn.classList.remove("is-playing"); };
+    btn.classList.add("is-playing");
+    speechSynthesis.speak(ut);
+  }
   function viewLearn() {
     return bar("No.#05", "menu") + '<main class="wrap">' +
       kicker([u("mItems") + " " + pad(T.phrases.length)]) +
       '<section class="tword r">' + word("belajar") + '</section><p class="fine lead r">' + esc(u("learnNote")) + '</p><ul class="phrases">' + T.phrases.map(function (p, i) {
         var mean = lang === "en" ? p[2][1] : p[2][0];
-        return '<li class="ph r"><span class="ph-no">' + pad(i + 1) + '</span><b class="ph-id">' + esc(p[0]) + '</b><span class="ph-say">' + esc(p[1]) + '</span><span class="ph-mean">' + esc(mean) + "</span></li>";
+        return '<li class="ph r"><span class="ph-no">' + pad(i + 1) + '</span><span class="ph-top"><b class="ph-id">' + esc(p[0]) + "</b>" +
+          (canSpeak ? '<button type="button" class="say" data-say="' + esc(p[0]) + '" aria-label="' + esc(u("listen") + "：" + p[0]) + '">' + ICON.speaker + "</button>" : "") +
+          '</span><span class="ph-say">' + esc(p[1]) + '</span><span class="ph-mean">' + esc(mean) + "</span></li>";
       }).join("") + "</ul>" + flowers() + "</main>";
   }
 
@@ -583,6 +611,7 @@
     var old = document.querySelector(".driver");
     if (old) old.remove();
     closeJump();
+    stopSpeaking();
     setPetals(!!(d && d.wedding)); // 只有 12/19、12/20 飄花瓣
   }
   function convert(from) {
@@ -615,6 +644,8 @@
       render();
     } else if (t.dataset.driver) {
       showDriver(t.dataset.driver);
+    } else if (t.dataset.say) {
+      speak(t);
     } else if (t.dataset.jump) {
       showJump();
     } else if (t.dataset.idr) {
