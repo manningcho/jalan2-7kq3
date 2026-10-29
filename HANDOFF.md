@@ -6,6 +6,10 @@
 - `data.js`：所有內容（每日行程、地點、餐廳、住宿、票券、單字）。三語文字格式是 `["中文", "Bahasa Indonesia", "English"]`。
 - `art.js`：每日插畫（SVG 程式畫的）。`ART.svg(name)` 會先看 `TRIP.photos[name]`，有照片就改用照片。
 - `app.js`：畫面與路由（hash：`home`、`menu`、`days`、`d1215`…、`food-pwt`、`stay`、`info`、`learn`）。
+  - 右上角是漢堡選單（`prefs()`）：語言（中/ID/EN）和顏色（跟手機/淺色/深色）。顏色存在 `localStorage` 的 `trip-theme`，套用方式是 `<html data-theme>`。
+  - 匯率換算（`moneyTool()`）和行李清單（`packTool()`）放在選單頁（`#menu`），不在旅遊資料頁。
+  - 餐廳頁切換城市頁籤時，上方大字和頁籤包在 `.keep` 裡、不重播動畫，只有列表重新出現。
+  - 交通圖示 car / train / flight / boat / walk 是 Codex 重畫的 SVG（`ICON`），線寬 1.8、`currentColor`。
 - `style.css`：海報風格（顆粒紙、大字疊在缺角圖框上）。動畫掛在 `<html class="motion">`，一律開啟：沒有開關，也刻意不跟系統的「減少動態效果」（使用者自己的 Mac 有開，但想看動畫）。
 - `build-preview.py`：把所有檔案合成 `dist/preview.html`，給 claude.ai 預覽用。GitHub 上不需要。
 

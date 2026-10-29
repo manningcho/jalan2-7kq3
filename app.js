@@ -8,6 +8,20 @@
   document.documentElement.classList.add("motion");
   try { localStorage.removeItem("trip-motion"); } catch (e) {} // 以前開關留下的紀錄
 
+  // 顏色：跟手機 / 淺色 / 深色，存在這支手機上
+  var THEMES = ["auto", "light", "dark"];
+  var theme = "auto";
+  try { var savedTheme = localStorage.getItem("trip-theme"); if (THEMES.indexOf(savedTheme) >= 0) theme = savedTheme; } catch (e) {}
+  function applyTheme() {
+    var root = document.documentElement;
+    if (theme === "auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", theme);
+    var meta = document.querySelector('meta[name="theme-color"]'); // 手機瀏覽器網址列的顏色
+    if (meta) meta.setAttribute("content", getComputedStyle(root).getPropertyValue("--paper").trim() || "#e9e7e2");
+  }
+  applyTheme();
+  try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme); } catch (e) {}
+  var prefsOpen = false; // 右上角選單是否打開
+
   // 介面文字
   var UI = {
     open: ["打開行程", "Buka jadwal", "Open the trip"],
@@ -16,6 +30,12 @@
     coverSub: ["一家五口的印尼行程", "Perjalanan keluarga ke Indonesia", "A family trip to Indonesia"],
     madeFor: ["made for 桌桌's family", "made for 桌桌's family", "made for 桌桌's family"],
     back: ["返回", "Kembali", "Back"],
+    prefs: ["設定", "Pengaturan", "Settings"],
+    langLabel: ["語言", "Bahasa", "Language"],
+    themeLabel: ["顏色", "Tampilan", "Appearance"],
+    themeAuto: ["跟手機", "Ikuti HP", "Auto"],
+    themeLight: ["淺色", "Terang", "Light"],
+    themeDark: ["深色", "Gelap", "Dark"],
     home: ["封面", "Sampul", "Cover"],
     days: ["每日行程", "Jadwal harian", "Daily plan"],
     daysSub: ["18 天，一天一頁", "18 hari, satu hari satu halaman", "18 days, one page each"],
@@ -24,7 +44,7 @@
     stay: ["住宿", "Penginapan", "Where we stay"],
     staySub: ["四間飯店和 villa", "Empat hotel & villa", "Four hotels and villas"],
     info: ["旅遊資料", "Info perjalanan", "Travel info"],
-    infoSub: ["時差・匯率・緊急電話・行李", "Waktu · kurs · darurat · barang", "Time · money · emergency · packing"],
+    infoSub: ["時差・入境・緊急電話・機票火車", "Waktu · masuk · darurat · tiket", "Time · entry · emergency · tickets"],
     learn: ["學一點印尼文", "Belajar bahasa Indonesia", "Learn some Indonesian"],
     learnSub: ["附中文唸法", "Dengan cara baca Mandarin", "With Chinese pronunciation"],
     map: ["地圖", "Peta", "Map"],
@@ -115,12 +135,13 @@
   function tzCode(city) { return city === "bali" ? "WITA" : city === "tw" ? "CST" : "WIB"; }
 
   // ---------- 小圖示與裝飾 ----------
+  // car / train / flight / boat / walk 由 Codex 重畫（2026/10/30）
   var ICON = {
-    car: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16h14v-4.5l-1.8-4.2A2 2 0 0 0 15.4 6H8.6a2 2 0 0 0-1.8 1.3L5 11.5V16Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="8" cy="16.5" r="1.8" fill="currentColor"/><circle cx="16" cy="16.5" r="1.8" fill="currentColor"/><path d="M5 11.5h14" stroke="currentColor" stroke-width="1.8"/></svg>',
-    walk: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="13" cy="4.5" r="2" fill="currentColor"/><path d="M10 21l2-6 3 3v3M12 15l-1-5 4 1 2 3M11 10l-3 2-1 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    flight: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 13.5l19-7-3.5 10-5-2.5-3 4v-5.5l-7.5 1Z" fill="currentColor"/></svg>',
-    train: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 10h14M8 21l2-4M16 21l-2-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="13.5" r="1" fill="currentColor"/><circle cx="15" cy="13.5" r="1" fill="currentColor"/></svg>',
-    boat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15h18l-2.5 4h-13L3 15ZM6 15V9h8l3 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+    car: '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 17.2H3.7a.7.7 0 0 1-.7-.7V13q0-1.2 1.2-1.2l1.7-3.3q.7-1.4 2.3-1.4h3.4q1.4 0 2.4 1.2l2.7 3.5 2.6.6q1.7.4 1.7 2.2v1.8q0 .8-.8.8h-.5M8.9 17.2h6.4M4.2 11.8h12.5"/><circle cx="6.7" cy="17.2" r="2.2"/><circle cx="17.5" cy="17.2" r="2.2"/></g></svg>',
+    walk: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="14.2" cy="4.5" r="1.8" fill="currentColor"/><path d="m12.2 8.3-1.2 5.6 4.2 3.1 1.3 4M11 13.9l-2.7 4.5-2.8 2.1M12.2 8.3l3.4 3.2h2.8M12.2 8.3l-3.4 2.2-1.3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    flight: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.4 3.7c.8-.8 2-1 2.8-.2s.6 2-.2 2.8l-4 4 1.4 8.1-1.9 1.9-3.2-6.2-3.6 3.2.4 2.7-1.3 1-1.9-3.5-3-1.8 1.1-1.3 2.7.4 3.2-3.6-6.2-3.2 1.9-1.9 7.8 1.6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    train: '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.2" width="14" height="14.4" rx="3.4"/><path d="M5 10.5h14M8 20.8l2-3.2m6 3.2-2-3.2"/></g><circle cx="9" cy="13.9" r="1" fill="currentColor"/><circle cx="15" cy="13.9" r="1" fill="currentColor"/></svg>',
+    boat: '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13.5h18l-2.3 3.2q-.8 1.1-2.4 1.1H7q-2 0-2.8-1.9L3 13.5ZM6 13.5v-6h7l3.8 6M6 10.5h8.9M3 20q2.25-1.4 4.5 0t4.5 0 4.5 0 4.5 0"/></g></svg>',
     stay: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19V7M3 14h18v5M21 14v-2a3 3 0 0 0-3-3h-7v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="11" r="1.8" fill="currentColor"/></svg>',
     wedding: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="14" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="14" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
     pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="2.3" fill="currentColor"/></svg>',
@@ -171,16 +192,35 @@
   }
 
   // ---------- 外框 ----------
-  function langSwitch() {
-    var names = ["中", "ID", "EN"];
-    return '<div class="lang" role="group" aria-label="Language">' + LANGS.map(function (l, i) {
-      return '<button type="button" data-lang="' + l + '" aria-pressed="' + (l === lang) + '">' + names[i] + "</button>";
+  // 右上角的漢堡選單：語言和顏色
+  var BURGER = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  function seg(attr, items, cur, label) {
+    return '<div class="seg" role="group" aria-label="' + esc(label) + '">' + items.map(function (it) {
+      return '<button type="button" ' + attr + '="' + it[0] + '" aria-pressed="' + (it[0] === cur) + '">' + esc(it[1]) + "</button>";
     }).join("") + "</div>";
+  }
+  function prefs() {
+    var names = ["中", "ID", "EN"];
+    return '<div class="prefs' + (prefsOpen ? " is-open" : "") + '">' +
+      '<button type="button" class="prefs-btn" data-prefs="1" aria-expanded="' + prefsOpen + '" aria-label="' + esc(u("prefs")) + '">' + BURGER + "</button>" +
+      '<div class="prefs-pop"' + (prefsOpen ? "" : " hidden") + ">" +
+      '<p class="prefs-h">' + esc(u("langLabel")) + "</p>" + seg("data-lang", LANGS.map(function (l, i) { return [l, names[i]]; }), lang, u("langLabel")) +
+      '<p class="prefs-h">' + esc(u("themeLabel")) + "</p>" +
+      seg("data-theme-pick", [["auto", u("themeAuto")], ["light", u("themeLight")], ["dark", u("themeDark")]], theme, u("themeLabel")) +
+      "</div></div>";
+  }
+  function setPrefsOpen(open) {
+    prefsOpen = open;
+    document.querySelectorAll(".prefs").forEach(function (p) {
+      p.classList.toggle("is-open", open);
+      p.querySelector(".prefs-btn").setAttribute("aria-expanded", open);
+      p.querySelector(".prefs-pop").hidden = !open;
+    });
   }
   function bar(label, backTo) {
     return '<header class="bar"><div class="bar-in">' +
       '<a class="back" href="#' + backTo + '">' + ICON.left + "<span>" + esc(backTo === "home" ? u("home") : u("back")) + "</span></a>" +
-      '<span class="bar-label">' + esc(label) + "</span>" + langSwitch() + "</div></header>";
+      '<span class="bar-label">' + esc(label) + "</span>" + prefs() + "</div></header>";
   }
 
   // ---------- 封面 ----------
@@ -192,7 +232,7 @@
     var route = ["tw", "jkt", "pwt", "yk", "bali", "tw"].map(function (c) { return "<li>" + esc(L(T.cities[c])) + "</li>"; }).join("");
     var over = '<p class="by">' + esc(u("madeFor")) + "</p>" + flowers();
     return '<main class="wrap cover">' +
-      '<div class="cover-bar r">' + STAR + langSwitch() + "</div>" +
+      '<div class="cover-bar r">' + STAR + prefs() + "</div>" +
       meta([[u("mTrip"), u("indonesia")], [u("mDate"), "14–31.12"], [u("mDays"), "18"], [u("mNo"), "#2026"]]) +
       hero("jalan²", "stupa", over) +
       '<section class="cover-body r"><p class="vert" aria-hidden="true">印尼之旅・二〇二六</p>' +
@@ -205,6 +245,23 @@
   }
 
   // ---------- 主選單 ----------
+  function sec(title, body) { return '<section class="sec r"><h2 class="sec-h">' + SPARK + esc(title) + "</h2>" + body + "</section>"; }
+  // 匯率換算和行李清單：放在選單頁（學一點印尼文下面）
+  function moneyTool() {
+    var r = T.rate.twd;
+    return sec(u("moneyTitle"), '<div class="conv">' +
+      '<label for="idr">' + esc(u("idr")) + '</label><input id="idr" inputmode="numeric" autocomplete="off" value="100.000">' +
+      '<label for="twd">' + esc(u("twd")) + '</label><input id="twd" inputmode="decimal" autocomplete="off">' +
+      '<div class="quick">' + [10000, 50000, 100000, 500000].map(function (v) { return '<button type="button" data-idr="' + v + '">' + v.toLocaleString("id-ID") + "</button>"; }).join("") + "</div>" +
+      '<p class="fine">' + esc(u("moneyRule")) + '</p><p class="fine">' + esc(u("moneyAsOf").replace("{r}", r).replace("{d}", T.rate.asOf)) + "</p></div>");
+  }
+  function packTool() {
+    var checked = {};
+    try { checked = JSON.parse(localStorage.getItem("trip-pack") || "{}"); } catch (e) {}
+    return sec(u("packTitle"), '<ul class="list checks">' + T.packing.map(function (p, i) {
+      return '<li><label><input type="checkbox" id="pk' + i + '" data-pack="' + i + '"' + (checked[i] ? " checked" : "") + "><span>" + esc(L(p)) + "</span></label></li>";
+    }).join("") + '</ul><p class="fine">' + esc(u("packNote")) + "</p>");
+  }
   function viewMenu() {
     var td = todayDay();
     var rows = [["days", "days", "daysSub"], ["food-jkt", "food", "foodSub"], ["stay", "stay", "staySub"], ["info", "info", "infoSub"], ["learn", "learn", "learnSub"]];
@@ -215,7 +272,7 @@
       '<nav class="menu">' + rows.map(function (x) {
         return '<a class="mrow r' + (x[1] === "today" ? " is-today" : "") + '" href="#' + x[0] + '">' + SPARK +
           '<span class="mrow-t"><b>' + esc(u(x[1])) + "</b><small>" + esc(x[3] || u(x[2])) + "</small></span>" + ICON.arrow + "</a>";
-      }).join("") + "</nav>" + flowers() + "</main>";
+      }).join("") + "</nav>" + moneyTool() + packTool() + flowers() + "</main>";
   }
 
   // ---------- 日期列表 ----------
@@ -310,8 +367,8 @@
       }).join("") + "</ul>";
     }).join("");
     return bar("No.#02", "menu") + '<main class="wrap">' +
-      kicker([L(T.cities[cur.city]), u("mPlaces") + " " + pad(count)]) +
-      '<section class="tword r">' + word("makan") + "</section>" + tabs + groups + "</main>";
+      '<div class="keep">' + kicker([L(T.cities[cur.city]), u("mPlaces") + " " + pad(count)]) +
+      '<section class="tword r">' + word("makan") + "</section>" + tabs + "</div>" + groups + "</main>";
   }
 
   // ---------- 住宿 ----------
@@ -353,16 +410,9 @@
     ["021-515-3939", ["駐印尼代表處（一般業務，上班時間）", "Kantor Dagang Taipei (umum)", "Taipei office (general, office hours)"]]
   ];
   function viewInfo() {
-    var r = T.rate.twd;
-    var sec = function (title, body) { return '<section class="sec r"><h2 class="sec-h">' + SPARK + esc(title) + "</h2>" + body + "</section>"; };
     var time = sec(u("timeTitle"), '<ul class="list kv">' +
       "<li><b>" + esc(L(T.cities.jkt) + "・" + L(T.cities.pwt) + "・" + L(T.cities.yk)) + "</b><span>WIB · " + esc(u("tzJava")) + "</span></li>" +
       "<li><b>" + esc(L(T.cities.bali)) + "</b><span>WITA · " + esc(u("tzBali")) + "</span></li></ul>");
-    var money = sec(u("moneyTitle"), '<div class="conv">' +
-      '<label for="idr">' + esc(u("idr")) + '</label><input id="idr" inputmode="numeric" autocomplete="off" value="100.000">' +
-      '<label for="twd">' + esc(u("twd")) + '</label><input id="twd" inputmode="decimal" autocomplete="off">' +
-      '<div class="quick">' + [10000, 50000, 100000, 500000].map(function (v) { return '<button type="button" data-idr="' + v + '">' + v.toLocaleString("id-ID") + "</button>"; }).join("") + "</div>" +
-      '<p class="fine">' + esc(u("moneyRule")) + '</p><p class="fine">' + esc(u("moneyAsOf").replace("{r}", r).replace("{d}", T.rate.asOf)) + "</p></div>");
     var entry = sec(u("entryTitle"), '<ul class="list">' + ENTRY.map(function (e) {
       return '<li class="para"><b>' + esc(L(e[0])) + "</b><p>" + esc(L(e[1])) + "</p></li>";
     }).join("") + "</ul>");
@@ -372,16 +422,11 @@
     var tickets = sec(u("ticketTitle"), '<ul class="list tickets">' + T.tickets.map(function (k) {
       return '<li class="tk"><span class="tk-ic">' + ICON[k.kind] + '</span><span><b>' + esc(k.date + "　" + L(k.t)) + "</b><small>" + esc(L(k.d)) + "</small></span></li>";
     }).join("") + "</ul>");
-    var checked = {};
-    try { checked = JSON.parse(localStorage.getItem("trip-pack") || "{}"); } catch (e) {}
-    var pack = sec(u("packTitle"), '<ul class="list checks">' + T.packing.map(function (p, i) {
-      return '<li><label><input type="checkbox" id="pk' + i + '" data-pack="' + i + '"' + (checked[i] ? " checked" : "") + "><span>" + esc(L(p)) + "</span></label></li>";
-    }).join("") + '</ul><p class="fine">' + esc(u("packNote")) + "</p>");
     var credits = "";
     if (Object.keys(T.photos || {}).length) credits = sec(u("photoTitle"), '<p class="fine">' + esc(u("artNote")) + "</p>");
     return bar("No.#04", "menu") + '<main class="wrap">' +
-      kicker(["WIB / WITA", u("mItems") + " 06"]) +
-      '<section class="tword r">' + word("info") + "</section>" + time + money + entry + emerg + tickets + pack + credits + "</main>";
+      kicker(["WIB / WITA", u("mItems") + " 04"]) +
+      '<section class="tword r">' + word("info") + "</section>" + time + entry + emerg + tickets + credits + "</main>";
   }
 
   // ---------- 學印尼文 ----------
@@ -423,6 +468,7 @@
 
   // ---------- 路由 ----------
   var app = document.getElementById("app");
+  var lastRoute = null; // 上一次畫的是哪一頁
   function render() {
     var h = (location.hash || "").replace(/^#/, "") || "home";
     var html;
@@ -439,9 +485,15 @@
       html = d ? viewDay(d) : viewHome();
     }
     app.innerHTML = html;
-    app.querySelectorAll(".r").forEach(function (el, i) { el.style.setProperty("--d", Math.min(i, 14)); });
+    // 餐廳頁換頁籤：上面的大字和頁籤不重播動畫，只有列表重新出現
+    if (lastRoute && lastRoute !== h && lastRoute.indexOf("food") === 0 && h.indexOf("food") === 0) {
+      app.querySelectorAll(".keep").forEach(function (el) { el.classList.add("no-anim"); });
+    }
+    lastRoute = h;
+    var n = 0;
+    app.querySelectorAll(".r").forEach(function (el) { if (!el.closest(".no-anim")) el.style.setProperty("--d", Math.min(n++, 14)); });
     fit();
-    if (h === "info") convert("idr");
+    if (h === "menu") convert("idr");
     var old = document.querySelector(".driver");
     if (old) old.remove();
   }
@@ -459,9 +511,17 @@
   }
 
   document.addEventListener("click", function (e) {
+    if (prefsOpen && !e.target.closest(".prefs")) setPrefsOpen(false); // 點選單外面就收起來
     var t = e.target.closest("button");
     if (!t) return;
-    if (t.dataset.lang) {
+    if (t.dataset.prefs) {
+      setPrefsOpen(!prefsOpen);
+    } else if (t.dataset.themePick) {
+      theme = t.dataset.themePick;
+      try { localStorage.setItem("trip-theme", theme); } catch (err) {}
+      applyTheme();
+      document.querySelectorAll("[data-theme-pick]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.themePick === theme); });
+    } else if (t.dataset.lang) {
       lang = t.dataset.lang;
       try { localStorage.setItem("trip-lang", lang); } catch (err) {}
       render();
@@ -494,9 +554,9 @@
     }
   });
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") { var o = document.querySelector(".driver"); if (o) o.remove(); }
+    if (e.key === "Escape") { var o = document.querySelector(".driver"); if (o) o.remove(); if (prefsOpen) setPrefsOpen(false); }
   });
-  window.addEventListener("hashchange", function () { render(); window.scrollTo(0, 0); });
+  window.addEventListener("hashchange", function () { prefsOpen = false; render(); window.scrollTo(0, 0); });
   window.addEventListener("resize", fit);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
   render();
