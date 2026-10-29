@@ -13,6 +13,14 @@
 window.TRIP = {
   title: ["印尼之旅", "Perjalanan ke Indonesia", "Indonesia Trip"],
   start: "2026-12-14",
+  // 行程列表和住宿頁的城市橫幅：Codex 專門畫的橫幅版（1200×359 JPG）
+  bands: {
+    tw: { src: "img/band-tw.jpg" },
+    jkt: { src: "img/band-jkt.jpg" },
+    pwt: { src: "img/band-pwt.jpg" },
+    yk: { src: "img/band-yk.jpg" },
+    bali: { src: "img/band-bali.jpg" }
+  },
   // 插畫：OpenAI Codex 生成（2026/10），1280×924 JPG
   photos: {
     stupa: { src: "img/stupa.jpg", what: "Borobudur", by: "AI (OpenAI Codex)" },

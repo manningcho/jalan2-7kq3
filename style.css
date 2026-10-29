@@ -175,6 +175,11 @@ button { font: inherit; color: inherit; }
 .cityblock { display: flex; flex-direction: column; gap: 8px; }
 .strip { position: relative; height: 112px; border-radius: 22px; overflow: hidden; }
 .strip .art { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* banner-shaped illustrations made for these strips */
+.strip .band { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
+.motion .strip .band { animation: kbband 26s ease-in-out infinite alternate; transform-origin: 60% 75%; }
+@keyframes kbband { to { transform: scale(1.06); } } /* gentle, so the top of the banner (the plane) stays in view */
+.band-shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(21, 26, 43, .7), rgba(21, 26, 43, 0) 65%); }
 .strip-name { position: absolute; left: 18px; bottom: 10px; margin: 0; color: #fff; font-weight: 900; font-size: 30px; line-height: 1.1; text-shadow: 0 1px 2px rgba(20, 24, 40, .5), 0 2px 16px rgba(20, 24, 40, .45); }
 .daylist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .dayrow { display: flex; align-items: center; gap: 12px; min-height: 76px; padding: 10px 4px; border-bottom: 1px solid var(--line); text-decoration: none; }

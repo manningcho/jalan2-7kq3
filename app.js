@@ -289,13 +289,19 @@
 
   // ---------- 日期列表 ----------
   var CITY_ART = { tw: "plane", jkt: "city", pwt: "slamet", yk: "stupa", bali: "gate" };
+  // 城市橫幅：有專門畫的橫幅圖（TRIP.bands）就用它，沒有才從大插畫裁一條
+  function stripArt(city) {
+    var b = (T.bands || {})[city];
+    if (!b) return ART.svg(CITY_ART[city], city, true);
+    return '<img class="band" src="' + esc(b.src) + '" alt="" loading="lazy" decoding="async"><span class="band-shade" aria-hidden="true"></span>';
+  }
   function viewDays() {
     var t = todayStr(), html = "", last = null, n = 0;
     T.days.forEach(function (d) {
       n++;
       if (d.city !== last) {
         if (last !== null) html += "</ol></section>";
-        html += '<section class="cityblock r"><div class="strip">' + ART.svg(CITY_ART[d.city], d.city, true) +
+        html += '<section class="cityblock r"><div class="strip">' + stripArt(d.city) +
           '<h2 class="strip-name">' + esc(L(T.cities[d.city])) + "</h2></div><ol class=\"daylist\">";
         last = d.city;
       }
@@ -392,7 +398,7 @@
       kicker(["15.12 – 31.12", u("mPlaces") + " 04"]) +
       '<section class="tword r">' + word("menginap") + '</section><ul class="stays">' + T.stays.map(function (s) {
         var p = place(s.place);
-        return '<li class="stay r"><div class="strip strip-s">' + ART.svg(CITY_ART[s.city], s.city, true) + '<p class="strip-name">' + esc(L(T.cities[s.city])) + "</p></div>" +
+        return '<li class="stay r"><div class="strip strip-s">' + stripArt(s.city) + '<p class="strip-name">' + esc(L(T.cities[s.city])) + "</p></div>" +
           '<div class="stay-body has-map">' + mapBtn(s.place) + '<p class="stay-when">' + esc(L(s.nights)) + "</p>" +
           '<h2 class="stay-name">' + esc(p.n) + '</h2><p class="stay-area">' + esc(p.a) + "</p>" +
           (s.inout ? '<p class="stay-meta">' + esc(L(s.inout)) + "</p>" : "") +
