@@ -288,18 +288,24 @@
       '<nav class="menu">' + rows.map(function (x) {
         var ic = (T.menuArt || {})[x[0]];
         return '<a class="mrow r' + (x[1] === "today" ? " is-today" : "") + '" href="#' + x[0] + '">' +
-          (ic ? '<img class="mrow-ic" src="' + esc(ic) + '" alt="" loading="lazy" decoding="async">' : SPARK) +
+          (ic ? '<span class="mrow-ic"><img class="fade" src="' + esc(ic) + '" alt="" loading="lazy" decoding="async"></span>' : SPARK) +
           '<span class="mrow-t"><b>' + esc(u(x[1])) + "</b><small>" + esc(x[3] || u(x[2])) + "</small></span>" + ICON.arrow + "</a>";
       }).join("") + "</nav>" + flowers() + "</main>";
   }
 
   // ---------- 日期列表 ----------
   var CITY_ART = { tw: "plane", jkt: "city", pwt: "slamet", yk: "stupa", bali: "gate" };
+  // 橫幅圖：模糊小預覽墊底，清楚的圖載完淡入
+  function bandImg(src, lazy) {
+    var lq = (window.LQ || {})[src];
+    return (lq ? '<img class="band-lq" src="' + lq + '" alt="" aria-hidden="true">' : "") +
+      '<img class="band fade" src="' + esc(src) + '" alt=""' + (lazy ? ' loading="lazy"' : "") + ' decoding="async">';
+  }
   // 城市橫幅：有專門畫的橫幅圖（TRIP.bands）就用它，沒有才從大插畫裁一條
   function stripArt(city) {
     var b = (T.bands || {})[city];
     if (!b) return ART.svg(CITY_ART[city], city, true);
-    return '<img class="band" src="' + esc(b.src) + '" alt="" loading="lazy" decoding="async"><span class="band-shade" aria-hidden="true"></span>';
+    return bandImg(b.src, true) + '<span class="band-shade" aria-hidden="true"></span>';
   }
   function viewDays() {
     var t = todayStr(), html = "", last = null, n = 0;
@@ -383,7 +389,7 @@
   // ---------- 餐廳 ----------
   function foodBand(id) { // 餐廳頁：每個城市一張美食橫幅
     var b = (T.bands || {})["food-" + id];
-    return b ? '<div class="strip r"><img class="band" src="' + esc(b.src) + '" alt="" decoding="async"></div>' : "";
+    return b ? '<div class="strip r">' + bandImg(b.src) + "</div>" : "";
   }
   function viewFood(id) {
     var cur = T.food.filter(function (f) { return f.id === id; })[0] || T.food[0];
@@ -561,6 +567,21 @@
     box.innerHTML = html;
     document.body.appendChild(box);
   }
+  // 圖片載完才淡入；已經在快取裡的就直接顯示，不重播
+  function fadeIn(root) {
+    root.querySelectorAll(".fade:not(.is-loaded)").forEach(function (el) {
+      var done = function () { el.classList.add("is-loaded"); };
+      if (el.tagName.toLowerCase() === "img") {
+        if (el.complete && el.naturalWidth) { el.classList.add("no-fade"); done(); }
+        else { el.addEventListener("load", done); el.addEventListener("error", done); }
+      } else { // 插畫裡的 SVG <image>：用一張看不見的圖來知道它載好了沒
+        var im = new Image();
+        im.onload = im.onerror = done;
+        im.src = el.getAttribute("href");
+        if (im.complete && im.naturalWidth) { el.classList.add("no-fade"); done(); }
+      }
+    });
+  }
   function closeJump() {
     var o = document.querySelector(".jump");
     if (o) o.remove();
@@ -628,6 +649,7 @@
     if (old) old.remove();
     closeJump();
     stopSpeaking();
+    fadeIn(app);
     setPetals(!!(d && d.wedding)); // 只有 12/19、12/20 飄花瓣
   }
   function convert(from) {

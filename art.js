@@ -200,11 +200,15 @@
       if (photo) {
         // 照片：上緣漸層成大字的顏色，讓字看起來融進圖裡
         var top = photo.top || p[0] || C.skyTop;
-        body = '<image class="a-kb" href="' + photo.src + '" x="0" y="0" width="360" height="260" preserveAspectRatio="xMidYMid slice"' +
+        // 先墊一張模糊的小預覽（lq.js），清楚的大圖載完再淡入（app.js 的 fadeIn）
+        var lq = (window.LQ || {})[photo.src];
+        body = (lq ? '<image href="' + lq + '" x="0" y="0" width="360" height="260" preserveAspectRatio="xMidYMid slice" filter="url(#b' + id + ')"/>' : "") +
+          '<image class="a-kb fade" href="' + photo.src + '" x="0" y="0" width="360" height="260" preserveAspectRatio="xMidYMid slice"' +
           (photo.focus ? ' style="transform-origin:' + photo.focus + '"' : "") + "/>" +
           (plain ? '<rect width="360" height="260" fill="url(#g' + id + ')" opacity=".55"/>' : '<rect width="360" height="110" fill="url(#g' + id + ')"/>');
         var grad = '<linearGradient id="g' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + top + '"/><stop offset=".35" stop-color="' + top + '" stop-opacity=".55"/><stop offset="1" stop-color="' + top + '" stop-opacity="0"/></linearGradient>';
         if (plain) grad = '<linearGradient id="g' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset=".3" stop-color="#151a2b" stop-opacity="0"/><stop offset="1" stop-color="#151a2b" stop-opacity=".85"/></linearGradient>';
+        if (lq) grad += '<filter id="b' + id + '" x="0" y="0" width="1" height="1"><feGaussianBlur stdDeviation="7" edgeMode="duplicate"/></filter>';
         body = "<defs>" + grad + "</defs>" + body;
       } else {
         body = (SCENES[name] || SCENES.plane)(id);

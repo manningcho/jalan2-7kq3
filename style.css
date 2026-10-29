@@ -167,7 +167,8 @@ button { font: inherit; color: inherit; }
   border-bottom: 1px solid var(--line); text-decoration: none;
 }
 .mrow .spark { width: 18px; height: 18px; }
-.mrow-ic { width: 52px; height: 52px; flex: none; border-radius: 14px; object-fit: cover; }
+.mrow-ic { width: 52px; height: 52px; flex: none; border-radius: 14px; overflow: hidden; background: linear-gradient(#5677ae, #dcbcb4); }
+.mrow-ic img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .mrow > svg:last-child { width: 26px; height: 26px; transition: transform .2s ease; }
 .mrow-t { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
 .mrow-t b { font-size: 26px; font-weight: 900; }
@@ -182,6 +183,11 @@ button { font: inherit; color: inherit; }
 .strip .band { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
 .motion .strip .band { animation: kbband 26s ease-in-out infinite alternate; transform-origin: 60% 75%; }
 @keyframes kbband { to { transform: scale(1.06); } } /* gentle, so the top of the banner (the plane) stays in view */
+.strip .band-lq { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(8px); transform: scale(1.12); }
+/* images fade in once loaded (tiny blurred preview underneath); cached ones just appear */
+.fade { opacity: 0; transition: opacity .7s ease; }
+.fade.is-loaded { opacity: 1; }
+.fade.no-fade { transition: none; }
 .band-shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(21, 26, 43, .7), rgba(21, 26, 43, 0) 65%); }
 .strip-name { position: absolute; left: 18px; bottom: 10px; margin: 0; color: #fff; font-weight: 900; font-size: 30px; line-height: 1.1; text-shadow: 0 1px 2px rgba(20, 24, 40, .5), 0 2px 16px rgba(20, 24, 40, .45); }
 .daylist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }

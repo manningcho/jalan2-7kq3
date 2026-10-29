@@ -5,6 +5,7 @@ out = (d / "head.html").read_text("utf8")
 out += "<style>\n" + (d / "style.css").read_text("utf8") + "\n</style>\n"
 out += '<div id="app"></div>\n'
 out += "<script>\n" + (d / "data.js").read_text("utf8") + "\n</script>\n"
+out += "<script>\n" + (d / "lq.js").read_text("utf8") + "\n</script>\n"
 out += "<script>\n" + (d / "art.js").read_text("utf8") + "\n</script>\n"
 out += "<script>\n" + (d / "app.js").read_text("utf8") + "\n</script>\n"
 (d / "dist").mkdir(exist_ok=True)
