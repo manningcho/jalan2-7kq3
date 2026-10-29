@@ -67,6 +67,8 @@
     wedding: ["婚禮", "Nikah", "Wedding"],
     takeMe: ["請帶我到這裡", "Tolong antar saya ke sini", "Please take me here"],
     close: ["關閉", "Tutup", "Close"],
+    vert: ["印尼之旅・二〇二六", "JALAN-JALAN · 2026", "INDONESIA · 2026"],
+    jumpTo: ["跳到其他天", "Pilih hari lain", "Jump to another day"],
     openMap: ["打開地圖", "Buka peta", "Open map"],
     tzJava: ["比台灣慢 1 小時", "1 jam lebih lambat dari Taiwan", "1 hour behind Taiwan"],
     tzBali: ["跟台灣同時間", "Sama dengan waktu Taiwan", "Same time as Taiwan"],
@@ -152,6 +154,8 @@
     chev: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     arrow: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     left: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    cal: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="14" r="1.1" fill="currentColor"/><circle cx="12" cy="14" r="1.1" fill="currentColor"/><circle cx="16" cy="14" r="1.1" fill="currentColor"/><circle cx="8" cy="17.3" r="1.1" fill="currentColor"/><circle cx="12" cy="17.3" r="1.1" fill="currentColor"/></svg>',
+    x: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
     warn: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2L12 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.1" fill="currentColor"/></svg>'
   };
   var STAR = '<svg class="star" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 0L26.6 19 40.9 7.1 29 21.4 48 24 29 26.6 40.9 40.9 26.6 29 24 48 21.4 29 7.1 40.9 19 26.6 0 24 19 21.4 7.1 7.1 21.4 19Z" fill="currentColor"/></svg>';
@@ -240,7 +244,7 @@
       '<div class="cover-bar r">' + STAR + prefs() + "</div>" +
       meta([[u("mTrip"), u("indonesia")], [u("mDate"), "14–31.12"], [u("mDays"), "18"], [u("mNo"), "#2026"]]) +
       hero("jalan²", "stupa", over) +
-      '<section class="cover-body r"><p class="vert" aria-hidden="true">印尼之旅・二〇二六</p>' +
+      '<section class="cover-body r"><p class="vert' + (lang === "zh" ? "" : " is-latin") + '" aria-hidden="true">' + esc(u("vert")) + "</p>" +
       '<div class="cover-main"><h1 class="cover-title">' + esc(L(T.title)) + "</h1>" +
       '<p class="cover-sub">' + esc(u("coverSub")) + "</p>" +
       '<ol class="route">' + route + "</ol>" +
@@ -330,7 +334,7 @@
   function card(it) {
     var chip = it.kind ? '<em class="chip chip-' + it.kind + '">' + ICON[it.kind] + esc(u(it.kind === "stay" ? "staytag" : it.kind)) + "</em>" : "";
     var p = it.place ? place(it.place) : null;
-    var h = '<li class="ev r"><div class="ev-time">' + esc(it.time || "·") + "</div>" +
+    var h = '<li class="ev r"><div class="ev-time">' + esc(L(it.time) || "·") + "</div>" +
       '<article class="ev-card' + (it.kind ? " k-" + it.kind : "") + (p ? " has-map" : "") + '">' + (p ? mapBtn(it.place) : "") + (chip ? '<div class="ev-chips">' + chip + "</div>" : "") +
       '<h3 class="ev-t">' + esc(L(it.t)) + "</h3>" +
       (p ? '<p class="ev-place">' + esc(p.n) + "</p>" : "") +
@@ -352,6 +356,7 @@
     var items = d.items.map(function (it) { return it.go ? goBlock(it) : card(it); }).join("");
     var pager = '<nav class="pager r">' +
       (prev ? '<a href="#' + dayId(prev) + '">' + ICON.left + "<span><small>" + esc(u("prev")) + "</small>" + dm(prev) + "</span></a>" : "<span></span>") +
+      '<button type="button" class="pg-jump" data-jump="1" aria-label="' + esc(u("jumpTo")) + '" title="' + esc(u("jumpTo")) + '">' + ICON.cal + "</button>" +
       (next ? '<a class="pg-next" href="#' + dayId(next) + '"><span><small>' + esc(u("next")) + "</small>" + dm(next) + "</span>" + ICON.chev + "</a>" : "<span></span>") + "</nav>";
     return bar("No.#" + pad(i + 1) + " / 18", "days") + '<main class="wrap' + (d.wedding ? " is-wedding" : "") + '">' +
       kicker([pad(i + 1) + "/18", dm(d) + " " + wk(d), L(T.cities[d.city]), tzCode(d.city)]) +
@@ -463,6 +468,42 @@
       }).join("") + "</ul>" + flowers() + "</main>";
   }
 
+  // ---------- 快速跳到其他天：從下方滑出的日期面板 ----------
+  function showJump() {
+    var cur = location.hash.replace(/^#/, ""), t = todayStr(), html = "", last = null;
+    T.days.forEach(function (d) {
+      if (d.city !== last) {
+        if (last !== null) html += "</div>";
+        html += '<p class="jump-city">' + esc(L(T.cities[d.city])) + '</p><div class="jump-grid">';
+        last = d.city;
+      }
+      var here = dayId(d) === cur;
+      html += '<a class="jump-day' + (here ? " is-cur" : "") + (d.wedding ? " is-wedding" : "") + (d.date === t ? " is-today" : "") +
+        '" href="#' + dayId(d) + '"' + (here ? ' aria-current="page"' : "") + "><b>" + dm(d) + "</b><small>" + esc(wk(d)) + "</small></a>";
+    });
+    var ov = document.createElement("div");
+    ov.className = "jump";
+    ov.setAttribute("role", "dialog");
+    ov.setAttribute("aria-modal", "true");
+    ov.setAttribute("aria-label", u("jumpTo"));
+    ov.innerHTML = '<div class="jump-sheet"><div class="jump-head"><b>' + esc(u("jumpTo")) + "</b>" +
+      '<button type="button" class="jump-x" data-close-jump="1" aria-label="' + esc(u("close")) + '">' + ICON.x + "</button></div>" + html + "</div></div>";
+    document.body.appendChild(ov);
+    document.documentElement.classList.add("jump-open");
+    var sheet = ov.querySelector(".jump-sheet"); // 對焦放在面板上，手機上不會出現對焦框
+    sheet.setAttribute("tabindex", "-1");
+    sheet.focus({ preventScroll: true });
+    // 點背景、叉叉或任何一天都收起來（點日期會照常跳頁）
+    ov.addEventListener("click", function (e) {
+      if (e.target === ov || e.target.closest("[data-close-jump]") || e.target.closest(".jump-day")) closeJump();
+    });
+  }
+  function closeJump() {
+    var o = document.querySelector(".jump");
+    if (o) o.remove();
+    document.documentElement.classList.remove("jump-open");
+  }
+
   // ---------- 給司機看 ----------
   function showDriver(k) {
     var p = place(k);
@@ -522,6 +563,7 @@
     if (h === "money") convert("idr");
     var old = document.querySelector(".driver");
     if (old) old.remove();
+    closeJump();
   }
   function convert(from) {
     var a = document.getElementById("idr"), b = document.getElementById("twd");
@@ -553,6 +595,8 @@
       render();
     } else if (t.dataset.driver) {
       showDriver(t.dataset.driver);
+    } else if (t.dataset.jump) {
+      showJump();
     } else if (t.dataset.idr) {
       document.getElementById("idr").value = (+t.dataset.idr).toLocaleString("id-ID");
       convert("idr");
@@ -582,7 +626,7 @@
     }
   });
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") { var o = document.querySelector(".driver"); if (o) o.remove(); if (prefsOpen) setPrefsOpen(false); }
+    if (e.key === "Escape") { var o = document.querySelector(".driver"); if (o) o.remove(); if (prefsOpen) setPrefsOpen(false); closeJump(); }
   });
   window.addEventListener("hashchange", function () { prefsOpen = false; render(); window.scrollTo(0, 0); });
   window.addEventListener("resize", fit);

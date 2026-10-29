@@ -139,6 +139,7 @@ button { font: inherit; color: inherit; }
   margin: 0; writing-mode: vertical-rl; font-weight: 900; font-size: 22px; letter-spacing: .25em;
   padding: 0 0 0 14px; border-left: 1px solid var(--line);
 }
+.vert.is-latin { font-size: 15px; letter-spacing: .22em; } /* Latin text lies sideways when vertical */
 .cover-main { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 .cover-title { margin: 0; font-weight: 900; font-size: clamp(34px, 10vw, 48px); line-height: 1.1; text-wrap: balance; }
 .cover-sub { margin: 0; font-size: 17px; color: var(--muted); }
@@ -260,7 +261,13 @@ button { font: inherit; color: inherit; }
 .go-nav svg { width: 16px; height: 16px; }
 .go-note { margin: 0 4px; font-size: 14px; color: var(--muted); }
 
-.pager { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.pager { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; margin-top: 10px; }
+.pg-jump {
+  align-self: center; width: 56px; height: 56px; border: 0; border-radius: 50%; background: var(--card); color: var(--ink);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.pg-jump svg { width: 24px; height: 24px; }
+.pg-jump:active { transform: scale(.95); }
 .pager a { display: flex; align-items: center; gap: 8px; min-height: 68px; padding: 0 16px; border-radius: 999px; background: var(--card); text-decoration: none; font-family: var(--f-mono); font-weight: 600; font-size: 18px; }
 .pager a span { display: flex; flex-direction: column; line-height: 1.2; }
 .pager small { font-family: var(--f-body); font-weight: 400; font-size: 13px; color: var(--muted); }
@@ -329,6 +336,37 @@ button { font: inherit; color: inherit; }
 .ph-mean { font-size: 16px; color: var(--muted); }
 
 /* ---------- driver card ---------- */
+/* ---------- jump to another day (bottom sheet) ---------- */
+.jump-open { overflow: hidden; }
+.jump { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center; background: rgba(10, 12, 20, .45); }
+.jump-sheet {
+  width: 100%; max-width: 600px; max-height: 82vh; overflow-y: auto; overscroll-behavior: contain;
+  padding: 14px max(16px, env(safe-area-inset-right, 0px)) calc(22px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  border-radius: 24px 24px 0 0; background: var(--paper); box-shadow: 0 -12px 32px rgba(10, 14, 25, .25);
+}
+.jump-sheet:focus { outline: none; }
+.jump-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.jump-head b { font-size: 20px; font-weight: 900; }
+.jump-x { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--card); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.jump-x svg { width: 20px; height: 20px; }
+.jump-city { margin: 10px 2px 6px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.jump-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.jump-day {
+  min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  border-radius: 16px; background: var(--card); text-decoration: none; line-height: 1.15;
+}
+.jump-day b { font-family: var(--f-mono); font-size: 17px; font-weight: 600; }
+.jump-day small { font-size: 12px; color: var(--muted); }
+.jump-day.is-wedding b { color: var(--soga); }
+.jump-day.is-today { box-shadow: inset 0 0 0 2px var(--gold); }
+.jump-day.is-cur { background: var(--ink); color: var(--paper); }
+.jump-day.is-cur b { color: var(--paper); }
+.jump-day.is-cur small { color: var(--paper); opacity: .7; }
+.motion .jump { animation: fadein .2s ease both; }
+.motion .jump-sheet { animation: sheet .35s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes fadein { from { opacity: 0; } }
+@keyframes sheet { from { transform: translateY(40px); opacity: 0; } }
+
 .driver {
   position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: var(--paper);
   padding: calc(24px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
@@ -392,4 +430,6 @@ button { font: inherit; color: inherit; }
 /* kept at the end so it wins over the rules above */
 @media (max-width: 359px) {
   .meta dd { font-size: 12px; }                 /* "Indonesia" fits its column */
+  .pager a { padding: 0 12px; min-width: 0; }   /* "Sebelumnya" fits next to the calendar button */
+  .pager a > svg { display: none; }
 }

@@ -16,7 +16,7 @@ window.TRIP = {
   // 插畫：OpenAI Codex 生成（2026/10），1280×924 JPG
   photos: {
     stupa: { src: "img/stupa.jpg", what: "Borobudur", by: "AI (OpenAI Codex)" },
-    palace: { src: "img/palace.jpg", what: "Kraton Yogyakarta", by: "AI (OpenAI Codex)" },
+    tamansari: { src: "img/tamansari.jpg", what: "Taman Sari", by: "AI (OpenAI Codex)" },
     slamet: { src: "img/slamet.jpg", what: "Gunung Slamet", by: "AI (OpenAI Codex)" },
     city: { src: "img/city.jpg", what: "Monas, Jakarta", by: "AI (OpenAI Codex)" },
     gate: { src: "img/gate.jpg", what: "Candi bentar", by: "AI (OpenAI Codex)" },
@@ -85,7 +85,7 @@ window.TRIP = {
       date: "2026-12-14", city: "tw", word: "berangkat", art: "plane",
       title: ["出發前一晚", "Malam sebelum berangkat", "The night before"],
       items: [
-        { time: "下午", t: ["前往桃園", "Berangkat ke Taoyuan", "Head to Taoyuan"],
+        { time: ["下午", "Sore", "PM"], t: ["前往桃園", "Berangkat ke Taoyuan", "Head to Taoyuan"],
           note: ["先住桃園，隔天一早搭機", "Menginap di Taoyuan, besok pagi terbang", "Stay near the airport for the early flight"] }
       ]
     },
@@ -203,7 +203,7 @@ window.TRIP = {
       ]
     },
     {
-      date: "2026-12-23", city: "yk", word: "jogja", art: "palace",
+      date: "2026-12-23", city: "yk", word: "jogja", art: "tamansari",
       title: ["火車到日惹・水宮", "Kereta ke Yogyakarta · Taman Sari", "Train to Yogyakarta · water castle"],
       items: [
         { time: "11:00", kind: "stay", t: ["退房，去火車站", "Check-out, ke stasiun", "Check out, go to the station"], place: "jhh" },
