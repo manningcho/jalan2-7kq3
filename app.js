@@ -197,6 +197,10 @@
     // 有往下長的字母（j g p q y）時多留一點底部空間，才不會壓到下面的線和圖
     return '<p class="hw' + (/[gjpqy]/.test(w) ? " has-desc" : "") + '" aria-hidden="true"' + (color ? ' style="color:' + color + '"' : "") + '><span class="hw-in">' + letters + "</span></p>";
   }
+  // 內頁標題：有插畫（TRIP.photos[art]）就像每日頁一樣字疊在圖上，沒有就只放大字
+  function pageHead(w, art) {
+    return (T.photos || {})[art] ? hero(w, art) : '<section class="tword r">' + word(w) + "</section>";
+  }
   function hero(w, art, overlay) {
     return '<section class="hero r">' + word(w, ART.topColor(art)) +
       '<div class="hero-art">' + ART.svg(art, w) + (overlay ? '<div class="hero-over">' + overlay + "</div>" : "") + "</div></section>";
@@ -282,7 +286,9 @@
       meta([[u("mTrip"), u("indonesia")], [u("mPages"), "07"], [u("mDays"), "18"]]) +
       '<section class="tword r">' + word("daftar") + "</section>" +
       '<nav class="menu">' + rows.map(function (x) {
-        return '<a class="mrow r' + (x[1] === "today" ? " is-today" : "") + '" href="#' + x[0] + '">' + SPARK +
+        var ic = (T.menuArt || {})[x[0]];
+        return '<a class="mrow r' + (x[1] === "today" ? " is-today" : "") + '" href="#' + x[0] + '">' +
+          (ic ? '<img class="mrow-ic" src="' + esc(ic) + '" alt="" loading="lazy" decoding="async">' : SPARK) +
           '<span class="mrow-t"><b>' + esc(u(x[1])) + "</b><small>" + esc(x[3] || u(x[2])) + "</small></span>" + ICON.arrow + "</a>";
       }).join("") + "</nav>" + flowers() + "</main>";
   }
@@ -375,6 +381,10 @@
   }
 
   // ---------- 餐廳 ----------
+  function foodBand(id) { // 餐廳頁：每個城市一張美食橫幅
+    var b = (T.bands || {})["food-" + id];
+    return b ? '<div class="strip r"><img class="band" src="' + esc(b.src) + '" alt="" decoding="async"></div>' : "";
+  }
   function viewFood(id) {
     var cur = T.food.filter(function (f) { return f.id === id; })[0] || T.food[0];
     var count = 0; cur.groups.forEach(function (g) { count += g.items.length; });
@@ -389,7 +399,7 @@
     }).join("");
     return bar("No.#02", "menu") + '<main class="wrap">' +
       '<div class="keep">' + kicker([L(T.cities[cur.city]), u("mPlaces") + " " + pad(count)]) +
-      '<section class="tword r">' + word("makan") + "</section>" + tabs + "</div>" + groups + "</main>";
+      '<section class="tword r">' + word("makan") + "</section>" + tabs + "</div>" + foodBand(cur.id) + groups + "</main>";
   }
 
   // ---------- 住宿 ----------
@@ -447,14 +457,14 @@
     if (Object.keys(T.photos || {}).length) credits = sec(u("photoTitle"), '<p class="fine">' + esc(u("artNote")) + "</p>");
     return bar("No.#04", "menu") + '<main class="wrap">' +
       kicker(["WIB / WITA", u("mItems") + " 04"]) +
-      '<section class="tword r">' + word("info") + "</section>" + time + entry + emerg + tickets + credits + "</main>";
+      pageHead("info", "p-info") + time + entry + emerg + tickets + credits + "</main>";
   }
 
   // ---------- 學印尼文 ----------
   function viewMoney() {
     return bar("No.#06", "menu") + '<main class="wrap">' +
       kicker(["IDR → TWD", "1 : " + T.rate.twd]) +
-      '<section class="tword r">' + word("rupiah") + "</section>" + moneyTool() + flowers() + "</main>";
+      pageHead("rupiah", "p-money") + moneyTool() + flowers() + "</main>";
   }
   function packCount() {
     var c = {}, n = 0;
@@ -465,7 +475,7 @@
   function viewPack() {
     return bar("No.#07", "menu") + '<main class="wrap">' +
       kicker([esc(u("mItems")) + " " + pad(T.packing.length), esc(u("mChecked")) + ' <b class="pk-n">' + pad(packCount()) + "</b>"], true) +
-      '<section class="tword r">' + word("koper") + "</section>" + packTool() + flowers() + "</main>";
+      pageHead("koper", "p-pack") + packTool() + flowers() + "</main>";
   }
   // 用手機內建的印尼文語音念出來（iPhone 是 Damayanti），不用另外放錄音檔
   var canSpeak = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
@@ -494,7 +504,7 @@
   function viewLearn() {
     return bar("No.#05", "menu") + '<main class="wrap">' +
       kicker([u("mItems") + " " + pad(T.phrases.length)]) +
-      '<section class="tword r">' + word("belajar") + '</section><p class="fine lead r">' + esc(u("learnNote")) + '</p><ul class="phrases">' + T.phrases.map(function (p, i) {
+      pageHead("belajar", "p-learn") + '<p class="fine lead r">' + esc(u("learnNote")) + '</p><ul class="phrases">' + T.phrases.map(function (p, i) {
         var mean = lang === "en" ? p[2][1] : p[2][0];
         return '<li class="ph r"><span class="ph-no">' + pad(i + 1) + '</span><span class="ph-top"><b class="ph-id">' + esc(p[0]) + "</b>" +
           (canSpeak ? '<button type="button" class="say" data-say="' + esc(p[0]) + '" aria-label="' + esc(u("listen") + "：" + p[0]) + '">' + ICON.speaker + "</button>" : "") +

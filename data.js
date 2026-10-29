@@ -19,7 +19,17 @@ window.TRIP = {
     jkt: { src: "img/band-jkt.jpg" },
     pwt: { src: "img/band-pwt.jpg" },
     yk: { src: "img/band-yk.jpg" },
-    bali: { src: "img/band-bali.jpg" }
+    bali: { src: "img/band-bali.jpg" },
+    // 餐廳頁的城市美食橫幅
+    "food-jkt": { src: "img/band-food-jkt.jpg" },
+    "food-pwt": { src: "img/band-food-pwt.jpg" },
+    "food-yk": { src: "img/band-food-yk.jpg" },
+    "food-bali": { src: "img/band-food-bali.jpg" }
+  },
+  // 選單每一列左邊的小插畫（key 是連到的頁面）
+  menuArt: {
+    days: "img/m-days.jpg", "food-jkt": "img/m-food.jpg", stay: "img/m-stay.jpg", info: "img/m-info.jpg",
+    learn: "img/m-learn.jpg", money: "img/m-money.jpg", pack: "img/m-pack.jpg"
   },
   // 插畫：OpenAI Codex 生成（2026/10），1280×924 JPG；top 是圖片上緣 20% 的平均天空色，大字和漸層用它才不會有色差
   photos: {
@@ -35,7 +45,11 @@ window.TRIP = {
     lake: { src: "img/lake.jpg", what: "Pura Ulun Danu Beratan", by: "AI (OpenAI Codex)", top: "#4e77bc" },
     wedding: { src: "img/wedding.jpg", what: "Pernikahan", by: "AI (OpenAI Codex)", top: "#a25d30" },
     plane: { src: "img/plane.jpg", what: "Berangkat", by: "AI (OpenAI Codex)", top: "#5279be" },
-    home: { src: "img/home.jpg", what: "Pulang", by: "AI (OpenAI Codex)", top: "#557ab6" }
+    home: { src: "img/home.jpg", what: "Pulang", by: "AI (OpenAI Codex)", top: "#557ab6" },
+    "p-info": { src: "img/p-info.jpg", what: "Bandara Ngurah Rai", by: "AI (OpenAI Codex)", top: "#557ab6" },
+    "p-learn": { src: "img/p-learn.jpg", what: "Pasar", by: "AI (OpenAI Codex)", top: "#5a78ac" },
+    "p-money": { src: "img/p-money.jpg", what: "Warung", by: "AI (OpenAI Codex)", top: "#5478b5" },
+    "p-pack": { src: "img/p-pack.jpg", what: "Dermaga", by: "AI (OpenAI Codex)", top: "#6086c0" }
   },
   end: "2026-12-31",
 
