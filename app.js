@@ -47,9 +47,13 @@
     infoSub: ["時差・入境・緊急電話・機票火車", "Waktu · masuk · darurat · tiket", "Time · entry · emergency · tickets"],
     learn: ["學一點印尼文", "Belajar bahasa Indonesia", "Learn some Indonesian"],
     learnSub: ["附中文唸法", "Dengan cara baca Mandarin", "With Chinese pronunciation"],
+    moneySub: ["印尼盾和台幣互換", "Rupiah ke dolar Taiwan", "Rupiah ↔ Taiwan dollar"],
+    packSub: ["出發前勾一勾", "Centang sebelum berangkat", "Tick off before you go"],
+    mChecked: ["已勾", "Dicentang", "Ticked"],
     map: ["地圖", "Peta", "Map"],
     driver: ["給司機看", "Tunjukkan ke sopir", "Show the driver"],
     nav: ["導航", "Rute", "Route"],
+    goTo: ["到 ", "Ke ", "To "],
     car: ["開車約", "Mobil sekitar", "Drive about"],
     walk: ["走路約", "Jalan kaki sekitar", "Walk about"],
     min: ["分", "menit", "min"],
@@ -179,12 +183,13 @@
     }).join("") + "</dl>";
   }
   // 內頁用的一行小字（取代星星、條碼、四欄資料）
-  function kicker(items) {
-    return '<p class="kicker r">' + items.map(function (x) { return "<span>" + esc(x) + "</span>"; }).join("") + "</p>";
+  function kicker(items, raw) { // raw：內容是自己組好的 HTML，不再跳脫
+    return '<p class="kicker r">' + items.map(function (x) { return "<span>" + (raw ? x : esc(x)) + "</span>"; }).join("") + "</p>";
   }
   function word(w, color) {
     var letters = Array.from(w).map(function (c, i) { return '<span style="--i:' + i + '">' + esc(c) + "</span>"; }).join("");
-    return '<p class="hw" aria-hidden="true"' + (color ? ' style="color:' + color + '"' : "") + '><span class="hw-in">' + letters + "</span></p>";
+    // 有往下長的字母（j g p q y）時多留一點底部空間，才不會壓到下面的線和圖
+    return '<p class="hw' + (/[gjpqy]/.test(w) ? " has-desc" : "") + '" aria-hidden="true"' + (color ? ' style="color:' + color + '"' : "") + '><span class="hw-in">' + letters + "</span></p>";
   }
   function hero(w, art, overlay) {
     return '<section class="hero r">' + word(w, ART.topColor(art)) +
@@ -246,7 +251,7 @@
 
   // ---------- 主選單 ----------
   function sec(title, body) { return '<section class="sec r"><h2 class="sec-h">' + SPARK + esc(title) + "</h2>" + body + "</section>"; }
-  // 匯率換算和行李清單：放在選單頁（學一點印尼文下面）
+  // 匯率換算和行李清單：選單頁的最後兩個按鈕，各自一頁
   function moneyTool() {
     var r = T.rate.twd;
     return sec(u("moneyTitle"), '<div class="conv">' +
@@ -264,15 +269,16 @@
   }
   function viewMenu() {
     var td = todayDay();
-    var rows = [["days", "days", "daysSub"], ["food-jkt", "food", "foodSub"], ["stay", "stay", "staySub"], ["info", "info", "infoSub"], ["learn", "learn", "learnSub"]];
+    var rows = [["days", "days", "daysSub"], ["food-jkt", "food", "foodSub"], ["stay", "stay", "staySub"], ["info", "info", "infoSub"], ["learn", "learn", "learnSub"],
+      ["money", "moneyTitle", "moneySub"], ["pack", "packTitle", "packSub"]];
     if (td) rows.unshift([dayId(td), "today", null, md(td) + " " + L(td.title)]);
     return bar("No.#00", "home") + '<main class="wrap">' + posterTop("DAFTAR") +
-      meta([[u("mTrip"), u("indonesia")], [u("mPages"), "05"], [u("mDays"), "18"]]) +
+      meta([[u("mTrip"), u("indonesia")], [u("mPages"), "07"], [u("mDays"), "18"]]) +
       '<section class="tword r">' + word("daftar") + "</section>" +
       '<nav class="menu">' + rows.map(function (x) {
         return '<a class="mrow r' + (x[1] === "today" ? " is-today" : "") + '" href="#' + x[0] + '">' + SPARK +
           '<span class="mrow-t"><b>' + esc(u(x[1])) + "</b><small>" + esc(x[3] || u(x[2])) + "</small></span>" + ICON.arrow + "</a>";
-      }).join("") + "</nav>" + moneyTool() + packTool() + flowers() + "</main>";
+      }).join("") + "</nav>" + flowers() + "</main>";
   }
 
   // ---------- 日期列表 ----------
@@ -303,7 +309,9 @@
     var link = from && to ? '<a class="go-nav" href="' + esc(dirUrl(from, to, mode)) + '" target="_blank" rel="noopener">' + esc(u("nav")) + ICON.arrow + "</a>" : "";
     return '<li class="go r"><div class="go-rail" aria-hidden="true"></div><div class="go-main"><div class="go-body">' +
       '<span class="go-ic">' + ICON[mode] + "</span>" +
-      '<span class="go-txt"><b>' + esc(u(mode) + " " + dur(g[1])) + "</b><small>" + esc(g[2]) + (it.label ? " · " + esc(L(it.label)) : "") + "</small></span>" + link + "</div>" +
+      // 小字：距離 · 要去哪（有自訂說明就用說明）
+      '<span class="go-txt"><b>' + esc(u(mode) + " " + dur(g[1])) + '</b><small><span class="go-km">' + esc(g[2]) + "</span> · " +
+      esc(it.label ? L(it.label) : to ? u("goTo") + place(to).n : "") + "</small></span>" + link + "</div>" +
       (it.note ? '<p class="go-note">' + esc(L(it.note)) + "</p>" : "") +
       (it.warn ? '<p class="warn">' + ICON.warn + "<span>" + esc(L(it.warn)) + "</span></p>" : "") + "</div></li>";
   }
@@ -430,6 +438,22 @@
   }
 
   // ---------- 學印尼文 ----------
+  function viewMoney() {
+    return bar("No.#06", "menu") + '<main class="wrap">' +
+      kicker(["IDR → TWD", "1 : " + T.rate.twd]) +
+      '<section class="tword r">' + word("rupiah") + "</section>" + moneyTool() + flowers() + "</main>";
+  }
+  function packCount() {
+    var c = {}, n = 0;
+    try { c = JSON.parse(localStorage.getItem("trip-pack") || "{}"); } catch (e) {}
+    T.packing.forEach(function (p, i) { if (c[i]) n++; });
+    return n;
+  }
+  function viewPack() {
+    return bar("No.#07", "menu") + '<main class="wrap">' +
+      kicker([esc(u("mItems")) + " " + pad(T.packing.length), esc(u("mChecked")) + ' <b class="pk-n">' + pad(packCount()) + "</b>"], true) +
+      '<section class="tword r">' + word("koper") + "</section>" + packTool() + flowers() + "</main>";
+  }
   function viewLearn() {
     return bar("No.#05", "menu") + '<main class="wrap">' +
       kicker([u("mItems") + " " + pad(T.phrases.length)]) +
@@ -480,6 +504,8 @@
     else if (h === "stay") html = viewStay();
     else if (h === "info") html = viewInfo();
     else if (h === "learn") html = viewLearn();
+    else if (h === "money") html = viewMoney();
+    else if (h === "pack") html = viewPack();
     else {
       var d = T.days.filter(function (x) { return dayId(x) === h; })[0];
       html = d ? viewDay(d) : viewHome();
@@ -493,7 +519,7 @@
     var n = 0;
     app.querySelectorAll(".r").forEach(function (el) { if (!el.closest(".no-anim")) el.style.setProperty("--d", Math.min(n++, 14)); });
     fit();
-    if (h === "menu") convert("idr");
+    if (h === "money") convert("idr");
     var old = document.querySelector(".driver");
     if (old) old.remove();
   }
@@ -551,6 +577,8 @@
       try { c = JSON.parse(localStorage.getItem("trip-pack") || "{}"); } catch (err) {}
       c[e.target.dataset.pack] = e.target.checked;
       try { localStorage.setItem("trip-pack", JSON.stringify(c)); } catch (err) {}
+      var pk = document.querySelector(".pk-n");
+      if (pk) pk.textContent = pad(packCount());
     }
   });
   document.addEventListener("keydown", function (e) {

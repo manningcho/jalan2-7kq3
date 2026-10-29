@@ -7,7 +7,9 @@
 - `art.js`：每日插畫（SVG 程式畫的）。`ART.svg(name)` 會先看 `TRIP.photos[name]`，有照片就改用照片。
 - `app.js`：畫面與路由（hash：`home`、`menu`、`days`、`d1215`…、`food-pwt`、`stay`、`info`、`learn`）。
   - 右上角是漢堡選單（`prefs()`）：語言（中/ID/EN）和顏色（跟手機/淺色/深色）。顏色存在 `localStorage` 的 `trip-theme`，套用方式是 `<html data-theme>`。
-  - 匯率換算（`moneyTool()`）和行李清單（`packTool()`）放在選單頁（`#menu`），不在旅遊資料頁。
+  - 匯率換算（`#money`，大字 rupiah）和行李清單（`#pack`，大字 koper）是選單頁最後兩個按鈕，各自一頁；不在旅遊資料頁。
+  - 每段車程的小字會寫「到 目的地」（`goBlock()`），有 `label` 的話改用 label。
+  - 大字裡有 j g p q y 時加 `has-desc`，列表頁會多留底部空間，尾巴才不會壓到下面。
   - 餐廳頁切換城市頁籤時，上方大字和頁籤包在 `.keep` 裡、不重播動畫，只有列表重新出現。
   - 交通圖示 car / train / flight / boat / walk 是 Codex 重畫的 SVG（`ICON`），線寬 1.8、`currentColor`。
 - `style.css`：海報風格（顆粒紙、大字疊在缺角圖框上）。動畫掛在 `<html class="motion">`，一律開啟：沒有開關，也刻意不跟系統的「減少動態效果」（使用者自己的 Mac 有開，但想看動畫）。
@@ -24,7 +26,7 @@
 - 已放上 GitHub Pages（2026/10/30）：repo `manningcho/jalan2-7kq3`（公開，名字故意取難猜），網址 https://manningcho.github.io/jalan2-7kq3/ 。從 `main` 分支根目錄發布，push 後約 1–10 分鐘更新。`.nojekyll` 讓 GitHub 不跑 Jekyll。
 - 峇里島 Casa Adem 的地圖搜尋字串拿掉了門牌，改成 `Casa Adem, Gang Lange, Seminyak, Bali`，**還沒確認 Google 地圖找得到同一個地方**（Claude 的瀏覽器擋 Google）。若不準，請使用者給 Google 地圖分享連結，填進 `places.casa.map`。
 - 還缺的資料：12/15 去程航班號碼、12/16 雅加達到普禾加多的火車車次與車站。拿到後更新 `data.js`。
-- 行程上的提醒（目前在網站上用橘色標示）：12/23 日惹王宮約 14:30 關門、水宮約 15:00 關門，排的時間可能進不去；12/31 太晚到機場（15:45 的國際線，14:30 才到）。使用者和家人還在調整。
+- 2026/10/30 依使用者決定：12/23 不去王宮，日惹站直接開車到水宮（14:15 到，車程 15–20 分、約 4 km 是估計值）；12/31 午餐提早到 11:30，12:45 到機場。12/23 的插畫還是王宮（`palace`），使用者還沒決定要不要換成水宮。
 
 ## 隱私（已和使用者約定）
 不放門牌號碼、訂位代號、信用卡、座位。家人用「爸爸、媽媽、姐姐、新郎、新娘」稱呼。
