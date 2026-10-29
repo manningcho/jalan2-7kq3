@@ -498,6 +498,25 @@
       if (e.target === ov || e.target.closest("[data-close-jump]") || e.target.closest(".jump-day")) closeJump();
     });
   }
+  // ---------- 婚禮那兩天：飄落的白色茉莉花瓣 ----------
+  var PETAL = '<svg viewBox="0 0 10 14" aria-hidden="true"><path d="M5 .5C8.2 3.4 9.6 7.2 5 13.5.4 7.2 1.8 3.4 5 .5Z"/></svg>';
+  function setPetals(on) {
+    var box = document.querySelector(".petals");
+    if (!on) { if (box) box.remove(); return; }
+    if (box) return; // 已經在飄（例如 12/19 換到 12/20、換語言），就讓它繼續
+    var html = "";
+    for (var i = 0; i < 12; i++) {
+      var dur = 10 + Math.random() * 8; // 每片落下 10–18 秒，起點和大小都不同
+      html += '<span class="petal" style="--x:' + (Math.random() * 100).toFixed(1) + "%;--dur:" + dur.toFixed(1) + "s;--delay:" + (-Math.random() * dur).toFixed(1) +
+        "s;--rot:" + (Math.random() < .5 ? -1 : 1) * Math.round(180 + Math.random() * 360) + 'deg"><i style="--s:' + (10 + Math.random() * 6).toFixed(1) +
+        "px;--sw:" + (2.5 + Math.random() * 2).toFixed(1) + "s;--o:" + (.6 + Math.random() * .35).toFixed(2) + '">' + PETAL + "</i></span>";
+    }
+    box = document.createElement("div");
+    box.className = "petals";
+    box.setAttribute("aria-hidden", "true");
+    box.innerHTML = html;
+    document.body.appendChild(box);
+  }
   function closeJump() {
     var o = document.querySelector(".jump");
     if (o) o.remove();
@@ -564,6 +583,7 @@
     var old = document.querySelector(".driver");
     if (old) old.remove();
     closeJump();
+    setPetals(!!(d && d.wedding)); // 只有 12/19、12/20 飄花瓣
   }
   function convert(from) {
     var a = document.getElementById("idr"), b = document.getElementById("twd");

@@ -11,6 +11,7 @@
   - 每段車程的小字會寫「到 目的地」（`goBlock()`），有 `label` 的話改用 label。
   - 大字裡有 j g p q y 時加 `has-desc`，列表頁會多留底部空間，尾巴才不會壓到下面。
   - 每日頁最下面「前一天／後一天」中間有日曆圓鈕，點開是從下方滑出的日期面板（`showJump()`），18 天按城市分組。
+  - 婚禮兩天（12/19、12/20，`wedding: true`）會飄白色茉莉花瓣（`setPetals()`），固定在畫面上、`pointer-events: none` 不擋點擊。
   - 餐廳頁切換城市頁籤時，上方大字和頁籤包在 `.keep` 裡、不重播動畫，只有列表重新出現。
   - 交通圖示 car / train / flight / boat / walk 是 Codex 重畫的 SVG（`ICON`），線寬 1.8、`currentColor`。
 - `style.css`：海報風格（顆粒紙、大字疊在缺角圖框上）。動畫掛在 `<html class="motion">`，一律開啟：沒有開關，也刻意不跟系統的「減少動態效果」（使用者自己的 Mac 有開，但想看動畫）。
