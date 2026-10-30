@@ -212,6 +212,7 @@ button { font: inherit; color: inherit; }
 .flow { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .ev { display: grid; grid-template-columns: 56px 1fr; gap: 10px; }
 .ev-time { padding-top: 18px; text-align: right; font-family: var(--f-mono); font-weight: 600; font-size: 16px; color: var(--gold); line-height: 1.2; word-break: break-word; }
+.ev-time.is-tbd { padding-top: 20px; font-size: 13px; font-weight: 500; color: var(--muted); }
 .ev-card { min-width: 0; margin: 5px 0; padding: 16px; border-radius: 22px; background: var(--card); display: flex; flex-direction: column; gap: 6px; }
 .ev-card.k-wedding { background: var(--soga-soft); }
 .ev-card.k-wedding .ev-t { color: var(--soga); }

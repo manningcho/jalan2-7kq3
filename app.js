@@ -54,6 +54,7 @@
     driver: ["給司機看", "Tunjukkan ke sopir", "Show the driver"],
     nav: ["導航", "Rute", "Route"],
     goTo: ["到 ", "Ke ", "To "],
+    tbd: ["未定", "Belum pasti", "TBD"],
     car: ["開車約", "Mobil sekitar", "Drive about"],
     walk: ["走路約", "Jalan kaki sekitar", "Walk about"],
     min: ["分", "menit", "min"],
@@ -354,7 +355,7 @@
   function card(it) {
     var chip = it.kind ? '<em class="chip chip-' + it.kind + '">' + ICON[it.kind] + esc(u(it.kind === "stay" ? "staytag" : it.kind)) + "</em>" : "";
     var p = it.place ? place(it.place) : null;
-    var h = '<li class="ev r"><div class="ev-time">' + esc(L(it.time) || "·") + "</div>" +
+    var h = '<li class="ev r">' + (it.time ? '<div class="ev-time">' + esc(L(it.time)) : '<div class="ev-time is-tbd">' + esc(u("tbd"))) + "</div>" +
       '<article class="ev-card' + (it.kind ? " k-" + it.kind : "") + (p ? " has-map" : "") + '">' + (p ? mapBtn(it.place) : "") + (chip ? '<div class="ev-chips">' + chip + "</div>" : "") +
       '<h3 class="ev-t">' + esc(L(it.t)) + "</h3>" +
       (p ? '<p class="ev-place">' + esc(p.n) + "</p>" : "") +
