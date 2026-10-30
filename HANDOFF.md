@@ -31,6 +31,7 @@
     - 有轉盤的頁面底部留白加高到 104px，才不會擋到「後一天」。
   - 婚禮兩天（12/19、12/20，`wedding: true`）會飄白色茉莉花瓣（`setPetals()`），固定在畫面上、`pointer-events: none` 不擋點擊。
   - 學印尼文每句後面有喇叭（`speak()`），用裝置內建的印尼文語音（`speechSynthesis`，lang `id-ID`，iPhone/Mac 是 Damayanti），速度 0.85。沒有錄音檔。
+    - 喇叭擺在每句「第一行」的尾巴、對齊第一行中線（`placeSays()` 用 Range 量位置，render、resize、字型載完時重算；文字右邊固定留 50px）。長句斷行時才不會卡在兩行字中間（2026/10/30 使用者要求）。
   - 餐廳頁切換城市頁籤時，上方大字和頁籤包在 `.keep` 裡、不重播動畫，只有列表重新出現。
   - 交通圖示 car / train / flight / boat / walk 是 Codex 重畫的 SVG（`ICON`），線寬 1.8、`currentColor`。
 - `style.css`：海報風格（顆粒紙、大字疊在缺角圖框上）。動畫掛在 `<html class="motion">`，一律開啟：沒有開關，也刻意不跟系統的「減少動態效果」（使用者自己的 Mac 有開，但想看動畫）。

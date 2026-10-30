@@ -547,11 +547,9 @@
       kicker([u("mItems") + " " + pad(T.phrases.length)]) +
       pageHead("belajar", "p-learn") + '<ul class="phrases">' + T.phrases.map(function (p, i) {
         var mean = lang === "en" ? p[2][1] : p[2][0];
-        // 喇叭接在句子最後一個字後面、跟它黏在一起：長句斷成兩行時，喇叭也會緊跟在句尾，不會被擠到最右邊
-        var words = esc(p[0]).split(" "), last = words.pop();
+        // 喇叭放在句子第一行的尾巴（placeSays() 量好位置）；長句斷行時就不會卡在兩行字中間
         var say = canSpeak ? '<button type="button" class="say" data-say="' + esc(p[0]) + '" aria-label="' + esc(u("listen") + "：" + p[0]) + '">' + ICON.speaker + "</button>" : "";
-        return '<li class="ph r"><span class="ph-no">' + pad(i + 1) + '</span><span class="ph-top"><b class="ph-id">' +
-          (words.length ? words.join(" ") + " " : "") + '<span class="ph-end">' + last + say + "</span></b>" +
+        return '<li class="ph r"><span class="ph-no">' + pad(i + 1) + '</span><span class="ph-top"><b class="ph-id">' + esc(p[0]) + "</b>" + say +
           '</span><span class="ph-say">' + esc(p[1]) + '</span><span class="ph-mean">' + esc(mean) + "</span></li>";
       }).join("") + "</ul>" + footNotes([u("learnNote")].concat(canSpeak ? [u("tipSpeak")] : [], commonTips())) + "</main>";
   }
@@ -1009,6 +1007,23 @@
     sizeHint();
     drawCards(); // 字的方向跟著換
   }
+  // ---------- 學印尼文：喇叭擺在每句第一行的尾巴、對齊第一行的中線 ----------
+  // 文字右邊固定留了喇叭的位置（.ph-top 的 padding-right），所以第一行尾巴一定放得下
+  function placeSays() {
+    app.querySelectorAll(".ph-top").forEach(function (top) {
+      var id = top.querySelector(".ph-id"), b = top.querySelector(".say");
+      if (!id || !b) return;
+      var r = document.createRange();
+      r.selectNodeContents(id);
+      var lines = [].filter.call(r.getClientRects(), function (q) { return q.width > 0; });
+      if (!lines.length) return;
+      var first = lines[0], right = first.right;
+      lines.forEach(function (q) { if (Math.abs(q.top - first.top) < 2) right = Math.max(right, q.right); });
+      var box = top.getBoundingClientRect();
+      b.style.left = Math.round(right - box.left + 10) + "px";
+      b.style.top = Math.round((first.top + first.bottom) / 2 - box.top - b.offsetHeight / 2) + "px";
+    });
+  }
   // ---------- 頁尾輪播：每 4.5 秒換一條，點一下立刻換；分頁在背景時不換 ----------
   var tickTimer = null;
   function nextTip(t) {
@@ -1108,6 +1123,7 @@
     closeJump();
     stopSpeaking();
     fadeIn(app);
+    placeSays();
     setPetals(!!(d && d.wedding)); // 只有 12/19、12/20 飄花瓣
     syncDial(h);
     startTicker();
@@ -1180,7 +1196,8 @@
     if (e.key === "Escape") { var o = document.querySelector(".driver"); if (o) o.remove(); if (prefsOpen) setPrefsOpen(false); closeJump(); closeDial(); }
   });
   window.addEventListener("hashchange", function () { prefsOpen = false; render(); window.scrollTo(0, 0); });
-  window.addEventListener("resize", fit);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  window.addEventListener("resize", function () { fit(); placeSays(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fit(); placeSays(); });
+  if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", placeSays); // 字型晚到，字寬會變
   render();
 })();
