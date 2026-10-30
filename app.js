@@ -677,8 +677,8 @@
       '<button type="button" class="pg-jump" data-jump="1" aria-label="' + esc(u("jumpTo")) + '" title="' + esc(u("jumpTo")) + '">' + ICON.cal + "</button>" +
       (next ? '<a class="pg-next" href="#' + dayId(next) + '"><span><small>' + esc(u("next")) + "</small>" + dm(next) + "</span>" + ICON.chev + "</a>" : "<span></span>") + "</nav>";
     return bar("No.#" + pad(i + 1) + " / 18", "days") + '<main class="wrap' + (d.wedding ? " is-wedding" : "") + '">' +
-      kicker([pad(i + 1) + "/18", dm(d) + " " + wk(d), L(T.cities[d.city]), tzCode(d.city)]).replace("</p>", wxHtml(d) + "</p>") +
-      hero(d.word, d.art) +
+      kicker([pad(i + 1) + "/18", dm(d) + " " + wk(d), L(T.cities[d.city]), tzCode(d.city)]) +
+      hero(d.word, d.art, wxHtml(d)) + // 天氣放在插畫天空的右上角（跟封面的小字一樣），日期那行才排得下一行
       '<section class="day-head r"><h1 class="dh-title">' + esc(L(d.title)) + "</h1>" +
       '<p class="dh-tz">' + SPARK + esc(tzNote(d.city)) + "</p></section>" +
       // 小花線只當「這一頁到底了」的記號：小花線＋提示輪播放在換日按鈕下面，當整頁的結尾（跟其他頁一樣）
@@ -1384,6 +1384,30 @@
       el.style.fontSize = "100px";
       var w = inner.getBoundingClientRect().width, max = el.clientWidth;
       if (w > 0 && max > 0) el.style.fontSize = Math.min(100 * max / w, 220) + "px";
+    });
+    // 天空上的天氣：大字有 g、j、p 這種尾巴時，尾巴會伸進插畫，天氣就往下挪到尾巴下面
+    app.querySelectorAll(".hero").forEach(function (h) {
+      var over = h.querySelector(".hero-over"), hw = h.querySelector(".hw.has-desc"), art = h.querySelector(".hero-art");
+      if (!over || !over.querySelector(".wx")) return;
+      over.style.top = "";
+      if (!hw) return;
+      // 每個字母是行高壓扁（.78）的小區塊：從區塊底部推回基線，再加上字母尾巴實際伸到的深度，多留一點空
+      var cs = getComputedStyle(hw), fs = parseFloat(cs.fontSize), ctx = (fit.c = fit.c || document.createElement("canvas").getContext("2d"));
+      ctx.font = cs.fontSize + " " + cs.fontFamily;
+      var m = ctx.measureText(hw.textContent), fa = m.fontBoundingBoxAscent, fd = m.fontBoundingBoxDescent;
+      if (!fa || !fd) return; // 舊瀏覽器量不到就維持原位
+      // 只看水平方向跟天氣重疊、而且有尾巴的字母（jakarta 的 j 在最左邊，不會擋到右邊的天氣）
+      // 用版面位置（offset）算，不用 getBoundingClientRect：字母有往上跳出來的進場動畫，動畫途中量會偏低
+      var wxEl = over.querySelector(".wx"), wxL = art.offsetLeft + over.offsetLeft + wxEl.offsetLeft, wxR = wxL + wxEl.offsetWidth, need = 0;
+      hw.querySelectorAll(".hw-in span").forEach(function (sp) {
+        if (!/[gjpqy]/.test(sp.textContent)) return;
+        var l = hw.offsetLeft + sp.offsetLeft, r = l + sp.offsetWidth;
+        if (r < wxL - 4 || l > wxR + 4) return;
+        var bottom = hw.offsetTop + sp.offsetTop + sp.offsetHeight - art.offsetTop; // 字母區塊底部，從插畫頂端算
+        var base = bottom - fd + (fa + fd - parseFloat(cs.lineHeight)) / 2;
+        need = Math.max(need, base + ctx.measureText(sp.textContent).actualBoundingBoxDescent + 8);
+      });
+      if (need > over.offsetTop) over.style.top = need + "px";
     });
   }
 

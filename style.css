@@ -107,6 +107,10 @@ button { font: inherit; color: inherit; }
 .kicker { margin: 0; display: flex; flex-wrap: wrap; gap: 0 10px; font-family: var(--f-mono); font-size: 13px; letter-spacing: .04em; color: var(--muted); }
 .kicker b { font-weight: 600; color: var(--gold); }
 .kicker span + span::before { content: "·"; margin-right: 10px; color: var(--gold); }
+@media (max-width: 359px) { /* 320px phones: "Purwokerto" / "Yogyakarta" still fit on one line */
+  .kicker { gap: 0 6px; letter-spacing: .01em; }
+  .kicker span + span::before { margin-right: 6px; }
+}
 .flowers { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--gold); }
 .flowers svg { width: 22px; height: 22px; }
 .flowers svg circle { fill: var(--paper); }
@@ -611,11 +615,11 @@ button { font: inherit; color: inherit; }
 .cover-bar .clk { margin-left: auto; margin-right: 10px; }
 
 /* ---------- weather chip at the right end of the day's meta row ---------- */
-.kicker .wx { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-style: normal; color: var(--ink); }
-.kicker .wx svg { width: 17px; height: 17px; color: var(--blue); }
-.kicker .wx b { font-weight: 600; }
-.kicker .wx small { font-size: 11px; color: var(--muted); letter-spacing: 0; }
-.kicker .wx.is-fc svg { color: var(--gold); }
+/* sits in the illustration's sky (top right, like the cover's small text): white on every sky colour */
+.hero-over .wx { display: inline-flex; align-items: center; gap: 6px; font-style: normal; font-family: var(--f-mono); font-size: 13px; letter-spacing: .04em; color: #fff; text-shadow: 0 1px 6px rgba(20, 30, 60, .28); }
+.hero-over .wx svg { width: 18px; height: 18px; filter: drop-shadow(0 1px 4px rgba(20, 30, 60, .28)); }
+.hero-over .wx b { font-weight: 600; }
+.hero-over .wx small { font-size: 11px; opacity: .85; letter-spacing: 0; }
 /* the clock takes the middle label's place (the meta row below already shows 02/18 / 項目 04); the label stays as an empty spacer */
 .bar-label { visibility: hidden; }
 /* app.js fitClock(): if one line still doesn't fit, drop the Taiwan half */
