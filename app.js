@@ -293,7 +293,7 @@
       '<span class="bar-label">' + esc(label) + "</span>" + clockHtml() + prefs() + "</div></header>";
   }
 
-  // ---------- 上方的時間：當地／台灣（漢堡選單旁邊，每 15 秒更新）----------
+  // ---------- 上方的時間：當地／台灣（漢堡選單旁邊，每秒檢查、分鐘一換就更新）----------
   function clockHtml() { return '<span class="clk" data-clk="1"></span>'; }
   function clockCity() {
     var h = (location.hash || "").replace(/^#/, ""), d = T.days.filter(function (x) { return dayId(x) === h; })[0] || todayDay();
@@ -308,8 +308,9 @@
     var html = c === "tw" ? "<span>" + esc(u("twShort")) + " " + tw + "</span>" :
       "<span>" + esc(u("localShort")) + " " + fmt(c === "bali" ? "Asia/Makassar" : "Asia/Jakarta") + "</span>" +
       '<span class="clk-tw">&nbsp;· ' + esc(u("twShort")) + " " + tw + "</span>";
-    els.forEach(function (el) { if (el.innerHTML !== html) el.innerHTML = html; });
-    fitClock();
+    var changed = false;
+    els.forEach(function (el) { if (el.innerHTML !== html) { el.innerHTML = html; changed = true; } });
+    if (changed) fitClock(); // 字變了才重量上方列寬度（每秒檢查時不用每次都量）
   }
   // 最窄的手機（例如 320px 的印尼文、英文）一行放不下時，只留當地時間
   function fitClock() {
@@ -319,7 +320,13 @@
       if (row.scrollWidth > row.clientWidth + 1) row.classList.add("clk-short");
     });
   }
-  setInterval(tickClock, 15000);
+  // 每秒看一次（文字沒變就不動畫面，幾乎不耗電）：分鐘一換就跟手機狀態列同時跳。
+  // iPhone 切到背景會暫停計時，切回來最多 1 秒內更新；下面幾個事件讓它切回來當下就更新。
+  setInterval(tickClock, 1000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) tickClock(); });
+  document.addEventListener("resume", tickClock);
+  window.addEventListener("pageshow", tickClock);
+  window.addEventListener("focus", tickClock);
 
   // ---------- 封面 ----------
   function todayDay() { var t = todayStr(); return T.days.filter(function (d) { return d.date === t; })[0]; }
