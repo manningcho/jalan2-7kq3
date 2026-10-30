@@ -48,8 +48,24 @@ try:
     if os.environ.get("NET"):
         down, lat = [float(x) for x in os.environ["NET"].split(",")]
         call("Network.enable"); call("Network.emulateNetworkConditions", {"offline": False, "latency": lat, "downloadThroughput": down * 1024 * 1024 / 8, "uploadThroughput": 750 * 1024 / 8})
+    if os.environ.get("SWIPES"): call("Emulation.setTouchEmulationEnabled", {"enabled": True, "maxTouchPoints": 5})
     call("Page.navigate", {"url": url})
     time.sleep(wait / 1000.0)
+    # SWIPES="選擇器|dx,dy;dx,dy"：在該元素中間用手指滑（12 小步），每滑一次印出 SWIPE_JS 的結果
+    if os.environ.get("SWIPES"):
+        sel, moves = os.environ["SWIPES"].split("|")
+        probe = os.environ.get("SWIPE_JS", "scrollY")
+        for mv in moves.split(";"):
+            dx, dy = [float(v) for v in mv.split(",")]
+            b = call("Runtime.evaluate", {"expression": "(function(){var r=document.querySelector(%s).getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2]})()" % json.dumps(sel), "returnByValue": True})["result"]["result"]["value"]
+            x0, y0 = b
+            call("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": x0, "y": y0}]})
+            for k in range(1, 13):
+                call("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": x0 + dx * k / 12, "y": y0 + dy * k / 12}]}); time.sleep(.016)
+            call("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+            time.sleep(.9)
+            v = call("Runtime.evaluate", {"expression": probe, "returnByValue": True})["result"]["result"].get("value")
+            print("swipe %s -> %s" % (mv, json.dumps(v, ensure_ascii=False)))
     r = call("Runtime.evaluate", {"expression": open(jsfile).read(), "awaitPromise": True, "returnByValue": True})
     print(json.dumps(r.get("result", {}).get("result", {}).get("value", r)))
     if len(sys.argv) > 5:

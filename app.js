@@ -416,17 +416,18 @@
     if (!cvDrag || e.pointerId !== cvDrag.id) return;
     var dx = e.clientX - cvDrag.x, dy = e.clientY - cvDrag.y;
     if (!cvDrag.on) {
-      if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { cvDrag = null; return; }
+      if (!(cvT && cvT.lock === "x") && Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { cvDrag = null; return; }
       if (Math.abs(dx) < 8) return;
       cvDrag.on = true;
     }
+    cvDrag.lx = e.clientX;
     cvShow(cvCur, dx * 360 / cvDrag.w);
   });
   function cvEnd(e) {
     if (!cvDrag || e.pointerId !== cvDrag.id) return;
     var d = cvDrag; cvDrag = null;
     if (!d.on) return;
-    var dx = (e.clientX || d.x) - d.x;
+    var dx = (e.type === "pointercancel" || !e.clientX ? (d.lx || d.x) : e.clientX) - d.x; // 被取消時沒有座標，用最後一次的位置
     cvShow(cvCur + (dx < -d.w * .18 ? 1 : dx > d.w * .18 ? -1 : 0));
     cvStart(); // 手動換過就重新計時 5 秒
     cvMoved = true;
@@ -434,6 +435,24 @@
   }
   document.addEventListener("pointerup", cvEnd);
   document.addEventListener("pointercancel", cvEnd);
+  // iPhone Safari：只靠 CSS 的 touch-action: pan-y，手指稍微斜一點就會被當成上下捲動、輪播卡住。
+  // 所以手指一開始移動就判斷方向：偏左右就擋掉這次捲動（第一下 touchmove 就要擋，晚了 Safari 不理），偏上下才讓頁面捲。
+  var cvT = null;
+  document.addEventListener("touchstart", function (e) {
+    var r = e.target.closest && e.target.closest("[data-cv]");
+    cvT = r && e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY, lock: "" } : null;
+  }, { passive: true });
+  document.addEventListener("touchmove", function (e) {
+    if (!cvT || e.touches.length !== 1) return;
+    var dx = e.touches[0].clientX - cvT.x, dy = e.touches[0].clientY - cvT.y;
+    if (!cvT.lock) {
+      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+      cvT.lock = Math.abs(dx) >= Math.abs(dy) ? "x" : "y";
+    }
+    if (cvT.lock === "x" && e.cancelable) e.preventDefault();
+  }, { passive: false });
+  document.addEventListener("touchend", function () { cvT = null; });
+  document.addEventListener("touchcancel", function () { cvT = null; });
 
   // ---------- 桌布浮層：暗色遮罩、右上 X、左右換張、長按存圖 ----------
   var wpOpen = false, wpIdx = 0;
