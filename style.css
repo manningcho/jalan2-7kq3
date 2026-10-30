@@ -405,6 +405,57 @@ button { font: inherit; color: inherit; }
 @keyframes fadein { from { opacity: 0; } }
 @keyframes sheet { from { transform: translateY(40px); opacity: 0; } }
 
+/* ---------- quick menu: a floating button that opens a quarter-circle dial you can spin ---------- */
+.has-dial .wrap { padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }  /* keep the pager clear of the button */
+.dial-scrim { position: fixed; inset: 0; z-index: 27; background: rgba(10, 12, 20, .38); opacity: 0; pointer-events: none; transition: opacity .25s ease; touch-action: none; }
+.dial.is-open .dial-scrim { opacity: 1; pointer-events: auto; }
+/* the hub is a zero-size point at the button's centre; everything is placed around it */
+.dial-hub {
+  position: fixed; z-index: 28; width: 0; height: 0;
+  right: calc(max(16px, env(safe-area-inset-right, 0px)) + 28px);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px) + 28px);
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.dial-btn {
+  position: absolute; left: -28px; top: -28px; width: 56px; height: 56px; padding: 0; border: 0; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer; background: var(--ink); color: var(--paper);
+  box-shadow: 0 8px 22px rgba(10, 14, 25, .3); -webkit-tap-highlight-color: transparent;
+}
+.dial-btn svg { grid-area: 1 / 1; width: 26px; height: 26px; transition: transform .45s cubic-bezier(.2, .8, .2, 1), opacity .25s ease; }
+.dial-btn svg + svg { width: 22px; height: 22px; opacity: 0; transform: rotate(-90deg) scale(.5); }
+.dial.is-open .dial-btn svg:first-child { opacity: 0; transform: rotate(135deg) scale(.5); }
+.dial.is-open .dial-btn svg + svg { opacity: 1; transform: none; }
+.dial-fan {
+  position: absolute; left: -250px; top: -250px; width: 500px; height: 500px; border-radius: 50%;
+  background: var(--paper); box-shadow: 0 0 0 1px var(--line), 0 -6px 40px rgba(10, 14, 25, .28);
+  opacity: 0; transform: scale(.12); pointer-events: none;
+  transition: transform .3s cubic-bezier(.5, 0, .75, 0), opacity .25s ease .05s;
+}
+.dial.is-open .dial-fan { opacity: 1; transform: none; pointer-events: auto; transition: transform .45s cubic-bezier(.2, .8, .2, 1), opacity .15s ease; }
+.dial-track { position: absolute; inset: 50px; border-radius: 50%; border: 1px solid var(--gold); opacity: .5; }
+.dial-cap { position: absolute; left: 172px; top: 176px; transform: translate(-50%, -50%); width: 110px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; line-height: 1.25; }
+.dial-cap b { font-family: var(--f-display); font-weight: 400; font-size: 20px; letter-spacing: .02em; }
+.dial-cap small { font-size: 12px; color: var(--muted); }
+.dial-items { position: absolute; left: 0; top: 0; }
+.dial-item {
+  position: absolute; left: -32px; top: -32px; width: 64px; height: 64px; display: block;
+  text-decoration: none; opacity: 0; transform: scale(.3); -webkit-tap-highlight-color: transparent;
+}
+.dial-ic {
+  display: block; width: 64px; height: 64px; border-radius: 50%; overflow: hidden;
+  background: linear-gradient(#5677ae, #dcbcb4); box-shadow: 0 0 0 3px var(--paper), 0 6px 16px rgba(10, 14, 25, .22);
+}
+.dial-ic img { display: block; width: 100%; height: 100%; object-fit: cover; pointer-events: none; -webkit-user-drag: none; }
+.dial-lb {
+  position: absolute; left: 50%; top: calc(100% - 9px); transform: translateX(-50%); white-space: nowrap;
+  padding: 0 9px; border-radius: 999px; background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 700; line-height: 22px;
+}
+.dial-item.is-cur .dial-ic { box-shadow: 0 0 0 3px var(--gold), 0 6px 16px rgba(10, 14, 25, .22); }
+.dial-item.is-cur .dial-lb { background: var(--gold); color: var(--paper); }
+.dial-item.is-off, .dial-items[inert] .dial-item { pointer-events: none; }
+.dial-item:focus-visible { outline: none; }
+.dial-item:focus-visible .dial-ic { box-shadow: 0 0 0 3px var(--blue), 0 6px 16px rgba(10, 14, 25, .22); }
+
 .driver {
   position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: var(--paper);
   padding: calc(24px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
