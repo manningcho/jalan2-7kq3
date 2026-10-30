@@ -1,12 +1,13 @@
 // 離線用：把整個網站存一份在手機裡，到印尼網路不穩或沒網路也打得開。
 // - 網頁、程式、資料（html / js / css）：先抓網路上的新版，3 秒抓不到就用存的；抓到新版順便更新存的那份。
 // - 插畫：先用存的（馬上顯示），同時在背景檢查新版，下次就是新的。
-// - Google 字型：看過的字存起來，下次直接用。
+// - Google 字型：安裝時讀網站的文字，算出用到哪些字，把需要的字型片段全部先存好（warmFonts）。
 // - 其他網站（地圖、導航）不經過這裡，照常需要網路。
 // 下面兩段由 make-sw.sh 自動產生：新增或換掉 img/ 的圖之後跑一次 ./make-sw.sh（make-lq.sh 會順便跑）。
 
 // <make-sw>
-var VERSION = "d211fa6a7f";
+var VERSION = "927cdd4e87";
+var FONT_CSS = "https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap";
 var ASSETS = [
   "./",
   "index.html",
@@ -57,9 +58,11 @@ var SITE = "trip-site-" + VERSION, FONTS = "trip-fonts";
 
 self.addEventListener("install", function (e) {
   // 一個一個存：網路不穩時有幾個失敗也沒關係，之後看到再補存
-  e.waitUntil(caches.open(SITE).then(function (c) {
-    return Promise.all(ASSETS.map(function (u) { return c.add(u).catch(function () {}); }));
-  }).then(function () { return self.skipWaiting(); }));
+  e.waitUntil(Promise.all([
+    caches.open(SITE).then(function (c) {
+      return Promise.all(ASSETS.map(function (u) { return c.add(u).catch(function () {}); }));
+    }).then(warmFonts)
+  ]).then(function () { return self.skipWaiting(); }));
 });
 
 self.addEventListener("activate", function (e) {
@@ -117,11 +120,51 @@ function cachedThenRefresh(e) {
   });
 }
 
+// 字型：Google 把中文字型切成很多小片（每片管一段字）。讀網站文字（data.js、app.js、index.html），
+// 對照字型設定檔裡每一片負責的字，把用得到的片全部下載存好；沒網路時才不會變成系統字。
+function warmFonts() {
+  var cssReq = new Request(FONT_CSS, { mode: "cors", credentials: "omit" });
+  return Promise.all([caches.open(FONTS), caches.open(SITE)]).then(function (cs) {
+    var fonts = cs[0], site = cs[1];
+    return fonts.match(cssReq, { ignoreVary: true }).then(function (hit) {
+      return hit || fetch(cssReq).then(function (res) { if (res.ok) fonts.put(cssReq, res.clone()); return res; });
+    }).then(function (res) { return res.text(); }).then(function (css) {
+      return Promise.all(["data.js", "app.js", "index.html"].map(function (u) {
+        return site.match(u).then(function (r) { return r ? r.text() : ""; });
+      })).then(function (texts) {
+        var codes = {}, all = texts.join("");
+        for (var i = 0; i < all.length; i++) codes[all.codePointAt(i)] = 1;
+        var list = Object.keys(codes).map(Number), urls = {};
+        css.replace(/@font-face\s*{([^}]*)}/g, function (m, body) {
+          var src = /url\(([^)]+)\)/.exec(body), ur = /unicode-range:\s*([^;]+)/.exec(body);
+          if (src && (!ur || covers(ur[1], list))) urls[src[1].replace(/["']/g, "")] = 1;
+        });
+        return Promise.all(Object.keys(urls).map(function (u) {
+          var r = new Request(u, { mode: "cors", credentials: "omit" });
+          return fonts.match(r, { ignoreVary: true }).then(function (hit) {
+            return hit || fetch(r).then(function (res) { if (res.ok) return fonts.put(r, res); });
+          }).catch(function () {});
+        }));
+      });
+    });
+  }).catch(function () {});
+}
+function covers(ranges, list) {
+  var spans = ranges.split(",").map(function (p) {
+    p = p.trim().replace(/^U\+/i, "");
+    if (p.indexOf("?") >= 0) return [parseInt(p.replace(/\?/g, "0"), 16), parseInt(p.replace(/\?/g, "F"), 16)];
+    var ab = p.split("-");
+    return [parseInt(ab[0], 16), parseInt(ab[1] || ab[0], 16)];
+  });
+  return list.some(function (c) { return spans.some(function (sp) { return c >= sp[0] && c <= sp[1]; }); });
+}
+
 function cacheFirst(req, name) {
   return caches.open(name).then(function (cache) {
-    return cache.match(req).then(function (hit) {
+    // ignoreVary：Google 回應會依請求來源變化，網頁和這裡發的請求不完全一樣，但內容一樣可以用
+    return cache.match(req, { ignoreVary: true }).then(function (hit) {
       return hit || fetch(req).then(function (res) {
-        if (res.ok) cache.put(req, res.clone());
+        if (res.ok || res.type === "opaque") cache.put(req, res.clone());
         return res;
       });
     });
