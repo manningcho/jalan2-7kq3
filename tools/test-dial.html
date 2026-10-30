@@ -1,0 +1,177 @@
+<!doctype html><html><body><pre id="out"></pre><iframe id="f" style="border:0;width:390px;height:844px"></iframe>
+<script>
+var f=document.getElementById('f'), log=[];
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
+function ok(name, cond, extra){ log.push((cond?'PASS ':'FAIL ')+name+(extra!==undefined?'  ['+extra+']':'')); }
+localStorage.setItem('trip-lang','zh');
+f.src='../index.html#d1221';
+f.onload=async function(){ try {
+  var w=f.contentWindow, d=f.contentDocument;
+  await sleep(600);
+  function go(h){ w.location.hash=h; }
+  async function settle(){ await sleep(300); d.getAnimations().forEach(function(a){ if (a instanceof w.CSSTransition) a.finish(); }); await sleep(30); }
+  function vis(){ return [].filter.call(d.querySelectorAll('.dial-item'),function(e){return +e.style.opacity>=.5}).map(function(e){return e.dataset.k.replace('-jkt','')}).join(','); }
+  function ctr(){ var b=d.querySelector('.dial-btn').getBoundingClientRect(); return [b.left+b.width/2, b.top+b.height/2]; }
+  function pt(th, r){ var c=ctr(), a=th*Math.PI/180; r=r||170; return [c[0]+r*Math.cos(a), c[1]+r*Math.sin(a)]; }
+  function at(p){ return d.elementFromPoint(p[0],p[1]); }
+  var PT='touch';
+  function pe(type, el, p){ el.dispatchEvent(new w.PointerEvent(type,{pointerId:7,pointerType:PT,button:type==='pointermove'?-1:0,buttons:type==='pointerup'?0:1,isPrimary:true,clientX:p[0],clientY:p[1],bubbles:true,cancelable:true})); }
+  async function drag(from, to, steps, gap, pause){
+    var p0=pt(from), el=at(p0);
+    pe('pointerdown', el, p0);
+    for (var i=1;i<=steps;i++){ await sleep(gap); pe('pointermove', el, pt(from+(to-from)*i/steps)); }
+    await sleep(pause);
+    pe('pointerup', el, pt(to));
+    return el;
+  }
+  var btn=d.querySelector('.dial-btn');
+  async function open(){ btn.click(); await settle(); }
+  ok('day page shows button', btn && !d.querySelector('.dial').hidden && d.documentElement.classList.contains('has-dial'));
+  await sleep(1700);
+  ok('cards built ahead of first open', d.querySelectorAll('.dial-item').length===7 && /M/.test(d.querySelector('.dial-hint-band').getAttribute('d')));
+  await open();
+  ok('opens', d.querySelector('.dial').classList.contains('is-open'), vis());
+  ok('days marked current on a day page', d.querySelector('.dial-item.is-cur').dataset.k==='days');
+  var hits=[258.75,236.25,213.75,191.25].map(function(a){ var e=at(pt(a)); var it=e&&e.closest('.dial-item'); return it?it.dataset.k.replace('-jkt',''):'-'; }).join(',');
+  ok('taps land on the right wedge', hits==='days,food,stay,info', hits);
+  var hits2=[258.75,236.25,213.75,191.25].map(function(a){ var e=at(pt(a,60)); var it=e&&e.closest('.dial-item'); return it?it.dataset.k.replace('-jkt',''):'-'; }).join(',');
+  ok('near the centre too (boxes do not overlap-steal)', hits2==='days,food,stay,info', hits2);
+  var gap=at(pt(247.5, 245)); ok('the gap between two cards is not a card', !(gap&&gap.closest('.dial-item')), gap&&gap.tagName);
+  var beyond=at(pt(225, 262)); ok('just past the outer edge is not a card', !(beyond&&beyond.closest('.dial-item')));
+  var el=await drag(191.25, 236.25, 10, 16, 150);
+  ok('drag starts on a card', !!el.closest('.dial-item'), el.getAttribute('class'));
+  var h0=w.location.hash; el.closest('.dial-item').click(); await settle();
+  ok('slow drag turns 2 steps', vis()==='stay,info,learn,money', vis());
+  ok('drag does not navigate or close', w.location.hash===h0 && d.querySelector('.dial').classList.contains('is-open'), w.location.hash);
+  await drag(213.75, 221.75, 3, 16, 0); await settle();
+  ok('quick flick adds one step', vis()==='info,learn,money,pack', vis());
+  await drag(200, 268, 12, 16, 150); await settle();
+  ok('keeps going past the last card (07 then 01)', vis()==='days,food,stay,pack', vis());
+  await drag(266, 131, 18, 16, 150); await settle();
+  ok('drag back to start', vis()==='days,food,stay,info', vis());
+  // spin 20 steps one way, then 20 back: every card moves exactly one slot per step, never sweeps across
+  function angles(){ return [].map.call(d.querySelectorAll('.dial-item'),function(e){ return parseFloat(/rotate\(([-\d.]+)deg/.exec(e.style.transform)[1]); }); }
+  var jumps=0, counts=[];
+  for (var dir of [1,-1]) for (var st=0; st<20; st++) {
+    var a0=angles(), o0=[].map.call(d.querySelectorAll('.dial-item'),function(e){return +e.style.opacity});
+    d.querySelector('.dial-hub').dispatchEvent(new w.WheelEvent('wheel',{deltaY:60*dir,bubbles:true,cancelable:true}));
+    // a card that was showing (even faintly) must move exactly one slot; only invisible cards may hop to the other end
+    var a1=angles(); a0.forEach(function(v,i){ if (o0[i]>0 && Math.abs(Math.abs(a1[i]-v)-22.5)>.01) jumps++; });
+    counts.push(vis().split(',').length);
+    await sleep(st%3===0 ? 700 : 80);
+  }
+  await settle();
+  ok('20 steps each way: every card moves exactly one slot', jumps===0, jumps+' jumps');
+  ok('always 4 cards showing while spinning', counts.every(function(c){return c===4}), counts.join(''));
+  ok('back where it started after 20 + 20', vis()==='days,food,stay,info', vis());
+  // dragging on the dimmed backdrop beside the cards also turns, and does not close
+  async function dragAt(r, from, to){ var p0=pt(from,r), el=at(p0); pe('pointerdown', el, p0); for (var i=1;i<=10;i++){ await sleep(16); pe('pointermove', el, pt(from+(to-from)*i/10, r)); } await sleep(150); pe('pointerup', el, pt(to,r)); el.click(); return el; }
+  var bg=await dragAt(300, 200, 245); await settle();
+  ok('drag on backdrop turns 2 steps', vis()==='stay,info,learn,money' && d.querySelector('.dial').classList.contains('is-open'), (bg&&bg.className)+' '+vis());
+  await dragAt(300, 245, 200); await settle();
+  ok('drag on backdrop back', vis()==='days,food,stay,info', vis());
+  // mouse
+  PT='mouse';
+  var p0=pt(191.25), m=at(p0);
+  var ds=new w.DragEvent('dragstart',{bubbles:true,cancelable:true}); m.dispatchEvent(ds);
+  ok('browser drag of link/image is blocked', ds.defaultPrevented);
+  ok('cards are not draggable', [].every.call(d.querySelectorAll('.dial-item'),function(a){return a.getAttribute('draggable')==='false'}));
+  await drag(191.25, 236.25, 10, 16, 150); await settle();
+  ok('mouse drag turns 2 steps', vis()==='stay,info,learn,money', vis());
+  await drag(236.25, 191.25, 10, 16, 150); await settle();
+  ok('mouse drag back', vis()==='days,food,stay,info', vis());
+  PT='touch';
+  var hub=d.querySelector('.dial-scrim');
+  for (var k=0;k<3;k++) hub.dispatchEvent(new w.WheelEvent('wheel',{deltaY:20,bubbles:true,cancelable:true}));
+  await settle();
+  ok('trackpad: small scrolls add up to one step', vis()==='food,stay,info,learn', vis());
+  for (var k=0;k<15;k++) hub.dispatchEvent(new w.WheelEvent('wheel',{deltaY:-4,bubbles:true,cancelable:true}));
+  await settle();
+  ok('trackpad: tiny scrolls add up too', vis()==='days,food,stay,info', vis());
+  await sleep(300);
+  hub.dispatchEvent(new w.WheelEvent('wheel',{deltaY:100,bubbles:true,cancelable:true})); await settle();
+  ok('mouse wheel notch turns one step', vis()==='food,stay,info,learn', vis());
+  hub.dispatchEvent(new w.WheelEvent('wheel',{deltaY:-100,bubbles:true,cancelable:true})); await settle();
+  ok('hidden cards not tappable', [].every.call(d.querySelectorAll('.dial-item.is-off .dial-hit'),function(e){return w.getComputedStyle(e).pointerEvents==='none'}) && d.querySelectorAll('.dial-item.is-off').length===3);
+  var p=pt(213.75), t=at(p);
+  pe('pointerdown', t, p); pe('pointermove', t, [p[0]+3,p[1]+2]); pe('pointerup', t, [p[0]+3,p[1]+2]); t.closest('.dial-item').click(); await settle();
+  ok('tap with small wobble navigates', w.location.hash==='#stay', w.location.hash);
+  ok('closes after navigating', !d.querySelector('.dial').classList.contains('is-open'));
+  await open();
+  ok('stay marked current', d.querySelector('.dial-item.is-cur').dataset.k==='stay');
+  d.querySelector('.dial-item.is-cur').click(); await settle();
+  ok('tap current page just closes', w.location.hash==='#stay' && !d.querySelector('.dial').classList.contains('is-open'));
+  await open();
+  d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true})); await settle();
+  ok('Esc closes', !d.querySelector('.dial').classList.contains('is-open'));
+  await open();
+  d.querySelector('.dial-scrim').click(); await settle();
+  ok('tap outside closes', !d.querySelector('.dial').classList.contains('is-open'));
+  ok('closed cards cannot be focused', d.querySelector('.dial-items').hasAttribute('inert'));
+  var cl=at(pt(213.75)); ok('closed: page underneath is tappable', !(cl&&cl.closest('.dial')), cl&&cl.tagName);
+  go('food-yk'); await sleep(300); await open();
+  ok('food current on food-yk', d.querySelector('.dial-item.is-cur').dataset.k==='food-jkt');
+  d.querySelector('.dial-item.is-cur').click(); await settle();
+  ok('tapping food stays on food-yk', w.location.hash==='#food-yk');
+  go('pack'); await sleep(300); await open();
+  ok('pack opens turned to show itself', vis()==='info,learn,money,pack', vis());
+  go('d1214'); await sleep(300); await open();
+  d.querySelectorAll('.dial-item')[6].focus(); await settle();
+  ok('focus hidden card turns dial', vis()==='days,food,stay,pack', vis());
+  d.querySelector('.dial-scrim').click(); await settle();
+  // other overlays hide the button (it sits above the paper grain now)
+  go('d1215'); await sleep(300);
+  var drv=d.querySelector('[data-driver]'); if (drv) drv.click(); await sleep(100);
+  ok('hidden while driver card is up', drv && w.getComputedStyle(d.querySelector('.dial')).display==='none');
+  d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true})); await sleep(100);
+  ok('back after driver card closes', w.getComputedStyle(d.querySelector('.dial')).display!=='none');
+  d.querySelector('[data-jump]').click(); await sleep(100);
+  ok('hidden while day picker is up', w.getComputedStyle(d.querySelector('.dial')).display==='none');
+  d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true})); await sleep(100);
+  go('menu'); await sleep(300);
+  ok('hidden on 00 page', d.querySelector('.dial').hidden && !d.documentElement.classList.contains('has-dial'));
+  go('home'); await sleep(300);
+  ok('hidden on cover', d.querySelector('.dial').hidden);
+  var bad=[];
+  for (var k2 of ['days','d1220','d1231','food-bali','stay','info','learn','money','pack']) {
+    go(k2); await sleep(250); w.scrollTo(0, 1e6); await sleep(150);
+    var last=d.querySelector('.wrap').lastElementChild.getBoundingClientRect(), b=btn.getBoundingClientRect();
+    if (!(last.bottom < b.top)) bad.push(k2+':'+Math.round(last.bottom)+'/'+Math.round(b.top));
+  }
+  ok('bottom of every page clear of the button', bad.length===0, bad.join(' '));
+  // ---- left-handed: drag the button to the bottom-left corner
+  go('d1221'); await sleep(300);
+  var b0=btn.getBoundingClientRect(), bx=b0.left+28, by=b0.top+28;
+  function bp(type,x,y){ btn.dispatchEvent(new w.PointerEvent(type,{pointerId:11,pointerType:'touch',isPrimary:true,clientX:x,clientY:y,bubbles:true,cancelable:true})); }
+  bp('pointerdown',bx,by); for (var k=1;k<=10;k++){ await sleep(16); bp('pointermove',bx-k*30,by-k*3); } bp('pointerup',bx-300,by-30); btn.click(); await settle();
+  ok('drag button to the left: snaps to bottom-left and remembers', d.querySelector('.dial').classList.contains('is-left') && w.localStorage.getItem('trip-dial-side')==='left' && btn.getBoundingClientRect().left<40, Math.round(btn.getBoundingClientRect().left));
+  ok('dragging the button does not open the dial', !d.querySelector('.dial').classList.contains('is-open'));
+  await open();
+  function ptL(th, r){ return pt(180-th, r); }   // mirrored: logical angle -> screen angle
+  var hl=[258.75,236.25,213.75,191.25].map(function(a){ var e=at(ptL(a)); var it=e&&e.closest('.dial-item'); return it?it.dataset.k.replace('-jkt',''):'-'; }).join(',');
+  ok('left: cards fan up-right, taps land on the right card', hl==='days,food,stay,info', hl);
+  async function dragL(from, to){ var p0=ptL(from), el=at(p0); pe('pointerdown', el, p0); for (var i=1;i<=10;i++){ await sleep(16); pe('pointermove', el, ptL(from+(to-from)*i/10)); } await sleep(150); pe('pointerup', el, ptL(to)); }
+  await dragL(191.25, 236.25); await settle();
+  ok('left: dragging along the arc turns the same way', vis()==='stay,info,learn,money', vis());
+  var hb=d.querySelector('.dial-hint-band').getBoundingClientRect();
+  ok('left: hint band sits up-right of the button', hb.left > btn.getBoundingClientRect().left, Math.round(hb.left));
+  d.querySelector('.dial-scrim').click(); await settle();
+  // page bottoms still clear of the button on the left side
+  var badL=[];
+  for (var k3 of ['d1220','d1231','money','info']) { go(k3); await sleep(250); w.scrollTo(0, 1e6); await sleep(150);
+    var lastL=d.querySelector('.wrap').lastElementChild.getBoundingClientRect(); if (!(lastL.bottom < btn.getBoundingClientRect().top)) badL.push(k3); }
+  ok('left: bottom of pages clear of the button', badL.length===0, badL.join(' '));
+  // drag it back to the right
+  go('d1221'); await sleep(300);
+  b0=btn.getBoundingClientRect(); bx=b0.left+28; by=b0.top+28;
+  bp('pointerdown',bx,by); for (var k=1;k<=10;k++){ await sleep(16); bp('pointermove',bx+k*30,by); } bp('pointerup',bx+300,by); btn.click(); await settle();
+  ok('drag back to the right', !d.querySelector('.dial').classList.contains('is-left') && w.localStorage.getItem('trip-dial-side')==='right' && btn.getBoundingClientRect().right > 300, Math.round(btn.getBoundingClientRect().right));
+  d.querySelector('.prefs-btn').click(); await sleep(200);
+  d.querySelector('[data-lang="en"]').click(); await sleep(1800);
+  ok('rebuilt ahead of time after language switch', d.querySelector('.dial-item').getAttribute('aria-label')==='Days' && d.querySelector('.dial-item canvas').width>0);
+  await open();
+  ok('relabels in English', d.querySelector('.dial-item').getAttribute('aria-label')==='Days' && btn.getAttribute('aria-label')==='Close', d.querySelector('.dial-item').textContent+' / '+d.querySelector('.dial-hint textPath').textContent);
+  document.getElementById('out').textContent='DONE\n'+log.join('\n')+'\nEND';
+  } catch(e) { document.getElementById('out').textContent='DONE\nERR '+e+' '+(e.stack||'')+'\n'+log.join('\n')+'\nEND'; }
+};
+</script></body></html>
