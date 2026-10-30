@@ -544,6 +544,7 @@ button { font: inherit; color: inherit; }
 
 /* ---------- cover carousel: pictures slide inside the fixed notched frame ---------- */
 .hero .hw { transition: color .6s ease; }
+.cover-bar .star { transition: color .8s ease .35s; }  /* follows the big word, a beat later */
 .cv { cursor: pointer; touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
 .cv:focus-visible { outline: 3px solid var(--blue); outline-offset: 4px; border-radius: 20px; }
 .cv-slide { will-change: transform; }

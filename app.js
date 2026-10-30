@@ -328,6 +328,8 @@
     });
     var c = T.covers[cvCur], w = app.querySelector(".hero .hw"), tag = root.querySelector("[data-cv-tag]");
     if (w) w.style.color = ART.topColor(c.art); // 大字跟著換成這張的天空色
+    var star = app.querySelector(".cover-bar .star"); // 左上角的星星也跟著換（晚一點，像離得比較遠才被染到）；第一張回到原本的藍
+    if (star) star.style.color = cvCur ? ART.topColor(c.art) : "";
     if (tag && prev !== cvCur) tag.textContent = c.tag || u("madeFor");
     root.querySelectorAll(".cv-dots i").forEach(function (d, i) { d.classList.toggle("is-on", i === cvCur); });
   }
