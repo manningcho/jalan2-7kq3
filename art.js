@@ -197,12 +197,14 @@
         var photo = (window.TRIP && TRIP.photos || {})[name];
         if (!photo) return;
         var top = photo.top || C.skyTop, lq = (window.LQ || {})[photo.src], gid = id + "g" + i;
-        defs += '<linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + top + '"/><stop offset=".35" stop-color="' + top + '" stop-opacity=".55"/><stop offset="1" stop-color="' + top + '" stop-opacity="0"/></linearGradient>';
+        // 大字壓進圖框的那一段（約上緣 16%）鋪滿同色，再慢慢淡進畫面，字的下半截才會融進去
+        defs += '<linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + top + '"/><stop offset=".3" stop-color="' + top + '"/><stop offset=".62" stop-color="' + top + '" stop-opacity=".45"/><stop offset="1" stop-color="' + top + '" stop-opacity="0"/></linearGradient>';
         if (lq && i === 0) defs += '<filter id="' + id + 'b" x="0" y="0" width="1" height="1"><feGaussianBlur stdDeviation="7" edgeMode="duplicate"/></filter>';
         body += '<g class="cv-slide" data-i="' + i + '" style="transform:translateX(' + (i ? 360 : 0) + 'px)">' +
           (lq && i === 0 ? '<image href="' + lq + '" width="360" height="260" preserveAspectRatio="xMidYMid slice" filter="url(#' + id + 'b)"/>' : "") +
           '<image class="fade" href="' + photo.src + '" width="360" height="260" preserveAspectRatio="xMidYMid slice"/>' +
-          '<rect width="360" height="110" fill="url(#' + gid + ')"/></g>';
+          (i ? '<rect width="360" height="140" fill="url(#' + gid + ')"/>' : '<rect width="360" height="110" fill="url(#' + gid + 'o)"/>') + "</g>";
+        if (!i) defs += '<linearGradient id="' + gid + 'o" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + top + '"/><stop offset=".35" stop-color="' + top + '" stop-opacity=".55"/><stop offset="1" stop-color="' + top + '" stop-opacity="0"/></linearGradient>';
       });
       return '<svg class="art" viewBox="0 0 360 260" role="img" aria-label="' + (label || "") + '" preserveAspectRatio="xMidYMax slice"><defs>' + defs + "</defs>" +
         '<g clip-path="url(#c' + id + ')"><rect width="360" height="260" fill="' + C.skyTop + '"/>' + body + "</g></svg>";
