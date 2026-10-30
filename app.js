@@ -599,9 +599,10 @@
   }
 
   // ---------- 右下角快速選單：點開像一本扇形色票卡，手指沿圓弧滑可以轉 ----------
-  // 7 張扇形卡以按鈕為圓心排開，每張 22.5°，一次露出 4 張（中心角 258.75° 到 191.25°）；轉盤角度 dRot 介於 0 到 3 格
+  // 7 張扇形卡以按鈕為圓心排開，每張 22.5°，一次露出 4 張（中心角 258.75° 到 191.25°）。
+  // 可以無限轉：卡片排成一圈，位置 p（0＝最上面那格）超出 -1.5～5.5 就從另一頭接回來；換邊的地方在畫面外、卡片完全透明，看不出來
   var DIAL = [["days", "dDays"], ["food-jkt", "dFood"], ["stay", "dStay"], ["info", "dInfo"], ["learn", "dLearn"], ["money", "dMoney"], ["pack", "dPack"]];
-  var D_STEP = 22.5, D_TOP = 270 - D_STEP / 2, D_MAX = (DIAL.length - 4) * D_STEP, D_LO = D_TOP - 3 * D_STEP;
+  var D_STEP = 22.5, D_TOP = 270 - D_STEP / 2, D_LO = D_TOP - 3 * D_STEP, D_N = DIAL.length;
   // 卡片尺寸：內半徑 38（留一圈給按鈕）、色塊從 150 開始、外半徑 250；每張兩邊各留 0.5° 縫
   var C_R0 = 38, C_R1 = 150, C_R = 250, C_HALF = (D_STEP / 2 - .5) * Math.PI / 180;
   var C_H = Math.ceil(2 * C_R * Math.sin(C_HALF)) + 2, C_MID = C_H / 2;
@@ -612,7 +613,7 @@
       "L" + f(r0 * c) + " " + f(C_MID + r0 * s) + "A" + r0 + " " + r0 + " 0 0 0 " + f(r0 * c) + " " + f(C_MID - r0 * s) + "Z";
   }
   var C_CARD = sector(C_R0, C_R), C_BAND = sector(C_R0, C_R1);
-  var dial = null, dialItems = [], dialOpen = false, dialLang = null, dRot = 0, openToken = 0;
+  var dial = null, dialItems = [], dialOpen = false, dialLang = null, dRot = 0, openToken = 0, cardP = [], wrapTimer = null;
   var DIAL_IC = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor"><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(90 12 12)"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(180 12 12)"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(270 12 12)"/></g><circle cx="12" cy="12" r="2.3" fill="var(--ink)"/></svg>';
   function dialSection(h) {
     if (/^d12\d\d$/.test(h) || h === "days") return "days";
@@ -659,7 +660,7 @@
       var dt = Math.max(1, e.timeStamp - drag.t);
       drag.v = drag.v * .5 + (d / dt) * .5; // 度／毫秒，放手時用來判斷甩的方向
       drag.t = e.timeStamp;
-      dRot = rubber(drag.rot);
+      dRot = drag.rot;
       placeDial("drag");
     });
     function endDrag(e) {
@@ -667,7 +668,7 @@
       if (drag.moved) {
         if (e.timeStamp - drag.t > 80) drag.v = 0; // 停住才放手就不算甩
         var aim = drag.rot + Math.max(-D_STEP, Math.min(D_STEP, drag.v * 100)); // 甩一下最多多轉一格
-        dRot = Math.max(0, Math.min(D_MAX, Math.round(aim / D_STEP) * D_STEP));
+        dRot = Math.round(aim / D_STEP) * D_STEP;
         dial.classList.remove("is-dragging");
         placeDial("snap");
         dial.dataset.justDragged = "1";
@@ -705,37 +706,71 @@
     dial.querySelector(".dial-items").addEventListener("focusin", function (e) {
       var i = dialItems.indexOf(e.target.closest(".dial-item"));
       if (i < 0) return;
-      var th = dialTheta(i);
-      if (th < D_LO - 1) { dRot += Math.ceil((D_LO - th) / D_STEP) * D_STEP; placeDial("snap"); }
-      else if (th > D_TOP + 1) { dRot -= Math.ceil((th - D_TOP) / D_STEP) * D_STEP; placeDial("snap"); }
+      var p = Math.round(cardP[i]);
+      if (p < 0) { dRot += p * D_STEP; placeDial("snap"); }
+      else if (p > 3) { dRot += (p - 3) * D_STEP; placeDial("snap"); }
     });
   }
-  function turnDial(dir) {
-    var next = Math.max(0, Math.min(D_MAX, dRot + dir * D_STEP));
-    if (next !== dRot) { dRot = next; placeDial("snap"); }
-  }
-  function rubber(r) { return r < 0 ? r / 3 : r > D_MAX ? D_MAX + (r - D_MAX) / 3 : r; }
+  function turnDial(dir) { dRot += dir * D_STEP; placeDial("snap"); }
   function dialAngle(e) {
     var b = dial.querySelector(".dial-btn").getBoundingClientRect();
     var a = Math.atan2(e.clientY - (b.top + b.height / 2), e.clientX - (b.left + b.width / 2)) * 180 / Math.PI;
     return a < 0 ? a + 360 : a;
   }
-  function dialTheta(i) { return D_TOP - i * D_STEP + dRot; }
+  // p 換回 -1.5～5.5 之間（一圈 7 格）
+  function wrapP(p) { return ((p + 1.5) % D_N + D_N) % D_N - 1.5; }
+  function pTheta(p) { return D_TOP - p * D_STEP; }
   // 看得到的範圍內完全不透明，超出範圍 30° 內慢慢淡掉
   function dialVis(th) { var out = Math.max(0, D_LO - 1 - th, th - D_TOP - 1); return Math.max(0, 1 - out / 30); }
   function dialTf(th, s) { return "rotate(" + th + "deg) scale(" + s + ")"; }
   // mode：drag 跟著手指不加動畫；snap 放手對齊；open 展開時一張接一張從圓心轉出來
+  function inRange(p) { return p >= -1.5 && p < D_N - 1.5; }
   function placeDial(mode) {
+    var k = dRot / D_STEP, targets = [], jumped = false;
+    clearTimeout(wrapTimer);
     dialItems.forEach(function (el, i) {
-      var th = dialTheta(i), o = dialVis(th);
+      var base = i - k, prev = cardP[i], p;
+      if (mode !== "snap" || prev == null) p = wrapP(base); // 跟著手指或剛打開：直接放到範圍內（換邊發生在看不見的地方）
+      else {
+        p = base + D_N * Math.round((prev - base) / D_N); // 往最近的方向轉
+        // 已經在畫面外、還要繼續往外走的卡：先在看不見的地方移到另一頭，再從那頭滑進來
+        if (!inRange(p) && !inRange(prev)) {
+          p = wrapP(p);
+          var from = prev + D_N * Math.round((p - prev) / D_N);
+          el.style.transition = "none";
+          el.style.transform = dialTf(pTheta(from), 1);
+          el.style.opacity = 0;
+          jumped = true;
+        }
+      }
+      targets.push(p);
+    });
+    if (jumped) void dial.offsetWidth;
+    dialItems.forEach(function (el, i) {
+      var p = cardP[i] = targets[i];
+      var th = pTheta(p), o = dialVis(th);
       if (mode === "drag") el.style.transition = "none";
       else if (mode === "open") {
-        var slot = Math.max(0, Math.round((D_TOP - th) / D_STEP)), wait = slot * 70;
+        var wait = Math.max(0, Math.round(p)) * 70;
         el.style.transition = "transform .66s cubic-bezier(.22, 1.12, .36, 1) " + wait + "ms, opacity .22s ease " + wait + "ms";
       } else el.style.transition = "transform .42s cubic-bezier(.25, 1.15, .45, 1), opacity .3s ease";
       el.style.transform = dialTf(th, 1);
       el.style.opacity = o;
       el.classList.toggle("is-off", o < .5);
+    });
+    if (mode === "snap") wrapTimer = setTimeout(wrapCards, 600);
+  }
+  // 轉完後，跑出範圍外（完全透明）的卡片悄悄移到另一頭
+  function wrapCards() {
+    if (!dialOpen) return;
+    dRot = ((dRot % (D_N * D_STEP)) + D_N * D_STEP) % (D_N * D_STEP); // 轉了很多圈也不會讓數字一直變大
+    dialItems.forEach(function (el, i) {
+      var w = wrapP(cardP[i]);
+      if (Math.abs(w - cardP[i]) < .01) return;
+      cardP[i] = w;
+      el.style.transition = "none";
+      el.style.transform = dialTf(pTheta(w), 1);
+      el.style.opacity = dialVis(pTheta(w));
     });
   }
   // 一張卡：畫面預先畫進 <canvas>（動畫時手機只需要搬動一張畫好的圖，不必重畫）；點擊只算在透明的扇形 .dial-hit 上
@@ -836,7 +871,8 @@
     });
     // 目前這頁如果在後面幾張，打開時先轉到看得到它的位置
     var ci = DIAL.map(function (x) { return x[0]; }).indexOf(cur);
-    dRot = ci > 3 ? Math.min(D_MAX, (ci - 3) * D_STEP) : 0;
+    dRot = ci > 3 ? (ci - 3) * D_STEP : 0;
+    cardP = dialItems.map(function (el, i) { return wrapP(i - dRot / D_STEP); });
     drawCards(); // 只重畫有變的卡（換了目前頁、深淺色或語言）
   }
   function openDial() {
@@ -846,7 +882,7 @@
     // 每張卡先縮在按鈕裡、往回轉 150°，接著一張接一張一邊轉一邊長大到定位
     dialItems.forEach(function (el, i) {
       el.style.transition = "none";
-      el.style.transform = dialTf(dialTheta(i) - 150, .12);
+      el.style.transform = dialTf(pTheta(cardP[i]) - 150, .12);
       el.style.opacity = 0;
     });
     void dial.offsetWidth;
@@ -876,7 +912,7 @@
     dialItems.forEach(function (el, i) {
       var wait = now ? 0 : (n - 1 - i) * 25;
       el.style.transition = now ? "none" : "transform .32s cubic-bezier(.5, 0, .75, 0) " + wait + "ms, opacity .2s ease " + (wait + 110) + "ms";
-      el.style.transform = dialTf(dialTheta(i) - 110, .12);
+      el.style.transform = dialTf(pTheta(cardP[i]) - 110, .12);
       el.style.opacity = 0;
     });
   }
