@@ -607,9 +607,7 @@ button { font: inherit; color: inherit; }
 .link-h { margin: 6px 2px 2px; font-size: 13px; font-weight: 700; color: var(--muted); }
 
 /* ---------- local / Taiwan clock next to the menu button ---------- */
-.clk { flex: none; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; line-height: 1.25; font-family: var(--f-mono); white-space: nowrap; }
-.clk b { font-size: 13px; font-weight: 600; color: var(--ink); }
-.clk small { font-size: 11px; color: var(--muted); }
+.clk { flex: none; display: flex; align-items: center; font-family: var(--f-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
 .cover-bar .clk { margin-left: auto; margin-right: 10px; }
 
 /* ---------- weather chip at the right end of the day's meta row ---------- */
@@ -618,6 +616,7 @@ button { font: inherit; color: inherit; }
 .kicker .wx b { font-weight: 600; }
 .kicker .wx small { font-size: 11px; color: var(--muted); letter-spacing: 0; }
 .kicker .wx.is-fc svg { color: var(--gold); }
-@media (max-width: 359px) {
-  .bar-label { visibility: hidden; }  /* very narrow phones: the clock needs the room; the meta row below already shows 02/18 */
-}
+/* the clock takes the middle label's place (the meta row below already shows 02/18 / 項目 04); the label stays as an empty spacer */
+.bar-label { visibility: hidden; }
+/* app.js fitClock(): if one line still doesn't fit, drop the Taiwan half */
+.clk-short .clk-tw { display: none; }

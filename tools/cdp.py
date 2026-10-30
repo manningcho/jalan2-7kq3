@@ -42,6 +42,9 @@ try:
             m = recv()
             if m.get("id") == i: return m
     call("Page.enable"); call("Emulation.setCPUThrottlingRate", {"rate": rate})
+    # 新版無頭 Chrome 視窗最窄只有 500px，WIN 的寬度要另外用模擬手機螢幕的方式設定才準
+    ww, wh = [int(x) for x in os.environ.get("WIN", "390,844").split(",")]
+    call("Emulation.setDeviceMetricsOverride", {"width": ww, "height": wh, "deviceScaleFactor": 3, "mobile": True})
     if os.environ.get("NET"):
         down, lat = [float(x) for x in os.environ["NET"].split(",")]
         call("Network.enable"); call("Network.emulateNetworkConditions", {"offline": False, "latency": lat, "downloadThroughput": down * 1024 * 1024 / 8, "uploadThroughput": 750 * 1024 / 8})

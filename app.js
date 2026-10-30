@@ -304,9 +304,20 @@
     if (!els.length) return;
     var fmt = function (tz) { try { return new Date().toLocaleTimeString("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } };
     var c = clockCity(), tw = fmt("Asia/Taipei");
-    var html = c === "tw" ? "<b>" + esc(u("twShort")) + " " + tw + "</b>" :
-      "<b>" + esc(u("localShort")) + " " + fmt(c === "bali" ? "Asia/Makassar" : "Asia/Jakarta") + "</b><small>" + esc(u("twShort")) + " " + tw + "</small>";
+    // 一行淡色小字：「當地 16:05 · 台灣 17:05」；太窄的手機只留當地（.clk-tw 由 CSS 藏起來）
+    var html = c === "tw" ? "<span>" + esc(u("twShort")) + " " + tw + "</span>" :
+      "<span>" + esc(u("localShort")) + " " + fmt(c === "bali" ? "Asia/Makassar" : "Asia/Jakarta") + "</span>" +
+      '<span class="clk-tw">&nbsp;· ' + esc(u("twShort")) + " " + tw + "</span>";
     els.forEach(function (el) { if (el.innerHTML !== html) el.innerHTML = html; });
+    fitClock();
+  }
+  // 最窄的手機（例如 320px 的印尼文、英文）一行放不下時，只留當地時間
+  function fitClock() {
+    document.querySelectorAll(".bar-in, .cover-bar").forEach(function (row) {
+      if (!row.querySelector(".clk")) return;
+      row.classList.remove("clk-short");
+      if (row.scrollWidth > row.clientWidth + 1) row.classList.add("clk-short");
+    });
   }
   setInterval(tickClock, 15000);
 
@@ -1507,9 +1518,9 @@
     if (e.key === "Escape") { var o = document.querySelector(".driver"); if (o) o.remove(); if (prefsOpen) setPrefsOpen(false); closeJump(); closeDial(); }
   });
   window.addEventListener("hashchange", function () { prefsOpen = false; render(); window.scrollTo(0, 0); });
-  window.addEventListener("resize", function () { fit(); placeSays(); });
+  window.addEventListener("resize", function () { fit(); placeSays(); fitClock(); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fit(); placeSays(); });
-  if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", placeSays); // 字型晚到，字寬會變
+  if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", function () { placeSays(); fitClock(); }); // 字型晚到，字寬會變
   render();
   // 離線版：把整個網站存一份在手機裡（sw.js），到印尼網路不穩也打得開
   if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
