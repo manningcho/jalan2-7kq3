@@ -598,23 +598,40 @@
     document.documentElement.classList.remove("jump-open");
   }
 
-  // ---------- 右下角快速選單：點開是四分之一圓的轉盤，手指沿圓弧滑可以轉 ----------
-  // 7 個選項排在同一個圓上，一次露出 4 個（270° 正上方到 186° 左邊）；轉盤角度 dRot 介於 0 到 3 格
+  // ---------- 右下角快速選單：點開像一本扇形色票卡，手指沿圓弧滑可以轉 ----------
+  // 7 張扇形卡以按鈕為圓心排開，每張 22.5°，一次露出 4 張（中心角 258.75° 到 191.25°）；轉盤角度 dRot 介於 0 到 3 格
   var DIAL = [["days", "dDays"], ["food-jkt", "dFood"], ["stay", "dStay"], ["info", "dInfo"], ["learn", "dLearn"], ["money", "dMoney"], ["pack", "dPack"]];
-  var D_R = 200, D_STEP = 28, D_TOP = 270, D_MAX = (DIAL.length - 4) * D_STEP;
-  var D_LO = D_TOP - 3 * D_STEP;
-  var dial = null, dialItems = [], dialOpen = false, dialLang = null, dRot = 0, dialTimer = null;
+  var D_STEP = 22.5, D_TOP = 270 - D_STEP / 2, D_MAX = (DIAL.length - 4) * D_STEP, D_LO = D_TOP - 3 * D_STEP;
+  // 卡片尺寸：內半徑 38（留一圈給按鈕）、色塊從 150 開始、外半徑 250；每張兩邊各留 0.5° 縫
+  var C_R0 = 38, C_R1 = 150, C_R = 250, C_HALF = (D_STEP / 2 - .5) * Math.PI / 180;
+  var C_H = Math.ceil(2 * C_R * Math.sin(C_HALF)) + 2, C_MID = C_H / 2;
+  function sector(r0, r1) {
+    var c = Math.cos(C_HALF), s = Math.sin(C_HALF), f = function (n) { return Math.round(n * 100) / 100; };
+    return "M" + f(r0 * c) + " " + f(C_MID - r0 * s) + "L" + f(r1 * c) + " " + f(C_MID - r1 * s) +
+      "A" + r1 + " " + r1 + " 0 0 1 " + f(r1 * c) + " " + f(C_MID + r1 * s) +
+      "L" + f(r0 * c) + " " + f(C_MID + r0 * s) + "A" + r0 + " " + r0 + " 0 0 0 " + f(r0 * c) + " " + f(C_MID - r0 * s) + "Z";
+  }
+  var C_CARD = sector(C_R0, C_R), C_BAND = sector(C_R0, C_R1);
+  var dial = null, dialItems = [], dialOpen = false, dialLang = null, dRot = 0;
   var DIAL_IC = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor"><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(90 12 12)"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(180 12 12)"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(270 12 12)"/></g><circle cx="12" cy="12" r="2.3" fill="var(--ink)"/></svg>';
   function dialSection(h) {
     if (/^d12\d\d$/.test(h) || h === "days") return "days";
     if (h.indexOf("food") === 0) return "food-jkt";
     return h;
   }
+  // 卡片外緣再往外一點的弧線，提示可以轉（字印在一條深色弧形底帶上）
+  var H_R = C_R + 22, H_MID = 226;
+  function arcPath(r, from, to) {
+    var a = from * Math.PI / 180, b = to * Math.PI / 180, f = function (n) { return Math.round(n * 10) / 10; };
+    return "M" + f(r * Math.cos(a)) + " " + f(r * Math.sin(a)) + "A" + r + " " + r + " 0 0 1 " + f(r * Math.cos(b)) + " " + f(r * Math.sin(b));
+  }
+  function hintArc() { return arcPath(H_R, H_MID - 40, H_MID + 40); }
   function buildDial() {
     dial = document.createElement("div");
     dial.className = "dial";
     dial.innerHTML = '<div class="dial-scrim" aria-hidden="true"></div><div class="dial-hub">' +
-      '<div class="dial-fan" aria-hidden="true"><span class="dial-track"></span><span class="dial-cap"><b>DAFTAR</b><small></small></span></div>' +
+      '<svg class="dial-hint" viewBox="-300 -300 600 600" aria-hidden="true"><path id="dialArc" d="' + hintArc() + '" fill="none"/><path class="dial-hint-band" d=""/>' +
+      '<text><textPath href="#dialArc" startOffset="50%" text-anchor="middle"></textPath></text></svg>' +
       '<nav class="dial-items" inert></nav>' +
       '<button type="button" class="dial-btn" aria-expanded="false">' + DIAL_IC + ICON.x + "</button></div>";
     document.body.appendChild(dial);
@@ -644,7 +661,7 @@
       drag.v = drag.v * .5 + (d / dt) * .5; // 度／毫秒，放手時用來判斷甩的方向
       drag.t = e.timeStamp;
       dRot = rubber(drag.rot);
-      placeDial(false);
+      placeDial("drag");
     });
     function endDrag(e) {
       if (!drag || e.pointerId !== drag.id) return;
@@ -653,7 +670,7 @@
         var aim = drag.rot + Math.max(-D_STEP, Math.min(D_STEP, drag.v * 100)); // 甩一下最多多轉一格
         dRot = Math.max(0, Math.min(D_MAX, Math.round(aim / D_STEP) * D_STEP));
         dial.classList.remove("is-dragging");
-        placeDial(true);
+        placeDial("snap");
         dial.dataset.justDragged = "1";
         setTimeout(function () { delete dial.dataset.justDragged; }, 0);
       }
@@ -661,7 +678,7 @@
     }
     hub.addEventListener("pointerup", endDrag);
     hub.addEventListener("pointercancel", endDrag);
-    // 拖曳完放手不算點擊
+    // 拖曳完放手不算點擊；點目前這頁就只收起來
     hub.addEventListener("click", function (e) {
       if (dial.dataset.justDragged) { e.preventDefault(); e.stopPropagation(); return; }
       var a = e.target.closest(".dial-item");
@@ -675,18 +692,18 @@
       if (Math.abs(e.deltaY) < 4) return;
       turnDial(e.deltaY > 0 ? 1 : -1);
     }, { passive: false });
-    // 用鍵盤移到看不到的選項時，自動轉過去
+    // 用鍵盤移到看不到的卡片時，自動轉過去
     dial.querySelector(".dial-items").addEventListener("focusin", function (e) {
       var i = dialItems.indexOf(e.target.closest(".dial-item"));
       if (i < 0) return;
       var th = dialTheta(i);
-      if (th < D_LO - 1) { dRot += Math.ceil((D_LO - th) / D_STEP) * D_STEP; placeDial(true); }
-      else if (th > D_TOP + 1) { dRot -= Math.ceil((th - D_TOP) / D_STEP) * D_STEP; placeDial(true); }
+      if (th < D_LO - 1) { dRot += Math.ceil((D_LO - th) / D_STEP) * D_STEP; placeDial("snap"); }
+      else if (th > D_TOP + 1) { dRot -= Math.ceil((th - D_TOP) / D_STEP) * D_STEP; placeDial("snap"); }
     });
   }
   function turnDial(dir) {
     var next = Math.max(0, Math.min(D_MAX, dRot + dir * D_STEP));
-    if (next !== dRot) { dRot = next; placeDial(true); }
+    if (next !== dRot) { dRot = next; placeDial("snap"); }
   }
   function rubber(r) { return r < 0 ? r / 3 : r > D_MAX ? D_MAX + (r - D_MAX) / 3 : r; }
   function dialAngle(e) {
@@ -695,57 +712,84 @@
     return a < 0 ? a + 360 : a;
   }
   function dialTheta(i) { return D_TOP - i * D_STEP + dRot; }
-  function dialTf(th, r, s) { return "rotate(" + th + "deg) translateX(" + r + "px) rotate(" + (-th) + "deg) scale(" + s + ")"; }
-  // 看得到的範圍內完全不透明，超出範圍 22° 內慢慢淡掉
-  function dialVis(th) { var out = Math.max(0, D_LO - 2 - th, th - D_TOP - 2); return Math.max(0, 1 - out / 22); }
-  function placeDial(animate, delays) {
+  // 看得到的範圍內完全不透明，超出範圍 30° 內慢慢淡掉
+  function dialVis(th) { var out = Math.max(0, D_LO - 1 - th, th - D_TOP - 1); return Math.max(0, 1 - out / 30); }
+  // mode：drag 跟著手指不加動畫；snap 放手對齊；open 展開時一張接一張翻開
+  function placeDial(mode) {
     dialItems.forEach(function (el, i) {
       var th = dialTheta(i), o = dialVis(th);
-      el.style.transition = animate ? "transform .45s cubic-bezier(.2,.9,.3,1.12) " + (delays ? i * 40 : 0) + "ms, opacity .3s ease " + (delays ? i * 40 : 0) + "ms" : "none";
-      el.style.transform = dialTf(th, D_R, .72 + .28 * o);
+      if (mode === "drag") el.style.transition = "none";
+      else if (mode === "open") {
+        var slot = Math.max(0, Math.round((D_TOP - th) / D_STEP)), wait = 160 + slot * 85;
+        el.style.transition = "transform .62s cubic-bezier(.3, 1.3, .5, 1) " + wait + "ms, opacity .3s ease " + wait + "ms";
+      } else el.style.transition = "transform .42s cubic-bezier(.25, 1.15, .45, 1), opacity .3s ease";
+      el.style.transform = "rotate(" + th + "deg)";
       el.style.opacity = o;
       el.classList.toggle("is-off", o < .5);
     });
+  }
+  function dialCard(x, i) {
+    var ic = (T.menuArt || {})[x[0]], name = u(x[1]), no = pad(i + 1);
+    var cx = (C_R1 + C_R) / 2, img = 112, mid = (C_R0 + C_R1) / 2 + 8;
+    return '<a class="dial-item" href="#' + x[0] + '" data-k="' + x[0] + '" aria-label="' + esc(name) + '" style="z-index:' + (20 - i) + '">' +
+      '<span class="dial-card"><svg viewBox="0 0 ' + C_R + " " + C_H + '" width="' + C_R + '" height="' + C_H + '" aria-hidden="true">' +
+      '<path class="dial-bg" d="' + C_CARD + '"/>' +
+      (ic ? '<image href="' + esc(ic) + '" x="' + (cx - img / 2) + '" y="' + (C_MID - img / 2) + '" width="' + img + '" height="' + img +
+        '" preserveAspectRatio="xMidYMid slice" transform="rotate(90 ' + cx + " " + C_MID + ')"/>' : "") +
+      '<path class="dial-band" d="' + C_BAND + '"/>' +
+      // 字沿著卡片方向排；這一側是左上方，所以轉 180° 才不會倒過來
+      '<g transform="rotate(180 ' + mid + " " + C_MID + ')"><text class="dial-lb" x="' + mid + '" y="' + C_MID + '" text-anchor="middle" dominant-baseline="central">' +
+      '<tspan class="dial-no">' + no + "</tspan><tspan dx=\"7\">" + esc(name) + "</tspan></text></g>" +
+      '<path class="dial-edge" d="' + C_CARD + '"/></svg></span></a>';
   }
   function fillDial() {
     var cur = dialSection((location.hash || "").replace(/^#/, ""));
     if (dialLang !== lang) {
       dialLang = lang;
-      dial.querySelector(".dial-items").innerHTML = DIAL.map(function (x) {
-        var ic = (T.menuArt || {})[x[0]];
-        return '<a class="dial-item" href="#' + x[0] + '" data-k="' + x[0] + '"><span class="dial-ic">' + (ic ? '<img src="' + esc(ic) + '" alt="" decoding="async">' : "") + "</span>" +
-          '<span class="dial-lb">' + esc(u(x[1])) + "</span></a>";
-      }).join("");
-      dial.querySelector(".dial-cap small").textContent = "↻ " + u("dialHint");
-      dial.querySelector(".dial-items").setAttribute("aria-label", u("dial"));
+      var nav = dial.querySelector(".dial-items");
+      nav.innerHTML = DIAL.map(dialCard).join("");
+      nav.setAttribute("aria-label", u("dial"));
+      dial.querySelector(".dial-hint textPath").textContent = "↻ " + u("dialHint");
+      var len = 120;
+      try { len = dial.querySelector(".dial-hint text").getComputedTextLength() || len; } catch (err) {}
+      var half = (len / 2 + 12) / H_R * 180 / Math.PI; // 底帶剛好比字長一點
+      dial.querySelector(".dial-hint-band").setAttribute("d", arcPath(H_R, H_MID - half, H_MID + half));
       dialItems = [].slice.call(dial.querySelectorAll(".dial-item"));
+      dialItems.forEach(function (el) { el.style.clipPath = "path('" + C_CARD + "')"; });
     }
     dialItems.forEach(function (el) {
       var here = el.dataset.k === cur;
       el.classList.toggle("is-cur", here);
       if (here) el.setAttribute("aria-current", "page"); else el.removeAttribute("aria-current");
     });
-    // 目前這頁如果在後面幾個，打開時先轉到看得到它的位置
+    // 目前這頁如果在後面幾張，打開時先轉到看得到它的位置
     var ci = DIAL.map(function (x) { return x[0]; }).indexOf(cur);
     dRot = ci > 3 ? Math.min(D_MAX, (ci - 3) * D_STEP) : 0;
   }
+  function eachCard(fn) { dialItems.forEach(function (el, i) { fn(el.firstChild, i, el); }); }
   function openDial() {
     if (!dial || dialOpen) return;
-    clearTimeout(dialTimer);
     dialOpen = true;
     fillDial();
-    // 先把每個選項收在按鈕中心、往回轉 150°，再一起轉出去
-    dialItems.forEach(function (el, i) {
-      el.style.transition = "none";
-      el.style.transform = dialTf(dialTheta(i) - 150, 0, .3);
-      el.style.opacity = 0;
+    // 開始時所有卡疊在最上面那一格、縮在按鈕裡
+    eachCard(function (card, i, el) {
+      el.style.transition = card.style.transition = "none";
+      el.style.transform = "rotate(" + D_TOP + "deg)";
+      el.style.opacity = 1;
+      card.style.transform = "scale(.18)";
     });
     void dial.offsetWidth;
     dial.classList.add("is-open");
     dial.querySelector(".dial-items").removeAttribute("inert");
-    dial.querySelector(".dial-btn").setAttribute("aria-expanded", "true");
-    dial.querySelector(".dial-btn").setAttribute("aria-label", u("close"));
-    placeDial(true, true);
+    var b = dial.querySelector(".dial-btn");
+    b.setAttribute("aria-expanded", "true");
+    b.setAttribute("aria-label", u("close"));
+    // 先整疊從按鈕長出來，再一張接一張翻開
+    eachCard(function (card) {
+      card.style.transition = "transform .34s cubic-bezier(.2, .9, .3, 1.1)";
+      card.style.transform = "none";
+    });
+    placeDial("open");
   }
   function closeDial(now) {
     if (!dial || !dialOpen) return;
@@ -756,10 +800,15 @@
     b.setAttribute("aria-expanded", "false");
     b.setAttribute("aria-label", u("dial"));
     if (dial.contains(document.activeElement)) b.focus({ preventScroll: true });
-    dialItems.forEach(function (el, i) {
-      el.style.transition = now ? "none" : "transform .28s cubic-bezier(.5,0,.75,0), opacity .2s ease .06s";
-      el.style.transform = dialTf(dialTheta(i) - 90, 0, .3);
+    // 反過來：一張張收回最上面，再縮回按鈕
+    var n = dialItems.length;
+    eachCard(function (card, i, el) {
+      var wait = now ? 0 : (n - 1 - i) * 30;
+      el.style.transition = now ? "none" : "transform .3s cubic-bezier(.5, 0, .7, .4) " + wait + "ms, opacity .18s ease " + (wait + 220) + "ms";
+      el.style.transform = "rotate(" + D_TOP + "deg)";
       el.style.opacity = 0;
+      card.style.transition = now ? "none" : "transform .22s cubic-bezier(.5, 0, .75, 0) 200ms";
+      card.style.transform = "scale(.18)";
     });
   }
   // 封面和 00 頁不需要；其他頁都有
