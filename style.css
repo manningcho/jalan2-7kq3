@@ -369,7 +369,10 @@ button { font: inherit; color: inherit; }
 .phrases { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .ph { display: grid; grid-template-columns: 30px 1fr; column-gap: 8px; padding: 14px 0; border-bottom: 1px solid var(--line); }
 .ph-no { grid-row: 1 / span 3; font-family: var(--f-mono); font-size: 12px; color: var(--muted); padding-top: 8px; }
-.ph-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ph-top { display: block; min-width: 0; }
+.ph-end { white-space: nowrap; }  /* last word + speaker never split across lines */
+/* the speaker sits right after the last word; negative vertical margins keep it from making the line taller */
+.ph-id .say { margin: -6px 0 -6px 10px; vertical-align: middle; position: relative; top: -2px; }
 .say {
   flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--blue-soft); color: var(--blue);
   display: inline-flex; align-items: center; justify-content: center; cursor: pointer;

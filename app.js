@@ -547,8 +547,11 @@
       kicker([u("mItems") + " " + pad(T.phrases.length)]) +
       pageHead("belajar", "p-learn") + '<ul class="phrases">' + T.phrases.map(function (p, i) {
         var mean = lang === "en" ? p[2][1] : p[2][0];
-        return '<li class="ph r"><span class="ph-no">' + pad(i + 1) + '</span><span class="ph-top"><b class="ph-id">' + esc(p[0]) + "</b>" +
-          (canSpeak ? '<button type="button" class="say" data-say="' + esc(p[0]) + '" aria-label="' + esc(u("listen") + "：" + p[0]) + '">' + ICON.speaker + "</button>" : "") +
+        // 喇叭接在句子最後一個字後面、跟它黏在一起：長句斷成兩行時，喇叭也會緊跟在句尾，不會被擠到最右邊
+        var words = esc(p[0]).split(" "), last = words.pop();
+        var say = canSpeak ? '<button type="button" class="say" data-say="' + esc(p[0]) + '" aria-label="' + esc(u("listen") + "：" + p[0]) + '">' + ICON.speaker + "</button>" : "";
+        return '<li class="ph r"><span class="ph-no">' + pad(i + 1) + '</span><span class="ph-top"><b class="ph-id">' +
+          (words.length ? words.join(" ") + " " : "") + '<span class="ph-end">' + last + say + "</span></b>" +
           '</span><span class="ph-say">' + esc(p[1]) + '</span><span class="ph-mean">' + esc(mean) + "</span></li>";
       }).join("") + "</ul>" + footNotes([u("learnNote")].concat(canSpeak ? [u("tipSpeak")] : [], commonTips())) + "</main>";
   }
