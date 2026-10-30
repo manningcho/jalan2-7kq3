@@ -29,6 +29,8 @@
     countdown: ["還有 {n} 天出發", "{n} hari lagi berangkat", "{n} days to go"],
     coverSub: ["一家五口的印尼行程", "Perjalanan keluarga ke Indonesia", "A family trip to Indonesia"],
     madeFor: ["made for 桌桌's family", "made for 桌桌's family", "made for 桌桌's family"],
+    tipDial: ["其他頁右下角的 {ic} 點開可以轉轉看，快速跳到任何一頁", "Di halaman lain, ketuk {ic} di pojok kanan bawah lalu putar untuk pindah halaman", "On other pages, tap {ic} at the bottom right and spin to jump to any page"],
+    tipHome: ["用瀏覽器的「加入主畫面」，就能像 App 一樣一點就打開", "Pilih \"Tambahkan ke Layar Utama\" di browser agar bisa dibuka seperti aplikasi", "Use \"Add to Home Screen\" in your browser to open it like an app"],
     back: ["返回", "Kembali", "Back"],
     prefs: ["設定", "Pengaturan", "Settings"],
     langLabel: ["語言", "Bahasa", "Language"],
@@ -179,9 +181,11 @@
   function flowers() {
     return '<div class="flowers" aria-hidden="true"><span class="dash"></span>' + flower(4) + flower(8) + flower(4) + '<span class="dash"></span></div>';
   }
-  // 頁尾：小花分隔線下面放這一頁的灰色小字備註，像海報底部的說明
-  function footNotes(notes) {
-    return '<footer class="foot r">' + flowers() + notes.map(function (n) { return "<p>" + esc(n) + "</p>"; }).join("") + "</footer>";
+  // 頁尾：小花分隔線下面放這一頁的灰色小字備註，像海報底部的說明；字裡的 {ic} 換成迷你小花按鈕，sign 是最底下的金色落款
+  function footNotes(notes, sign) {
+    var ic = '<span class="foot-ic" role="img" aria-label="' + esc(u("dial")) + '">' + DIAL_IC + "</span>";
+    return '<footer class="foot r">' + flowers() + notes.map(function (n) { return "<p>" + esc(n).replace("{ic}", ic) + "</p>"; }).join("") +
+      (sign ? '<p class="sign">' + esc(sign) + "</p>" : "") + "</footer>";
   }
   function barcode(str) {
     var bars = "", x = 0;
@@ -301,7 +305,7 @@
         return '<a class="mrow r' + (x[1] === "today" ? " is-today" : "") + '" href="#' + x[0] + '">' +
           (ic ? '<span class="mrow-ic"><img class="fade" src="' + esc(ic) + '" alt="" loading="lazy" decoding="async"></span>' : SPARK) +
           '<span class="mrow-t"><b>' + esc(u(x[1])) + "</b><small>" + esc(x[3] || u(x[2])) + "</small></span>" + ICON.arrow + "</a>";
-      }).join("") + "</nav>" + flowers() + "</main>";
+      }).join("") + "</nav>" + footNotes([u("tipDial"), u("tipHome")], u("madeFor") + " · 2026") + "</main>";
   }
 
   // ---------- 日期列表 ----------

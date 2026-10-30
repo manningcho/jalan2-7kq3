@@ -112,9 +112,12 @@ button { font: inherit; color: inherit; }
 .flowers svg circle { fill: var(--paper); }
 .flowers .dash { flex: 1; max-width: 110px; border-top: 1px solid currentColor; opacity: .45; }
 /* page footer: the flower divider with the page's small grey notes under it, like the fine print at the foot of a poster */
-.foot { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
-.foot .flowers { align-self: stretch; margin-bottom: 8px; }
+.foot { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.foot .flowers { align-self: stretch; margin-bottom: 4px; }
 .foot p { margin: 0; max-width: 30em; font-size: 13px; line-height: 1.6; color: var(--muted); text-wrap: balance; }
+.foot-ic { display: inline-grid; place-items: center; width: 20px; height: 20px; margin: 0 2px; border-radius: 50%; vertical-align: -5px; background: var(--ink); color: var(--paper); }
+.foot-ic svg { width: 13px; height: 13px; }
+.foot .sign { margin-top: 6px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; color: var(--gold); }
 
 /* the giant word */
 .hw {
