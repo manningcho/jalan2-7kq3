@@ -115,8 +115,9 @@ button { font: inherit; color: inherit; }
 .foot { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
 .foot .flowers { align-self: stretch; margin-bottom: 4px; }
 .foot p { margin: 0; max-width: 30em; font-size: 13px; line-height: 1.6; color: var(--muted); text-wrap: balance; }
-.foot-ic { display: inline-grid; place-items: center; width: 20px; height: 20px; margin: 0 2px; border-radius: 50%; vertical-align: -5px; background: var(--ink); color: var(--paper); }
-.foot-ic svg { width: 13px; height: 13px; }
+/* mini copy of the floating flower button inside a sentence: centred on the text's middle (≈0.37em above the baseline), small enough not to stretch the line */
+.foot-ic { display: inline-block; width: 18px; height: 18px; margin: 0 2px; border-radius: 50%; vertical-align: -0.32em; background: var(--ink); color: var(--paper); }
+.foot-ic svg { display: block; width: 12px; height: 12px; margin: 3px; }
 .foot .sign { margin-top: 6px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; color: var(--gold); }
 
 /* the giant word */
