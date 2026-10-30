@@ -407,11 +407,12 @@ button { font: inherit; color: inherit; }
 
 /* ---------- quick menu: a floating button that opens like a fan of swatch cards you can spin ---------- */
 .has-dial .wrap { padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }  /* keep the pager clear of the button */
-.dial-scrim { position: fixed; inset: 0; z-index: 27; background: rgba(10, 12, 20, .46); opacity: 0; pointer-events: none; transition: opacity .25s ease; touch-action: none; }
+.jump-open .dial, :root:has(.driver) .dial { display: none; }
+.dial-scrim { position: fixed; inset: 0; z-index: 41; background: rgba(10, 12, 20, .46); opacity: 0; pointer-events: none; transition: opacity .25s ease; touch-action: none; }
 .dial.is-open .dial-scrim { opacity: 1; pointer-events: auto; }
 /* the hub is a zero-size point at the button's centre (the rivet); every card pivots around it */
 .dial-hub {
-  position: fixed; z-index: 28; width: 0; height: 0;
+  position: fixed; z-index: 42; width: 0; height: 0;
   right: calc(max(16px, env(safe-area-inset-right, 0px)) + 28px);
   bottom: calc(16px + env(safe-area-inset-bottom, 0px) + 28px);
   touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
@@ -434,11 +435,14 @@ button { font: inherit; color: inherit; }
 /* each card: a box whose left-centre is the rivet, rotated to its angle and clipped to its wedge (so taps only land on the card) */
 .dial-item {
   position: absolute; left: 0; top: -48px; width: 250px; height: 96px; display: block;
-  transform-origin: 0 50%; opacity: 0; text-decoration: none; -webkit-tap-highlight-color: transparent;
+  transform-origin: 0 50%; opacity: 0; text-decoration: none; will-change: transform, opacity;
+  pointer-events: none; -webkit-tap-highlight-color: transparent; -webkit-user-drag: none;
 }
-.dial-card { display: block; width: 100%; height: 100%; transform-origin: 0 50%; transform: scale(.18); }
-.dial-card svg { display: block; width: 100%; height: 100%; overflow: hidden; }
-.dial-bg { fill: var(--card); }
+.dial-item svg { display: block; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
+/* only the wedge itself takes taps, so neighbouring cards' boxes never steal them */
+.dial-hit { fill: transparent; pointer-events: fill; }
+.dial:not(.is-open) .dial-hit, .dial-item.is-off .dial-hit { pointer-events: none; }
+.dial-bg { fill: var(--blue-soft); }
 .dial-band { fill: var(--card); }
 .dial-edge { fill: none; stroke: var(--line); stroke-width: 2; }
 .dial-lb { font-family: var(--f-body); font-size: 15px; font-weight: 800; fill: var(--ink); }
@@ -447,7 +451,6 @@ button { font: inherit; color: inherit; }
 .dial-item.is-cur .dial-lb { fill: var(--gold); }
 .dial-item.is-cur .dial-no { fill: var(--gold); }
 .dial-item.is-cur .dial-edge { stroke: var(--gold); stroke-width: 5; }
-.dial-item.is-off, .dial-items[inert] .dial-item { pointer-events: none; }
 .dial-item:focus-visible { outline: none; }
 .dial-item:focus-visible .dial-edge { stroke: var(--blue); stroke-width: 6; }
 

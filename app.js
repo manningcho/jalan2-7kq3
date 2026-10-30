@@ -635,22 +635,21 @@
       '<nav class="dial-items" inert></nav>' +
       '<button type="button" class="dial-btn" aria-expanded="false">' + DIAL_IC + ICON.x + "</button></div>";
     document.body.appendChild(dial);
-    var hub = dial.querySelector(".dial-hub");
     dial.querySelector(".dial-btn").addEventListener("click", function () { dialOpen ? closeDial() : openDial(); });
     dial.querySelector(".dial-scrim").addEventListener("click", function () { closeDial(); });
-    dial.querySelector(".dial-scrim").addEventListener("wheel", function (e) { e.preventDefault(); }, { passive: false });
-    // 拖曳轉盤：手指移動超過 6px 才算轉，沒移動就照常點選
+    // 拖曳轉盤：在卡片或旁邊暗色背景上都可以拖；手指移動超過 6px 才算轉，沒移動就照常點選（點背景＝收起）
     var drag = null;
-    hub.addEventListener("pointerdown", function (e) {
+    dial.addEventListener("pointerdown", function (e) {
       if (!dialOpen || e.target.closest(".dial-btn") || (e.pointerType === "mouse" && e.button !== 0)) return;
+      if (e.pointerType === "mouse") e.preventDefault(); // 滑鼠按住拖時不要選到字
       drag = { id: e.pointerId, x: e.clientX, y: e.clientY, a: dialAngle(e), rot: dRot, moved: false, t: e.timeStamp, v: 0 };
     });
-    hub.addEventListener("pointermove", function (e) {
+    dial.addEventListener("pointermove", function (e) {
       if (!drag || e.pointerId !== drag.id) return;
       if (!drag.moved) {
         if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
         drag.moved = true;
-        try { hub.setPointerCapture(e.pointerId); } catch (err) {}
+        try { dial.setPointerCapture(e.pointerId); } catch (err) {}
         dial.classList.add("is-dragging");
       }
       var a = dialAngle(e), d = a - drag.a;
@@ -676,21 +675,31 @@
       }
       drag = null;
     }
-    hub.addEventListener("pointerup", endDrag);
-    hub.addEventListener("pointercancel", endDrag);
+    dial.addEventListener("pointerup", endDrag);
+    dial.addEventListener("pointercancel", endDrag);
     // 拖曳完放手不算點擊；點目前這頁就只收起來
-    hub.addEventListener("click", function (e) {
+    dial.addEventListener("click", function (e) {
       if (dial.dataset.justDragged) { e.preventDefault(); e.stopPropagation(); return; }
       var a = e.target.closest(".dial-item");
       if (!a) return;
       if (a.classList.contains("is-cur") && (a.getAttribute("href") === location.hash || a.dataset.k === "food-jkt")) { e.preventDefault(); closeDial(); }
     }, true);
-    // 電腦用滑鼠滾輪也能轉
-    hub.addEventListener("wheel", function (e) {
+    // 電腦用滑鼠拖：不讓瀏覽器把它當成「拖曳連結／圖片」搶走手勢
+    dial.addEventListener("dragstart", function (e) { e.preventDefault(); });
+    // 電腦用滾輪或觸控板也能轉：累積滾動量，每 60 單位轉一格，觸控板才不會一下轉到底
+    var wheelAcc = 0, wheelTimer = null;
+    dial.addEventListener("wheel", function (e) {
       if (!dialOpen) return;
       e.preventDefault();
-      if (Math.abs(e.deltaY) < 4) return;
-      turnDial(e.deltaY > 0 ? 1 : -1);
+      var dy = e.deltaMode === 1 ? e.deltaY * 30 : e.deltaY;
+      wheelAcc += dy;
+      clearTimeout(wheelTimer);
+      wheelTimer = setTimeout(function () { wheelAcc = 0; }, 220);
+      while (Math.abs(wheelAcc) >= 60) {
+        var dir = wheelAcc > 0 ? 1 : -1;
+        wheelAcc -= dir * 60;
+        turnDial(dir);
+      }
     }, { passive: false });
     // 用鍵盤移到看不到的卡片時，自動轉過去
     dial.querySelector(".dial-items").addEventListener("focusin", function (e) {
@@ -714,33 +723,36 @@
   function dialTheta(i) { return D_TOP - i * D_STEP + dRot; }
   // 看得到的範圍內完全不透明，超出範圍 30° 內慢慢淡掉
   function dialVis(th) { var out = Math.max(0, D_LO - 1 - th, th - D_TOP - 1); return Math.max(0, 1 - out / 30); }
-  // mode：drag 跟著手指不加動畫；snap 放手對齊；open 展開時一張接一張翻開
+  function dialTf(th, s) { return "rotate(" + th + "deg) scale(" + s + ")"; }
+  // mode：drag 跟著手指不加動畫；snap 放手對齊；open 展開時一張接一張從圓心轉出來
   function placeDial(mode) {
     dialItems.forEach(function (el, i) {
       var th = dialTheta(i), o = dialVis(th);
       if (mode === "drag") el.style.transition = "none";
       else if (mode === "open") {
-        var slot = Math.max(0, Math.round((D_TOP - th) / D_STEP)), wait = 160 + slot * 85;
-        el.style.transition = "transform .62s cubic-bezier(.3, 1.3, .5, 1) " + wait + "ms, opacity .3s ease " + wait + "ms";
+        var slot = Math.max(0, Math.round((D_TOP - th) / D_STEP)), wait = slot * 70;
+        el.style.transition = "transform .66s cubic-bezier(.22, 1.12, .36, 1) " + wait + "ms, opacity .22s ease " + wait + "ms";
       } else el.style.transition = "transform .42s cubic-bezier(.25, 1.15, .45, 1), opacity .3s ease";
-      el.style.transform = "rotate(" + th + "deg)";
+      el.style.transform = dialTf(th, 1);
       el.style.opacity = o;
       el.classList.toggle("is-off", o < .5);
     });
   }
+  // 一張卡：裁切在 SVG 裡面做（動畫時只需要搬動畫好的圖層），點擊只算在透明的扇形 .dial-hit 上
   function dialCard(x, i) {
     var ic = (T.menuArt || {})[x[0]], name = u(x[1]), no = pad(i + 1);
-    var cx = (C_R1 + C_R) / 2, img = 112, mid = (C_R0 + C_R1) / 2 + 8;
-    return '<a class="dial-item" href="#' + x[0] + '" data-k="' + x[0] + '" aria-label="' + esc(name) + '" style="z-index:' + (20 - i) + '">' +
-      '<span class="dial-card"><svg viewBox="0 0 ' + C_R + " " + C_H + '" width="' + C_R + '" height="' + C_H + '" aria-hidden="true">' +
+    var cx = (C_R1 + C_R) / 2, img = 112, start = C_R1 - 8;
+    return '<a class="dial-item" href="#' + x[0] + '" data-k="' + x[0] + '" aria-label="' + esc(name) + '" draggable="false" style="z-index:' + (20 - i) + '">' +
+      '<svg viewBox="0 0 ' + C_R + " " + C_H + '" width="' + C_R + '" height="' + C_H + '" aria-hidden="true">' +
+      '<clipPath id="dc' + i + '"><path d="' + C_CARD + '"/></clipPath><g clip-path="url(#dc' + i + ')">' +
       '<path class="dial-bg" d="' + C_CARD + '"/>' +
       (ic ? '<image href="' + esc(ic) + '" x="' + (cx - img / 2) + '" y="' + (C_MID - img / 2) + '" width="' + img + '" height="' + img +
         '" preserveAspectRatio="xMidYMid slice" transform="rotate(90 ' + cx + " " + C_MID + ')"/>' : "") +
-      '<path class="dial-band" d="' + C_BAND + '"/>' +
-      // 字沿著卡片方向排；這一側是左上方，所以轉 180° 才不會倒過來
-      '<g transform="rotate(180 ' + mid + " " + C_MID + ')"><text class="dial-lb" x="' + mid + '" y="' + C_MID + '" text-anchor="middle" dominant-baseline="central">' +
-      '<tspan class="dial-no">' + no + "</tspan><tspan dx=\"7\">" + esc(name) + "</tspan></text></g>" +
-      '<path class="dial-edge" d="' + C_CARD + '"/></svg></span></a>';
+      '<path class="dial-band" d="' + C_BAND + '"/><path class="dial-edge" d="' + C_CARD + '"/></g>' +
+      // 字從色塊交界處開始，沿著卡片往圓心排；這一側是左上方，所以轉 180° 才不會倒過來
+      '<text class="dial-lb" x="' + start + '" y="' + C_MID + '" text-anchor="start" dominant-baseline="central" transform="rotate(180 ' + start + " " + C_MID + ')">' +
+      '<tspan class="dial-no">' + no + "</tspan><tspan dx=\"7\">" + esc(name) + "</tspan></text>" +
+      '<path class="dial-hit" d="' + C_CARD + '"/></svg></a>';
   }
   function fillDial() {
     var cur = dialSection((location.hash || "").replace(/^#/, ""));
@@ -755,7 +767,7 @@
       var half = (len / 2 + 12) / H_R * 180 / Math.PI; // 底帶剛好比字長一點
       dial.querySelector(".dial-hint-band").setAttribute("d", arcPath(H_R, H_MID - half, H_MID + half));
       dialItems = [].slice.call(dial.querySelectorAll(".dial-item"));
-      dialItems.forEach(function (el) { el.style.clipPath = "path('" + C_CARD + "')"; });
+      dialItems.forEach(function (el, i) { el.style.transform = dialTf(D_TOP - i * D_STEP - 150, .12); }); // 收起的位置
     }
     dialItems.forEach(function (el) {
       var here = el.dataset.k === cur;
@@ -766,17 +778,15 @@
     var ci = DIAL.map(function (x) { return x[0]; }).indexOf(cur);
     dRot = ci > 3 ? Math.min(D_MAX, (ci - 3) * D_STEP) : 0;
   }
-  function eachCard(fn) { dialItems.forEach(function (el, i) { fn(el.firstChild, i, el); }); }
   function openDial() {
     if (!dial || dialOpen) return;
     dialOpen = true;
     fillDial();
-    // 開始時所有卡疊在最上面那一格、縮在按鈕裡
-    eachCard(function (card, i, el) {
-      el.style.transition = card.style.transition = "none";
-      el.style.transform = "rotate(" + D_TOP + "deg)";
-      el.style.opacity = 1;
-      card.style.transform = "scale(.18)";
+    // 每張卡先縮在按鈕裡、往回轉 150°，接著一張接一張一邊轉一邊長大到定位
+    dialItems.forEach(function (el, i) {
+      el.style.transition = "none";
+      el.style.transform = dialTf(dialTheta(i) - 150, .12);
+      el.style.opacity = 0;
     });
     void dial.offsetWidth;
     dial.classList.add("is-open");
@@ -784,11 +794,6 @@
     var b = dial.querySelector(".dial-btn");
     b.setAttribute("aria-expanded", "true");
     b.setAttribute("aria-label", u("close"));
-    // 先整疊從按鈕長出來，再一張接一張翻開
-    eachCard(function (card) {
-      card.style.transition = "transform .34s cubic-bezier(.2, .9, .3, 1.1)";
-      card.style.transform = "none";
-    });
     placeDial("open");
   }
   function closeDial(now) {
@@ -800,16 +805,32 @@
     b.setAttribute("aria-expanded", "false");
     b.setAttribute("aria-label", u("dial"));
     if (dial.contains(document.activeElement)) b.focus({ preventScroll: true });
-    // 反過來：一張張收回最上面，再縮回按鈕
+    // 反過來：轉回去、縮回按鈕
     var n = dialItems.length;
-    eachCard(function (card, i, el) {
-      var wait = now ? 0 : (n - 1 - i) * 30;
-      el.style.transition = now ? "none" : "transform .3s cubic-bezier(.5, 0, .7, .4) " + wait + "ms, opacity .18s ease " + (wait + 220) + "ms";
-      el.style.transform = "rotate(" + D_TOP + "deg)";
+    dialItems.forEach(function (el, i) {
+      var wait = now ? 0 : (n - 1 - i) * 25;
+      el.style.transition = now ? "none" : "transform .32s cubic-bezier(.5, 0, .75, 0) " + wait + "ms, opacity .2s ease " + (wait + 110) + "ms";
+      el.style.transform = dialTf(dialTheta(i) - 110, .12);
       el.style.opacity = 0;
-      card.style.transition = now ? "none" : "transform .22s cubic-bezier(.5, 0, .75, 0) 200ms";
-      card.style.transform = "scale(.18)";
     });
+  }
+  // 網頁閒下來時先把卡片建好、圖片下載並解碼，第一次打開才不會卡
+  var warmTimer = null;
+  function warmDial() {
+    if (!dial || dialOpen || dialLang === lang || warmTimer) return;
+    var go = function () {
+      warmTimer = null;
+      if (dialOpen || dialLang === lang) return;
+      fillDial();
+      DIAL.forEach(function (x) {
+        var src = (T.menuArt || {})[x[0]];
+        if (!src) return;
+        var im = new Image();
+        im.src = src;
+        if (im.decode) im.decode().catch(function () {});
+      });
+    };
+    warmTimer = window.requestIdleCallback ? requestIdleCallback(go, { timeout: 1500 }) : setTimeout(go, 600);
   }
   // 封面和 00 頁不需要；其他頁都有
   function syncDial(h) {
@@ -820,6 +841,7 @@
     closeDial(true);
     dial.hidden = !show;
     dial.querySelector(".dial-btn").setAttribute("aria-label", u("dial"));
+    if (show) warmDial();
   }
 
   // ---------- 給司機看 ----------
