@@ -422,10 +422,13 @@ button { font: inherit; color: inherit; }
   bottom: calc(16px + env(safe-area-inset-bottom, 0px) + 28px);
   touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
 }
+.dial.is-left .dial-hub { right: auto; left: calc(max(16px, env(safe-area-inset-left, 0px)) + 28px); }  /* left-handed: bottom-left corner */
+.dial.is-moving .dial-btn { cursor: grabbing; transform: scale(1.08); box-shadow: 0 14px 30px rgba(10, 14, 25, .38); }
 .dial-btn {
   position: absolute; z-index: 30; left: -28px; top: -28px; width: 56px; height: 56px; padding: 0; border: 0; border-radius: 50%;
   display: grid; place-items: center; cursor: pointer; background: var(--ink); color: var(--paper);
   box-shadow: 0 8px 22px rgba(10, 14, 25, .3); -webkit-tap-highlight-color: transparent;
+  transition: transform .2s ease, box-shadow .2s ease;
 }
 .dial-btn svg { grid-area: 1 / 1; width: 26px; height: 26px; transition: transform .45s cubic-bezier(.2, .8, .2, 1), opacity .25s ease; }
 .dial-btn svg + svg { width: 22px; height: 22px; opacity: 0; transform: rotate(-90deg) scale(.5); }
@@ -435,7 +438,7 @@ button { font: inherit; color: inherit; }
 .dial-hint { position: absolute; left: -300px; top: -300px; width: 600px; height: 600px; overflow: visible; pointer-events: none; opacity: 0; transition: opacity .2s ease; }
 .dial.is-open .dial-hint { opacity: 1; transition: opacity .4s ease .65s; }
 .dial-hint-band { fill: none; stroke: rgba(10, 12, 20, .78); stroke-width: 26; stroke-linecap: round; }
-.dial-hint text { fill: #fff; font-size: 13px; font-weight: 700; letter-spacing: .04em; dominant-baseline: central; }
+.dial-hint text { fill: #fff; font-size: 13px; font-weight: 700; letter-spacing: .04em; }
 .dial-items { position: absolute; left: 0; top: 0; }
 /* each card: a box whose left-centre is the rivet, rotated to its angle and clipped to its wedge (so taps only land on the card) */
 .dial-item {

@@ -621,6 +621,10 @@
   }
   var C_CARD = sector(C_R0, C_R), C_BAND = sector(C_R0, C_R1);
   var dial = null, dialItems = [], dialOpen = false, dialLang = null, dRot = 0, openToken = 0, cardP = [], wrapTimer = null;
+  // 按鈕可以拖到左下角（左撇子用左手大拇指）。左邊時整個轉盤左右鏡像：程式裡的角度照右邊算，最後才換成螢幕角度
+  var dialLeft = false;
+  try { dialLeft = localStorage.getItem("trip-dial-side") === "left"; } catch (e) {}
+  function scrAng(th) { return dialLeft ? 180 - th : th; }
   var DIAL_IC = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor"><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(90 12 12)"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(180 12 12)"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(270 12 12)"/></g><circle cx="12" cy="12" r="2.3" fill="var(--ink)"/></svg>';
   function dialSection(h) {
     if (/^d12\d\d$/.test(h) || h === "days") return "days";
@@ -628,22 +632,74 @@
     return h;
   }
   // 卡片外緣再往外一點的弧線，提示可以轉（字印在一條深色弧形底帶上）
-  var H_R = C_R + 22, H_MID = 226;
+  var H_R = C_R + 22, H_MID = 226, H_TEXT = H_R - 4.6; // 字的基線往內 0.35em，字身才會正好在底帶中間
   function arcPath(r, from, to) {
     var a = from * Math.PI / 180, b = to * Math.PI / 180, f = function (n) { return Math.round(n * 10) / 10; };
     return "M" + f(r * Math.cos(a)) + " " + f(r * Math.sin(a)) + "A" + r + " " + r + " 0 0 1 " + f(r * Math.cos(b)) + " " + f(r * Math.sin(b));
   }
-  function hintArc() { return arcPath(H_R, H_MID - 40, H_MID + 40); }
+  // 弧線都順時針畫（字頭朝外、不會倒過來），左邊時中心角換到右上方
+  function hintMid() { var m = scrAng(H_MID); return (m % 360 + 360) % 360; }
+  function hintArc() { return arcPath(H_TEXT, hintMid() - 40, hintMid() + 40); }
+  function sizeHint() {
+    var len = 120;
+    try { len = dial.querySelector(".dial-hint text").getComputedTextLength() || len; } catch (err) {}
+    var half = (len / 2 + 12) / H_R * 180 / Math.PI; // 底帶剛好比字長一點
+    dial.querySelector("#dialArc").setAttribute("d", hintArc());
+    dial.querySelector(".dial-hint-band").setAttribute("d", arcPath(H_R, hintMid() - half, hintMid() + half));
+  }
   function buildDial() {
     dial = document.createElement("div");
     dial.className = "dial";
     dial.innerHTML = '<div class="dial-scrim" aria-hidden="true"></div><div class="dial-hub">' +
       '<svg class="dial-hint" viewBox="-300 -300 600 600" aria-hidden="true"><path id="dialArc" d="' + hintArc() + '" fill="none"/><path class="dial-hint-band" d=""/>' +
-      '<text><textPath href="#dialArc" startOffset="50%" text-anchor="middle"></textPath></text></svg>' +
+      '<text text-anchor="middle"><textPath href="#dialArc" startOffset="50%" text-anchor="middle"></textPath></text></svg>' +
       '<nav class="dial-items" inert></nav>' +
       '<button type="button" class="dial-btn" aria-expanded="false">' + DIAL_IC + ICON.x + "</button></div>";
+    if (dialLeft) dial.classList.add("is-left");
     document.body.appendChild(dial);
-    dial.querySelector(".dial-btn").addEventListener("click", function () { dialOpen ? closeDial() : openDial(); });
+    var btn = dial.querySelector(".dial-btn"), hub = dial.querySelector(".dial-hub");
+    btn.addEventListener("click", function () {
+      if (btn.dataset.moved) return; // 剛拖完按鈕，不算點擊
+      dialOpen ? closeDial() : openDial();
+    });
+    // 按住小花拖到另一邊，放開吸到最近的下角，記在這支手機上
+    var mv = null;
+    btn.addEventListener("pointerdown", function (e) {
+      if (dialOpen || (e.pointerType === "mouse" && e.button !== 0)) return;
+      mv = { id: e.pointerId, x: e.clientX, y: e.clientY, on: false };
+    });
+    btn.addEventListener("pointermove", function (e) {
+      if (!mv || e.pointerId !== mv.id) return;
+      var dx = e.clientX - mv.x, dy = e.clientY - mv.y;
+      if (!mv.on) {
+        if (Math.hypot(dx, dy) < 8) return;
+        mv.on = true;
+        try { btn.setPointerCapture(e.pointerId); } catch (err) {}
+        dial.classList.add("is-moving");
+      }
+      hub.style.transition = "none";
+      hub.style.transform = "translate(" + dx + "px," + dy + "px)";
+    });
+    function endMove(e) {
+      if (!mv || e.pointerId !== mv.id) return;
+      if (mv.on) {
+        var before = btn.getBoundingClientRect();
+        setDialSide(before.left + before.width / 2 < window.innerWidth / 2);
+        hub.style.transform = "none";
+        var after = btn.getBoundingClientRect();
+        // 從放手的位置滑到新的角落
+        hub.style.transform = "translate(" + (before.left - after.left) + "px," + (before.top - after.top) + "px)";
+        void hub.offsetWidth;
+        hub.style.transition = "transform .38s cubic-bezier(.2, .9, .3, 1.15)";
+        hub.style.transform = "none";
+        dial.classList.remove("is-moving");
+        btn.dataset.moved = "1";
+        setTimeout(function () { delete btn.dataset.moved; }, 0);
+      }
+      mv = null;
+    }
+    btn.addEventListener("pointerup", endMove);
+    btn.addEventListener("pointercancel", endMove);
     dial.querySelector(".dial-scrim").addEventListener("click", function () { closeDial(); });
     // 拖曳轉盤：在卡片或旁邊暗色背景上都可以拖；手指移動超過 6px 才算轉，沒移動就照常點選（點背景＝收起）
     var drag = null;
@@ -721,15 +777,15 @@
   function turnDial(dir) { dRot += dir * D_STEP; placeDial("snap"); }
   function dialAngle(e) {
     var b = dial.querySelector(".dial-btn").getBoundingClientRect();
-    var a = Math.atan2(e.clientY - (b.top + b.height / 2), e.clientX - (b.left + b.width / 2)) * 180 / Math.PI;
-    return a < 0 ? a + 360 : a;
+    var a = scrAng(Math.atan2(e.clientY - (b.top + b.height / 2), e.clientX - (b.left + b.width / 2)) * 180 / Math.PI);
+    return (a % 360 + 360) % 360;
   }
   // p 換回 -1.5～5.5 之間（一圈 7 格）
   function wrapP(p) { return ((p + 1.5) % D_N + D_N) % D_N - 1.5; }
   function pTheta(p) { return D_TOP - p * D_STEP; }
   // 看得到的範圍內完全不透明，超出範圍 30° 內慢慢淡掉
   function dialVis(th) { var out = Math.max(0, D_LO - 1 - th, th - D_TOP - 1); return Math.max(0, 1 - out / 30); }
-  function dialTf(th, s) { return "rotate(" + th + "deg) scale(" + s + ")"; }
+  function dialTf(th, s) { return "rotate(" + scrAng(th) + "deg) scale(" + s + ")"; }
   // mode：drag 跟著手指不加動畫；snap 放手對齊；open 展開時一張接一張從圓心轉出來
   function inRange(p) { return p >= -1.5 && p < D_N - 1.5; }
   function placeDial(mode) {
@@ -820,7 +876,7 @@
     dialItems.forEach(function (el, i) {
       var x = DIAL[i], cur = el.classList.contains("is-cur"), src = (T.menuArt || {})[x[0]], im = src ? dialImg(src) : null;
       var ready = !!(im && im.ready), fonts = !!(dialFonts && dialFonts.ready);
-      var key = [pk, cur, dialLang, dpr, ready, fonts].join("|");
+      var key = [pk, cur, dialLang, dpr, ready, fonts, dialLeft].join("|");
       if (cardKeys[i] === key) return; // 沒變就不重畫
       cardKeys[i] = key;
       var cv = el.querySelector("canvas"), c = cv.getContext("2d");
@@ -841,16 +897,20 @@
       c.strokeStyle = cur ? p.gold : p.line;
       c.stroke(cardPath);
       c.restore();
-      // 字從色塊交界處開始，沿著卡片往圓心排；這一側是左上方，所以轉 180° 才不會倒過來
-      var no = pad(i + 1);
+      // 字貼著色塊交界處、沿著卡片排。按鈕在右邊時卡片朝左上，轉 180° 往圓心讀才不會倒過來；
+      // 在左邊時卡片朝右上，直接往外讀，字尾對齊交界處
+      var no = pad(i + 1), name = u(x[1]), fNo = "600 11px " + p.mono, fName = "800 15px " + p.body;
       c.save();
-      c.translate(C_R1 - 8, C_MID); c.rotate(Math.PI);
+      c.translate(C_R1 - 8, C_MID);
       c.textBaseline = "middle"; c.textAlign = "left";
-      c.font = "600 11px " + p.mono; c.fillStyle = cur ? p.gold : p.muted;
-      c.fillText(no, 0, 0);
-      var w = c.measureText(no).width + 7;
-      c.font = "800 15px " + p.body; c.fillStyle = cur ? p.gold : p.ink;
-      c.fillText(u(x[1]), w, 0);
+      c.font = fNo; var wNo = c.measureText(no).width + 7;
+      c.font = fName; var wName = c.measureText(name).width;
+      var x0 = 0;
+      if (dialLeft) x0 = -(wNo + wName); else c.rotate(Math.PI);
+      c.font = fNo; c.fillStyle = cur ? p.gold : p.muted;
+      c.fillText(no, x0, 0);
+      c.font = fName; c.fillStyle = cur ? p.gold : p.ink;
+      c.fillText(name, x0 + wNo, 0);
       c.restore();
     });
   }
@@ -862,10 +922,7 @@
       nav.innerHTML = DIAL.map(dialCard).join("");
       nav.setAttribute("aria-label", u("dial"));
       dial.querySelector(".dial-hint textPath").textContent = "↻ " + u("dialHint");
-      var len = 120;
-      try { len = dial.querySelector(".dial-hint text").getComputedTextLength() || len; } catch (err) {}
-      var half = (len / 2 + 12) / H_R * 180 / Math.PI; // 底帶剛好比字長一點
-      dial.querySelector(".dial-hint-band").setAttribute("d", arcPath(H_R, H_MID - half, H_MID + half));
+      sizeHint();
       dialItems = [].slice.call(dial.querySelectorAll(".dial-item"));
       dialItems.forEach(function (el, i) { el.style.transform = dialTf(D_TOP - i * D_STEP - 150, .12); }); // 收起的位置
       cardKeys = [];
@@ -922,6 +979,14 @@
       el.style.transform = dialTf(pTheta(cardP[i]) - 110, .12);
       el.style.opacity = 0;
     });
+  }
+  function setDialSide(left) {
+    dialLeft = left;
+    try { localStorage.setItem("trip-dial-side", left ? "left" : "right"); } catch (e) {}
+    if (!dial) return;
+    dial.classList.toggle("is-left", left);
+    sizeHint();
+    drawCards(); // 字的方向跟著換
   }
   // 網頁閒下來時先把卡片建好、圖片下載並解碼，第一次打開才不會卡
   var warmTimer = null;
