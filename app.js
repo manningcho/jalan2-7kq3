@@ -30,6 +30,7 @@
     coverSub: ["一家五口的印尼行程", "Perjalanan keluarga ke Indonesia", "A family trip to Indonesia"],
     madeFor: ["made for 桌桌's family", "made for 桌桌's family", "made for 桌桌's family"],
     tipDial: ["其他頁右下角的 {ic} 點開可以轉轉看，快速跳到任何一頁", "Di halaman lain, ketuk {ic} di pojok kanan bawah lalu putar untuk pindah halaman", "On other pages, tap {ic} at the bottom right and spin to jump to any page"],
+    foodMore: ["還有想吃的店，再丟出來，之後幫你加進清單", "Ada tempat makan lain yang ingin dicoba? Kabari saja, nanti kami tambahkan ke daftar", "Want to try somewhere else? Just let us know and we'll add it to the list"],
     tipHome: ["用瀏覽器的「加入主畫面」，就能像 App 一樣一點就打開", "Pilih \"Tambahkan ke Layar Utama\" di browser agar bisa dibuka seperti aplikasi", "Use \"Add to Home Screen\" in your browser to open it like an app"],
     back: ["返回", "Kembali", "Back"],
     prefs: ["設定", "Pengaturan", "Settings"],
@@ -420,7 +421,7 @@
     }).join("");
     return bar("No.#02", "menu") + '<main class="wrap">' +
       '<div class="keep">' + kicker([L(T.cities[cur.city]), u("mPlaces") + " " + pad(count)]) +
-      '<section class="tword r">' + word("makan") + "</section>" + tabs + "</div>" + foodBand(cur.id) + groups + "</main>";
+      '<section class="tword r">' + word("makan") + "</section>" + tabs + "</div>" + foodBand(cur.id) + groups + footNotes([u("foodMore")]) + "</main>";
   }
 
   // ---------- 住宿 ----------
