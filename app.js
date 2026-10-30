@@ -397,8 +397,9 @@
       kicker([pad(i + 1) + "/18", dm(d) + " " + wk(d), L(T.cities[d.city]), tzCode(d.city)]) +
       hero(d.word, d.art) +
       '<section class="day-head r"><h1 class="dh-title">' + esc(L(d.title)) + "</h1>" +
-      '<p class="dh-tz">' + SPARK + esc(tzNote(d.city)) + "</p></section>" + flowers() +
-      '<ol class="flow">' + items + "</ol>" + pager + "</main>";
+      '<p class="dh-tz">' + SPARK + esc(tzNote(d.city)) + "</p></section>" +
+      // 小花線只當「這一頁到底了」的記號：放在今天最後一個行程下面、換日按鈕上面
+      '<ol class="flow">' + items + "</ol>" + flowers() + pager + "</main>";
   }
 
   // ---------- 餐廳 ----------
