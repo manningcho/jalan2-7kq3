@@ -190,6 +190,23 @@
   };
 
   window.ART = {
+    // 封面輪播：同一個缺角圖框裡放好幾張圖，左右排開（每張寬 360），由 app.js 移動 .cv-slide
+    slides: function (names, label) {
+      var id = "a" + (++uid), defs = '<clipPath id="c' + id + '"><path d="' + FRAME + '"/></clipPath>', body = "";
+      names.forEach(function (name, i) {
+        var photo = (window.TRIP && TRIP.photos || {})[name];
+        if (!photo) return;
+        var top = photo.top || C.skyTop, lq = (window.LQ || {})[photo.src], gid = id + "g" + i;
+        defs += '<linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + top + '"/><stop offset=".35" stop-color="' + top + '" stop-opacity=".55"/><stop offset="1" stop-color="' + top + '" stop-opacity="0"/></linearGradient>';
+        if (lq && i === 0) defs += '<filter id="' + id + 'b" x="0" y="0" width="1" height="1"><feGaussianBlur stdDeviation="7" edgeMode="duplicate"/></filter>';
+        body += '<g class="cv-slide" data-i="' + i + '" style="transform:translateX(' + (i ? 360 : 0) + 'px)">' +
+          (lq && i === 0 ? '<image href="' + lq + '" width="360" height="260" preserveAspectRatio="xMidYMid slice" filter="url(#' + id + 'b)"/>' : "") +
+          '<image class="fade" href="' + photo.src + '" width="360" height="260" preserveAspectRatio="xMidYMid slice"/>' +
+          '<rect width="360" height="110" fill="url(#' + gid + ')"/></g>';
+      });
+      return '<svg class="art" viewBox="0 0 360 260" role="img" aria-label="' + (label || "") + '" preserveAspectRatio="xMidYMax slice"><defs>' + defs + "</defs>" +
+        '<g clip-path="url(#c' + id + ')"><rect width="360" height="260" fill="' + C.skyTop + '"/>' + body + "</g></svg>";
+    },
     // 大字的顏色：有插畫就用插畫自己的天空色，字和天空才接得起來
     topColor: function (name) { var ph = (window.TRIP && TRIP.photos || {})[name]; return (ph && ph.top) || (PAL[name] || [C.skyTop])[0]; },
     svg: function (name, label, plain) {

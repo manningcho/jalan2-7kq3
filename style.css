@@ -541,3 +541,42 @@ button { font: inherit; color: inherit; }
   .pager a { padding: 0 12px; min-width: 0; }   /* "Sebelumnya" fits next to the calendar button */
   .pager a > svg { display: none; }
 }
+
+/* ---------- cover carousel: pictures slide inside the fixed notched frame ---------- */
+.hero .hw { transition: color .6s ease; }
+.cv { cursor: pointer; touch-action: pan-y; -webkit-tap-highlight-color: transparent; }
+.cv:focus-visible { outline: 3px solid var(--blue); outline-offset: 4px; border-radius: 20px; }
+.cv-slide { will-change: transform; }
+.cv-dots { position: absolute; left: 0; right: 0; bottom: 14px; display: flex; justify-content: center; gap: 6px; pointer-events: none; }
+.cv-dots i { width: 6px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .5); transition: width .35s ease, background .35s ease; }
+.cv-dots i.is-on { width: 18px; background: #fff; }
+
+/* ---------- wallpaper viewer ---------- */
+.wp-open { overflow: hidden; }
+.wp { position: fixed; inset: 0; z-index: 45; display: flex; align-items: center; justify-content: center; touch-action: none; }
+.wp-scrim { position: absolute; inset: 0; background: rgba(8, 10, 18, .82); }
+.motion .wp-scrim { animation: fadein .25s ease both; }
+.wp-fig { position: relative; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.wp-img {
+  display: block; height: min(calc(100vh - 130px), calc((100vw - 40px) * 2556 / 1179)); width: auto; aspect-ratio: 1179 / 2556;
+  border-radius: 22px; background: #3e5689; box-shadow: 0 20px 50px rgba(0, 0, 0, .45); -webkit-touch-callout: default;
+}
+.motion .wp-img { animation: wpin .35s cubic-bezier(.2, .8, .3, 1) both; }
+.motion .wp-img.is-in-r { animation: wpr .35s cubic-bezier(.2, .8, .3, 1) both; }
+.motion .wp-img.is-in-l { animation: wpl .35s cubic-bezier(.2, .8, .3, 1) both; }
+@keyframes wpin { from { opacity: 0; transform: scale(.94); } }
+@keyframes wpr { from { opacity: 0; transform: translateX(40px); } }
+@keyframes wpl { from { opacity: 0; transform: translateX(-40px); } }
+.wp-hint { display: flex; gap: 10px; align-items: baseline; font-size: 13px; color: rgba(255, 255, 255, .78); text-align: center; padding: 0 16px; }
+.wp-hint b { font-family: var(--f-mono); font-weight: 600; font-size: 12px; color: rgba(255, 255, 255, .55); }
+.wp-x, .wp-nav {
+  position: absolute; z-index: 1; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer; background: rgba(12, 14, 24, .45); color: #fff;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  -webkit-tap-highlight-color: transparent;
+}
+.wp-x svg, .wp-nav svg { width: 20px; height: 20px; }
+.wp-x { top: calc(14px + env(safe-area-inset-top, 0px)); right: max(14px, env(safe-area-inset-right, 0px)); }
+.wp-nav { top: 50%; margin-top: -22px; }
+.wp-prev { left: max(10px, env(safe-area-inset-left, 0px)); }
+.wp-next { right: max(10px, env(safe-area-inset-right, 0px)); }

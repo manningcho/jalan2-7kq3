@@ -38,6 +38,12 @@
     tipCopy: ["電話號碼旁的「複製」可以直接複製號碼", "Ketuk \"Salin\" untuk menyalin nomor", "Tap \"Copy\" to copy a number"],
     tipSpeak: ["點 {spk} 可以聽印尼文怎麼唸，再點一次停止", "Ketuk {spk} untuk mendengar cara bacanya", "Tap {spk} to hear how it sounds"],
     foodMore: ["還有想去的店，再丟出來，之後幫你加進清單", "Ada tempat lain yang ingin dikunjungi? Kabari saja, nanti kami tambahkan ke daftar", "Want to go somewhere else? Just let us know and we'll add it to the list"],
+    tipWall: ["封面的圖可以左右滑，點開還能存成手機桌布", "Gambar sampul bisa digeser; ketuk untuk menyimpan wallpaper", "Swipe the cover picture, tap it to save a phone wallpaper"],
+    wpTitle: ["手機桌布", "Wallpaper HP", "Phone wallpapers"],
+    wpHint: ["長按圖片，存成手機桌布", "Tekan lama gambar untuk menyimpan wallpaper", "Press and hold the picture to save it as a wallpaper"],
+    wpHintDesk: ["按右鍵「另存圖片」，存成桌布", "Klik kanan lalu \"Simpan gambar\"", "Right-click and choose \"Save image\""],
+    wpPrev: ["上一張", "Sebelumnya", "Previous"],
+    wpNext: ["下一張", "Berikutnya", "Next"],
     tipHome: ["用瀏覽器的「加入主畫面」，就能像 App 一樣一點就打開", "Pilih \"Tambahkan ke Layar Utama\" di browser agar bisa dibuka seperti aplikasi", "Use \"Add to Home Screen\" in your browser to open it like an app"],
     back: ["返回", "Kembali", "Back"],
     prefs: ["設定", "Pengaturan", "Settings"],
@@ -279,11 +285,11 @@
     if (td) extra = '<a class="btn btn-line" href="#' + dayId(td) + '">' + esc(u("today")) + ICON.arrow + "</a>";
     else if (t < T.start) extra = '<p class="count">' + SPARK + esc(u("countdown").replace("{n}", Math.round((parseDate(T.start) - parseDate(t)) / 86400000))) + "</p>";
     var route = ["tw", "jkt", "pwt", "yk", "bali", "tw"].map(function (c) { return "<li>" + esc(L(T.cities[c])) + "</li>"; }).join("");
-    var over = '<p class="by">' + esc(u("madeFor")) + "</p>" + flowers();
+
     return '<main class="wrap cover">' +
       '<div class="cover-bar r">' + STAR + prefs() + "</div>" +
       meta([[u("mTrip"), u("indonesia")], [u("mDate"), "14–31.12"], [u("mDays"), "18"], [u("mNo"), "#2026"]]) +
-      hero("jalan²", "stupa", over) +
+      coverHero() +
       '<section class="cover-body r"><p class="vert' + (lang === "zh" ? "" : " is-latin") + '" aria-hidden="true">' + esc(u("vert")) + "</p>" +
       '<div class="cover-main"><h1 class="cover-title">' + esc(L(T.title)) + "</h1>" +
       '<p class="cover-sub">' + esc(u("coverSub")) + "</p>" +
@@ -291,6 +297,123 @@
       '<div class="cover-actions"><a class="btn btn-ink" href="#menu">' + esc(u("open")) + ICON.arrow + "</a>" + extra + "</div></div></section>" +
       '<footer class="pfoot r"><span>2026</span><span>Jakarta · Purwokerto · Yogyakarta · Bali</span><span>' + SPARK + "</span></footer>" +
       "</main>";
+  }
+
+  // ---------- 封面輪播：同一個圖框裡左右滑的插畫，點開可以存成手機桌布 ----------
+  function coverHero() {
+    var cs = T.covers || [{ art: "stupa" }];
+    var dots = cs.length > 1 ? '<div class="cv-dots" aria-hidden="true">' + cs.map(function (c, i) { return "<i" + (i ? "" : ' class="is-on"') + "></i>"; }).join("") + "</div>" : "";
+    return '<section class="hero r">' + word("jalan²", ART.topColor(cs[0].art)) +
+      '<div class="hero-art cv" data-cv="1" role="button" tabindex="0" aria-label="' + esc(u("wpTitle")) + '">' +
+      ART.slides(cs.map(function (c) { return c.art; }), "jalan²") +
+      '<div class="hero-over"><p class="by" data-cv-tag>' + esc(cs[0].tag || u("madeFor")) + "</p>" + flowers() + "</div>" + dots + "</div></section>";
+  }
+  var cvCur = 0, cvPos = [], cvTimer = null, cvDrag = null, cvMoved = false;
+  // 每張的位置 o：0＝正在看的，±1＝左右鄰居；超過一圈就從另一邊接回來
+  function cvOffset(i, cur, n) { var o = ((i - cur) % n + n) % n; return o > n / 2 ? o - n : o; }
+  function cvShow(next, drag) {
+    var root = app.querySelector("[data-cv]");
+    if (!root) return;
+    var slides = root.querySelectorAll(".cv-slide"), n = slides.length;
+    if (!n) return;
+    var prev = cvCur;
+    cvCur = ((next % n) + n) % n;
+    slides.forEach(function (g, i) {
+      var o = cvOffset(i, cvCur, n), was = cvPos[i];
+      var anim = drag == null && was != null && Math.abs(o) <= 1 && Math.abs(was) <= 1;
+      g.style.transition = anim ? "transform .6s cubic-bezier(.3, .8, .3, 1)" : "none";
+      g.style.transform = "translateX(" + (o * 360 + (drag || 0)) + "px)";
+      cvPos[i] = o;
+    });
+    var c = T.covers[cvCur], w = app.querySelector(".hero .hw"), tag = root.querySelector("[data-cv-tag]");
+    if (w) w.style.color = ART.topColor(c.art); // 大字跟著換成這張的天空色
+    if (tag && prev !== cvCur) tag.textContent = c.tag || u("madeFor");
+    root.querySelectorAll(".cv-dots i").forEach(function (d, i) { d.classList.toggle("is-on", i === cvCur); });
+  }
+  function cvStart() {
+    clearInterval(cvTimer);
+    if (!app.querySelector("[data-cv]") || !T.covers || T.covers.length < 2) return;
+    cvTimer = setInterval(function () { if (!document.hidden && !wpOpen && !cvDrag) cvShow(cvCur + 1); }, 5000);
+  }
+  // 手指左右滑：上下滑照常捲動頁面
+  document.addEventListener("pointerdown", function (e) {
+    var r = e.target.closest && e.target.closest("[data-cv]");
+    if (!r || (e.pointerType === "mouse" && e.button !== 0)) return;
+    cvDrag = { id: e.pointerId, x: e.clientX, y: e.clientY, on: false, w: r.getBoundingClientRect().width };
+  });
+  document.addEventListener("pointermove", function (e) {
+    if (!cvDrag || e.pointerId !== cvDrag.id) return;
+    var dx = e.clientX - cvDrag.x, dy = e.clientY - cvDrag.y;
+    if (!cvDrag.on) {
+      if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { cvDrag = null; return; }
+      if (Math.abs(dx) < 8) return;
+      cvDrag.on = true;
+    }
+    cvShow(cvCur, dx * 360 / cvDrag.w);
+  });
+  function cvEnd(e) {
+    if (!cvDrag || e.pointerId !== cvDrag.id) return;
+    var d = cvDrag; cvDrag = null;
+    if (!d.on) return;
+    var dx = (e.clientX || d.x) - d.x;
+    cvShow(cvCur + (dx < -d.w * .18 ? 1 : dx > d.w * .18 ? -1 : 0));
+    cvStart(); // 手動換過就重新計時 5 秒
+    cvMoved = true;
+    setTimeout(function () { cvMoved = false; }, 0);
+  }
+  document.addEventListener("pointerup", cvEnd);
+  document.addEventListener("pointercancel", cvEnd);
+
+  // ---------- 桌布浮層：暗色遮罩、右上 X、左右換張、長按存圖 ----------
+  var wpOpen = false, wpIdx = 0;
+  function walls() { return (T.covers || []).filter(function (c) { return c.wall; }); }
+  function openWall(i) {
+    closeWall();
+    var ws = walls();
+    if (!ws.length) return;
+    wpIdx = ((i % ws.length) + ws.length) % ws.length;
+    var desk = window.matchMedia && matchMedia("(hover: hover) and (pointer: fine)").matches;
+    var ov = document.createElement("div");
+    ov.className = "wp";
+    ov.setAttribute("role", "dialog");
+    ov.setAttribute("aria-modal", "true");
+    ov.setAttribute("aria-label", u("wpTitle"));
+    ov.innerHTML = '<div class="wp-scrim" data-wp-close="1"></div>' +
+      '<figure class="wp-fig"><img class="wp-img" alt=""><figcaption class="wp-hint"><span>' + esc(u(desk ? "wpHintDesk" : "wpHint")) + '</span><b class="wp-n"></b></figcaption></figure>' +
+      '<button type="button" class="wp-nav wp-prev" data-wp-step="-1" aria-label="' + esc(u("wpPrev")) + '">' + ICON.left + "</button>" +
+      '<button type="button" class="wp-nav wp-next" data-wp-step="1" aria-label="' + esc(u("wpNext")) + '">' + ICON.chev + "</button>" +
+      '<button type="button" class="wp-x" data-wp-close="1" aria-label="' + esc(u("close")) + '">' + ICON.x + "</button>";
+    document.body.appendChild(ov);
+    document.documentElement.classList.add("wp-open");
+    wpOpen = true;
+    wallShow(0);
+    ov.querySelector(".wp-x").focus({ preventScroll: true });
+    // 在浮層裡左右滑也能換張
+    var sw = null;
+    ov.addEventListener("pointerdown", function (e) { if (!e.target.closest("button")) sw = { id: e.pointerId, x: e.clientX, y: e.clientY }; });
+    ov.addEventListener("pointerup", function (e) {
+      if (!sw || e.pointerId !== sw.id) return;
+      var dx = e.clientX - sw.x, dy = e.clientY - sw.y; sw = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { wallShow(dx < 0 ? 1 : -1); ov.dataset.swiped = "1"; setTimeout(function () { delete ov.dataset.swiped; }, 0); }
+    });
+  }
+  function wallShow(dir) {
+    var ov = document.querySelector(".wp"), ws = walls();
+    if (!ov || !ws.length) return;
+    wpIdx = ((wpIdx + dir) % ws.length + ws.length) % ws.length;
+    var img = ov.querySelector(".wp-img"), c = ws[wpIdx], ph = (T.photos || {})[c.art];
+    img.classList.remove("is-in-l", "is-in-r");
+    void img.offsetWidth;
+    if (dir) img.classList.add(dir > 0 ? "is-in-r" : "is-in-l");
+    img.src = c.wall;
+    img.alt = (ph && ph.what) || "";
+    ov.querySelector(".wp-n").textContent = (wpIdx + 1) + " / " + ws.length;
+  }
+  function closeWall() {
+    var ov = document.querySelector(".wp");
+    if (ov) ov.remove();
+    document.documentElement.classList.remove("wp-open");
+    wpOpen = false;
   }
 
   // ---------- 主選單 ----------
@@ -322,7 +445,7 @@
         return '<a class="mrow r' + (x[1] === "today" ? " is-today" : "") + '" href="#' + x[0] + '">' +
           (ic ? '<span class="mrow-ic"><img class="fade" src="' + esc(ic) + '" alt="" loading="lazy" decoding="async"></span>' : SPARK) +
           '<span class="mrow-t"><b>' + esc(u(x[1])) + "</b><small>" + esc(x[3] || u(x[2])) + "</small></span>" + ICON.arrow + "</a>";
-      }).join("") + "</nav>" + footNotes([u("tipDial"), u("tipDragOther"), u("tipHome"), u("artNote")]) + "</main>";
+      }).join("") + "</nav>" + footNotes([u("tipWall"), u("tipDial"), u("tipDragOther"), u("tipHome"), u("artNote")]) + "</main>";
   }
 
   // ---------- 日期列表 ----------
@@ -1127,6 +1250,10 @@
     setPetals(!!(d && d.wedding)); // 只有 12/19、12/20 飄花瓣
     syncDial(h);
     startTicker();
+    closeWall();
+    cvCur = 0; cvPos = [];
+    cvShow(0);
+    cvStart();
   }
   function convert(from) {
     var a = document.getElementById("idr"), b = document.getElementById("twd");
@@ -1143,6 +1270,11 @@
 
   document.addEventListener("click", function (e) {
     if (prefsOpen && !e.target.closest(".prefs")) setPrefsOpen(false); // 點選單外面就收起來
+    var wpc = e.target.closest("[data-wp-close]"), wps = e.target.closest("[data-wp-step]");
+    if (wpc) { if (!wpc.closest(".wp").dataset.swiped) closeWall(); return; } // 剛滑完換張，不算點背景
+    if (wps) { wallShow(+wps.dataset.wpStep); return; }
+    var cv = e.target.closest("[data-cv]");
+    if (cv) { if (!cvMoved) openWall(cvCur ? cvCur - 1 : 0); return; } // 第一張（婆羅浮屠）點開就從第 1 張桌布開始
     var tk = e.target.closest("[data-tick]");
     if (tk) { nextTip(tk); startTicker(); return; } // 點輪播區＝馬上換下一條
     var t = e.target.closest("button");
@@ -1193,6 +1325,13 @@
     }
   });
   document.addEventListener("keydown", function (e) {
+    if (wpOpen) {
+      if (e.key === "Escape") closeWall();
+      else if (e.key === "ArrowRight") wallShow(1);
+      else if (e.key === "ArrowLeft") wallShow(-1);
+      return;
+    }
+    if ((e.key === "Enter" || e.key === " ") && e.target.closest && e.target.closest("[data-cv]")) { e.preventDefault(); openWall(cvCur ? cvCur - 1 : 0); return; }
     if (e.key === "Escape") { var o = document.querySelector(".driver"); if (o) o.remove(); if (prefsOpen) setPrefsOpen(false); closeJump(); closeDial(); }
   });
   window.addEventListener("hashchange", function () { prefsOpen = false; render(); window.scrollTo(0, 0); });

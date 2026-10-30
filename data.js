@@ -32,8 +32,25 @@ window.TRIP = {
     learn: "img/m-learn.jpg", money: "img/m-money.jpg", pack: "img/m-pack.jpg"
   },
   // 插畫：OpenAI Codex 生成（2026/10），1280×924 JPG；top 是圖片上緣 20% 的平均天空色，大字和漸層用它才不會有色差
+  // 封面輪播：第一張是原本的婆羅浮屠，後面 6 張是可以存成手機桌布的插畫（wall/，1179×2556）
+  // tag 是封面右上角的落款；第一張用「made for 桌桌's family」
+  covers: [
+    { art: "stupa" },
+    { art: "cover1", wall: "wall/wall-1.jpg", tag: "sizihwan · kaohsiung" },
+    { art: "cover2", wall: "wall/wall-2.jpg", tag: "sizihwan · kaohsiung" },
+    { art: "cover3", wall: "wall/wall-3.jpg", tag: "kaohsiung harbour" },
+    { art: "cover4", wall: "wall/wall-4.jpg", tag: "borobudur · java" },
+    { art: "cover5", wall: "wall/wall-5.jpg", tag: "bali" },
+    { art: "cover6", wall: "wall/wall-6.jpg", tag: "kaohsiung × indonesia" }
+  ],
   photos: {
     stupa: { src: "img/stupa.jpg", what: "Borobudur", by: "AI (OpenAI Codex)", top: "#587bbb" },
+    cover1: { src: "img/cover-1.jpg", what: "Sizihwan, Kaohsiung", by: "AI (OpenAI Codex)", top: "#39538d" },
+    cover2: { src: "img/cover-2.jpg", what: "Sizihwan, Kaohsiung", by: "AI (OpenAI Codex)", top: "#5879b3" },
+    cover3: { src: "img/cover-3.jpg", what: "Kaohsiung harbour", by: "AI (OpenAI Codex)", top: "#5b84c1" },
+    cover4: { src: "img/cover-4.jpg", what: "Borobudur", by: "AI (OpenAI Codex)", top: "#5881c1" },
+    cover5: { src: "img/cover-5.jpg", what: "Bali", by: "AI (OpenAI Codex)", top: "#6081bf" },
+    cover6: { src: "img/cover-6.jpg", what: "Kaohsiung and Indonesia", by: "AI (OpenAI Codex)", top: "#4d7dc0" },
     tamansari: { src: "img/tamansari.jpg", what: "Taman Sari", by: "AI (OpenAI Codex)", top: "#5c84c0" },
     slamet: { src: "img/slamet.jpg", what: "Gunung Slamet", by: "AI (OpenAI Codex)", top: "#5b7fbe" },
     city: { src: "img/city.jpg", what: "Monas, Jakarta", by: "AI (OpenAI Codex)", top: "#587aba" },
