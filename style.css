@@ -118,7 +118,6 @@ button { font: inherit; color: inherit; }
 /* mini copy of the floating flower button inside a sentence: centred on the text's middle (≈0.37em above the baseline), small enough not to stretch the line */
 .foot-ic { display: inline-block; width: 18px; height: 18px; margin: 0 2px; border-radius: 50%; vertical-align: -0.32em; background: var(--ink); color: var(--paper); }
 .foot-ic svg { display: block; width: 12px; height: 12px; margin: 3px; }
-.foot .sign { margin-top: 6px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; color: var(--gold); }
 
 /* the giant word */
 .hw {

@@ -181,11 +181,10 @@
   function flowers() {
     return '<div class="flowers" aria-hidden="true"><span class="dash"></span>' + flower(4) + flower(8) + flower(4) + '<span class="dash"></span></div>';
   }
-  // 頁尾：小花分隔線下面放這一頁的灰色小字備註，像海報底部的說明；字裡的 {ic} 換成迷你小花按鈕，sign 是最底下的金色落款
-  function footNotes(notes, sign) {
+  // 頁尾：小花分隔線下面放這一頁的灰色小字備註，像海報底部的說明；字裡的 {ic} 換成迷你小花按鈕
+  function footNotes(notes) {
     var ic = '<span class="foot-ic" role="img" aria-label="' + esc(u("dial")) + '">' + DIAL_IC + "</span>";
-    return '<footer class="foot r">' + flowers() + notes.map(function (n) { return "<p>" + esc(n).replace("{ic}", ic) + "</p>"; }).join("") +
-      (sign ? '<p class="sign">' + esc(sign) + "</p>" : "") + "</footer>";
+    return '<footer class="foot r">' + flowers() + notes.map(function (n) { return "<p>" + esc(n).replace("{ic}", ic) + "</p>"; }).join("") + "</footer>";
   }
   function barcode(str) {
     var bars = "", x = 0;
@@ -305,7 +304,7 @@
         return '<a class="mrow r' + (x[1] === "today" ? " is-today" : "") + '" href="#' + x[0] + '">' +
           (ic ? '<span class="mrow-ic"><img class="fade" src="' + esc(ic) + '" alt="" loading="lazy" decoding="async"></span>' : SPARK) +
           '<span class="mrow-t"><b>' + esc(u(x[1])) + "</b><small>" + esc(x[3] || u(x[2])) + "</small></span>" + ICON.arrow + "</a>";
-      }).join("") + "</nav>" + footNotes([u("tipDial"), u("tipHome")], u("madeFor") + " · 2026") + "</main>";
+      }).join("") + "</nav>" + footNotes([u("tipDial"), u("tipHome")]) + "</main>";
   }
 
   // ---------- 日期列表 ----------
