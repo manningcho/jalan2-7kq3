@@ -612,7 +612,7 @@
       "L" + f(r0 * c) + " " + f(C_MID + r0 * s) + "A" + r0 + " " + r0 + " 0 0 0 " + f(r0 * c) + " " + f(C_MID - r0 * s) + "Z";
   }
   var C_CARD = sector(C_R0, C_R), C_BAND = sector(C_R0, C_R1);
-  var dial = null, dialItems = [], dialOpen = false, dialLang = null, dRot = 0;
+  var dial = null, dialItems = [], dialOpen = false, dialLang = null, dRot = 0, openToken = 0;
   var DIAL_IC = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor"><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(90 12 12)"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(180 12 12)"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(270 12 12)"/></g><circle cx="12" cy="12" r="2.3" fill="var(--ink)"/></svg>';
   function dialSection(h) {
     if (/^d12\d\d$/.test(h) || h === "days") return "days";
@@ -738,21 +738,79 @@
       el.classList.toggle("is-off", o < .5);
     });
   }
-  // 一張卡：裁切在 SVG 裡面做（動畫時只需要搬動畫好的圖層），點擊只算在透明的扇形 .dial-hit 上
+  // 一張卡：畫面預先畫進 <canvas>（動畫時手機只需要搬動一張畫好的圖，不必重畫）；點擊只算在透明的扇形 .dial-hit 上
   function dialCard(x, i) {
-    var ic = (T.menuArt || {})[x[0]], name = u(x[1]), no = pad(i + 1);
-    var cx = (C_R1 + C_R) / 2, img = 112, start = C_R1 - 8;
+    var name = u(x[1]);
     return '<a class="dial-item" href="#' + x[0] + '" data-k="' + x[0] + '" aria-label="' + esc(name) + '" draggable="false" style="z-index:' + (20 - i) + '">' +
-      '<svg viewBox="0 0 ' + C_R + " " + C_H + '" width="' + C_R + '" height="' + C_H + '" aria-hidden="true">' +
-      '<clipPath id="dc' + i + '"><path d="' + C_CARD + '"/></clipPath><g clip-path="url(#dc' + i + ')">' +
-      '<path class="dial-bg" d="' + C_CARD + '"/>' +
-      (ic ? '<image href="' + esc(ic) + '" x="' + (cx - img / 2) + '" y="' + (C_MID - img / 2) + '" width="' + img + '" height="' + img +
-        '" preserveAspectRatio="xMidYMid slice" transform="rotate(90 ' + cx + " " + C_MID + ')"/>' : "") +
-      '<path class="dial-band" d="' + C_BAND + '"/><path class="dial-edge" d="' + C_CARD + '"/></g>' +
+      '<canvas class="dial-cv" aria-hidden="true"></canvas>' +
+      '<svg viewBox="0 0 ' + C_R + " " + C_H + '" width="' + C_R + '" height="' + C_H + '" aria-hidden="true"><path class="dial-hit" d="' + C_CARD + '"/></svg></a>';
+  }
+  var cardPath = null, bandPath = null, dialImgs = {}, cardKeys = [], dialFonts = null;
+  function dialPaint() {
+    var cs = getComputedStyle(document.documentElement), v = function (n) { return cs.getPropertyValue(n).trim(); };
+    return { bg: v("--blue-soft"), card: v("--card"), goldSoft: v("--gold-soft"), gold: v("--gold"), line: v("--line"), ink: v("--ink"), muted: v("--muted"), body: v("--f-body"), mono: v("--f-mono") };
+  }
+  // 小插畫：下載並解碼好才畫上去；晚到的話到了再補畫
+  function dialImg(src) {
+    var im = dialImgs[src];
+    if (im) return im;
+    im = dialImgs[src] = new Image();
+    im.onload = function () {
+      (im.decode ? im.decode() : Promise.resolve()).catch(function () {}).then(function () { im.ready = true; drawCards(); });
+    };
+    im.src = src;
+    return im;
+  }
+  // 字型：Google 字型是分片下載的，先把卡片上會用到的字載好再畫，不然畫出來會是備用字型
+  function loadDialFonts() {
+    if (dialFonts && dialFonts.lang === lang) return;
+    var mine = dialFonts = { lang: lang, ready: false };
+    var done = function () { mine.ready = true; drawCards(); };
+    if (!document.fonts || !document.fonts.load) return done();
+    var p = dialPaint(), text = DIAL.map(function (x) { return u(x[1]); }).join("");
+    Promise.all([document.fonts.load("800 15px " + p.body, text), document.fonts.load("600 11px " + p.mono, "0123456789")])
+      .catch(function () {}).then(done);
+  }
+  function drawCards() {
+    if (!dial || !dialItems.length || !window.Path2D) return;
+    if (!cardPath) { cardPath = new Path2D(C_CARD); bandPath = new Path2D(C_BAND); }
+    var p = dialPaint(), dpr = Math.min(3, Math.max(1, Math.ceil(window.devicePixelRatio || 1))), pk = JSON.stringify(p);
+    dialItems.forEach(function (el, i) {
+      var x = DIAL[i], cur = el.classList.contains("is-cur"), src = (T.menuArt || {})[x[0]], im = src ? dialImg(src) : null;
+      var ready = !!(im && im.ready), fonts = !!(dialFonts && dialFonts.ready);
+      var key = [pk, cur, dialLang, dpr, ready, fonts].join("|");
+      if (cardKeys[i] === key) return; // 沒變就不重畫
+      cardKeys[i] = key;
+      var cv = el.querySelector("canvas"), c = cv.getContext("2d");
+      if (cv.width !== C_R * dpr) { cv.width = C_R * dpr; cv.height = C_H * dpr; }
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.clearRect(0, 0, C_R, C_H);
+      c.save();
+      c.clip(cardPath);
+      c.fillStyle = p.bg;
+      c.fillRect(0, 0, C_R, C_H);
+      if (ready) { // 圖的上方朝外
+        var cx = (C_R1 + C_R) / 2, sz = 112;
+        c.save(); c.translate(cx, C_MID); c.rotate(Math.PI / 2); c.drawImage(im, -sz / 2, -sz / 2, sz, sz); c.restore();
+      }
+      c.fillStyle = cur ? p.goldSoft : p.card;
+      c.fill(bandPath);
+      c.lineWidth = cur ? 5 : 2; // 線畫在邊上、只留裡面那一半
+      c.strokeStyle = cur ? p.gold : p.line;
+      c.stroke(cardPath);
+      c.restore();
       // 字從色塊交界處開始，沿著卡片往圓心排；這一側是左上方，所以轉 180° 才不會倒過來
-      '<text class="dial-lb" x="' + start + '" y="' + C_MID + '" text-anchor="start" dominant-baseline="central" transform="rotate(180 ' + start + " " + C_MID + ')">' +
-      '<tspan class="dial-no">' + no + "</tspan><tspan dx=\"7\">" + esc(name) + "</tspan></text>" +
-      '<path class="dial-hit" d="' + C_CARD + '"/></svg></a>';
+      var no = pad(i + 1);
+      c.save();
+      c.translate(C_R1 - 8, C_MID); c.rotate(Math.PI);
+      c.textBaseline = "middle"; c.textAlign = "left";
+      c.font = "600 11px " + p.mono; c.fillStyle = cur ? p.gold : p.muted;
+      c.fillText(no, 0, 0);
+      var w = c.measureText(no).width + 7;
+      c.font = "800 15px " + p.body; c.fillStyle = cur ? p.gold : p.ink;
+      c.fillText(u(x[1]), w, 0);
+      c.restore();
+    });
   }
   function fillDial() {
     var cur = dialSection((location.hash || "").replace(/^#/, ""));
@@ -768,6 +826,8 @@
       dial.querySelector(".dial-hint-band").setAttribute("d", arcPath(H_R, H_MID - half, H_MID + half));
       dialItems = [].slice.call(dial.querySelectorAll(".dial-item"));
       dialItems.forEach(function (el, i) { el.style.transform = dialTf(D_TOP - i * D_STEP - 150, .12); }); // 收起的位置
+      cardKeys = [];
+      loadDialFonts();
     }
     dialItems.forEach(function (el) {
       var here = el.dataset.k === cur;
@@ -777,6 +837,7 @@
     // 目前這頁如果在後面幾張，打開時先轉到看得到它的位置
     var ci = DIAL.map(function (x) { return x[0]; }).indexOf(cur);
     dRot = ci > 3 ? Math.min(D_MAX, (ci - 3) * D_STEP) : 0;
+    drawCards(); // 只重畫有變的卡（換了目前頁、深淺色或語言）
   }
   function openDial() {
     if (!dial || dialOpen) return;
@@ -794,11 +855,16 @@
     var b = dial.querySelector(".dial-btn");
     b.setAttribute("aria-expanded", "true");
     b.setAttribute("aria-label", u("close"));
-    placeDial("open");
+    // 等兩格畫面（約 0.03 秒）再開始轉：手機第一次準備卡片的時間不會吃掉動畫，動畫一定從頭完整播
+    var tk = ++openToken, started = false;
+    var start = function () { if (started || !dialOpen || tk !== openToken) return; started = true; placeDial("open"); };
+    requestAnimationFrame(function () { requestAnimationFrame(start); });
+    setTimeout(start, 250); // 萬一畫面回呼沒來（例如分頁剛切回來），0.25 秒後也照樣開始
   }
   function closeDial(now) {
     if (!dial || !dialOpen) return;
     dialOpen = false;
+    openToken++;
     dial.classList.remove("is-open", "is-dragging");
     dial.querySelector(".dial-items").setAttribute("inert", "");
     var b = dial.querySelector(".dial-btn");
@@ -821,14 +887,7 @@
     var go = function () {
       warmTimer = null;
       if (dialOpen || dialLang === lang) return;
-      fillDial();
-      DIAL.forEach(function (x) {
-        var src = (T.menuArt || {})[x[0]];
-        if (!src) return;
-        var im = new Image();
-        im.src = src;
-        if (im.decode) im.decode().catch(function () {});
-      });
+      fillDial(); // 建卡片、載字型和小插畫，好了就先畫好
     };
     warmTimer = window.requestIdleCallback ? requestIdleCallback(go, { timeout: 1500 }) : setTimeout(go, 600);
   }

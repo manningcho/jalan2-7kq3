@@ -438,21 +438,13 @@ button { font: inherit; color: inherit; }
   transform-origin: 0 50%; opacity: 0; text-decoration: none; will-change: transform, opacity;
   pointer-events: none; -webkit-tap-highlight-color: transparent; -webkit-user-drag: none;
 }
-.dial-item svg { display: block; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
+.dial-cv { display: block; width: 250px; height: 96px; }
+.dial-item svg { position: absolute; left: 0; top: 0; width: 250px; height: 96px; overflow: visible; pointer-events: none; }
 /* only the wedge itself takes taps, so neighbouring cards' boxes never steal them */
 .dial-hit { fill: transparent; pointer-events: fill; }
 .dial:not(.is-open) .dial-hit, .dial-item.is-off .dial-hit { pointer-events: none; }
-.dial-bg { fill: var(--blue-soft); }
-.dial-band { fill: var(--card); }
-.dial-edge { fill: none; stroke: var(--line); stroke-width: 2; }
-.dial-lb { font-family: var(--f-body); font-size: 15px; font-weight: 800; fill: var(--ink); }
-.dial-no { font-family: var(--f-mono); font-size: 11px; font-weight: 600; fill: var(--muted); }
-.dial-item.is-cur .dial-band { fill: var(--gold-soft); }
-.dial-item.is-cur .dial-lb { fill: var(--gold); }
-.dial-item.is-cur .dial-no { fill: var(--gold); }
-.dial-item.is-cur .dial-edge { stroke: var(--gold); stroke-width: 5; }
 .dial-item:focus-visible { outline: none; }
-.dial-item:focus-visible .dial-edge { stroke: var(--blue); stroke-width: 6; }
+.dial-item:focus-visible .dial-hit { stroke: var(--blue); stroke-width: 4; }
 
 .driver {
   position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: var(--paper);
