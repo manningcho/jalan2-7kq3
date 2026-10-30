@@ -397,17 +397,32 @@
       if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) { wallShow(dx < 0 ? 1 : -1); ov.dataset.swiped = "1"; setTimeout(function () { delete ov.dataset.swiped; }, 0); }
     });
   }
+  // 桌布先在背景下載並解碼好（打開浮層時 6 張都先載），換張時才不會先滑進舊圖、再突然跳成新圖
+  var wpCache = {}, wpToken = 0;
+  function wallImg(src) {
+    if (!wpCache[src]) {
+      var im = new Image();
+      im.src = src;
+      wpCache[src] = (im.decode ? im.decode() : new Promise(function (r) { im.onload = r; })).catch(function () {});
+    }
+    return wpCache[src];
+  }
   function wallShow(dir) {
     var ov = document.querySelector(".wp"), ws = walls();
     if (!ov || !ws.length) return;
     wpIdx = ((wpIdx + dir) % ws.length + ws.length) % ws.length;
-    var img = ov.querySelector(".wp-img"), c = ws[wpIdx], ph = (T.photos || {})[c.art];
-    img.classList.remove("is-in-l", "is-in-r");
-    void img.offsetWidth;
-    if (dir) img.classList.add(dir > 0 ? "is-in-r" : "is-in-l");
-    img.src = c.wall;
-    img.alt = (ph && ph.what) || "";
+    var img = ov.querySelector(".wp-img"), c = ws[wpIdx], ph = (T.photos || {})[c.art], tk = ++wpToken;
     ov.querySelector(".wp-n").textContent = (wpIdx + 1) + " / " + ws.length;
+    if (dir) img.classList.add("is-wait"); // 新圖還沒好（網路慢）時舊圖先變淡，知道正在載
+    wallImg(c.wall).then(function () {
+      if (tk !== wpToken || !img.isConnected) return; // 連按好幾下：只換最後那張
+      img.classList.remove("is-in-l", "is-in-r", "is-wait");
+      img.src = c.wall;
+      img.alt = (ph && ph.what) || "";
+      void img.offsetWidth;
+      if (dir) img.classList.add(dir > 0 ? "is-in-r" : "is-in-l");
+    });
+    ws.forEach(function (w) { wallImg(w.wall); });
   }
   function closeWall() {
     var ov = document.querySelector(".wp");
