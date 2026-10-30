@@ -320,6 +320,7 @@
     cvCur = ((next % n) + n) % n;
     slides.forEach(function (g, i) {
       var o = cvOffset(i, cvCur, n), was = cvPos[i];
+      if ((drag != null || prev !== cvCur) && Math.abs(o) <= 1) cvLoad(g.querySelector("image[data-href]")); // 要滑到的那幾張先載
       var anim = drag == null && was != null && Math.abs(o) <= 1 && Math.abs(was) <= 1;
       g.style.transition = anim ? "transform .6s cubic-bezier(.3, .8, .3, 1)" : "none";
       g.style.transform = "translateX(" + (o * 360 + (drag || 0)) + "px)";
@@ -329,6 +330,31 @@
     if (w) w.style.color = ART.topColor(c.art); // 大字跟著換成這張的天空色
     if (tag && prev !== cvCur) tag.textContent = c.tag || u("madeFor");
     root.querySelectorAll(".cv-dots i").forEach(function (d, i) { d.classList.toggle("is-on", i === cvCur); });
+  }
+  // 封面其他張：等第一張載好後，一張一張在背景補上（不跟第一張搶網路）
+  function cvLoad(el) {
+    if (!el || !el.hasAttribute("data-href")) return;
+    el.setAttribute("href", el.getAttribute("data-href"));
+    el.removeAttribute("data-href");
+    fadeIn(el.closest("svg"));
+  }
+  function cvLoadRest() {
+    var root = app.querySelector("[data-cv]");
+    if (!root) return;
+    var first = root.querySelector(".cv-slide image.fade"), wait = new Image();
+    var go = function () {
+      var rest = [].slice.call(root.querySelectorAll("image[data-href]"));
+      (function step() {
+        var el = rest.shift();
+        if (!el || !root.isConnected) return;
+        if (!el.hasAttribute("data-href")) return step(); // 已經因為滑動先載了
+        var pre = new Image();
+        pre.onload = pre.onerror = function () { cvLoad(el); step(); };
+        pre.src = el.getAttribute("data-href");
+      })();
+    };
+    wait.onload = wait.onerror = function () { setTimeout(go, 300); };
+    wait.src = first ? first.getAttribute("href") : "";
   }
   function cvStart() {
     clearInterval(cvTimer);
@@ -749,6 +775,7 @@
         if (el.complete && el.naturalWidth) { el.classList.add("no-fade"); done(); }
         else { el.addEventListener("load", done); el.addEventListener("error", done); }
       } else { // 插畫裡的 SVG <image>：用一張看不見的圖來知道它載好了沒
+        if (!el.getAttribute("href")) return; // 還沒輪到載入的封面圖（data-href）
         var im = new Image();
         im.onload = im.onerror = done;
         im.src = el.getAttribute("href");
@@ -1269,6 +1296,7 @@
     cvCur = 0; cvPos = [];
     cvShow(0);
     cvStart();
+    cvLoadRest();
   }
   function convert(from) {
     var a = document.getElementById("idr"), b = document.getElementById("twd");

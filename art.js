@@ -202,7 +202,8 @@
         if (lq && i === 0) defs += '<filter id="' + id + 'b" x="0" y="0" width="1" height="1"><feGaussianBlur stdDeviation="7" edgeMode="duplicate"/></filter>';
         body += '<g class="cv-slide" data-i="' + i + '" style="transform:translateX(' + (i ? 360 : 0) + 'px)">' +
           (lq && i === 0 ? '<image href="' + lq + '" width="360" height="260" preserveAspectRatio="xMidYMid slice" filter="url(#' + id + 'b)"/>' : "") +
-          '<image class="fade" href="' + photo.src + '" width="360" height="260" preserveAspectRatio="xMidYMid slice"/>' +
+          // 第 2 張以後先不載（data-href），等第一張出來後才在背景補上，第一次打開比較快（app.js 的 cvLoadRest）
+          '<image class="fade" ' + (i ? "data-href" : "href") + '="' + photo.src + '" width="360" height="260" preserveAspectRatio="xMidYMid slice"/>' +
           (i ? '<rect width="360" height="140" fill="url(#' + gid + ')"/>' : '<rect width="360" height="110" fill="url(#' + gid + 'o)"/>') + "</g>";
         if (!i) defs += '<linearGradient id="' + gid + 'o" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + top + '"/><stop offset=".35" stop-color="' + top + '" stop-opacity=".55"/><stop offset="1" stop-color="' + top + '" stop-opacity="0"/></linearGradient>';
       });
