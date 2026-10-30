@@ -8,7 +8,7 @@
 - `app.js`：畫面與路由（hash：`home`、`menu`、`days`、`d1215`…、`food-pwt`、`stay`、`info`、`learn`）。
   - 右上角是漢堡選單（`prefs()`）：語言（中/ID/EN）和顏色（跟手機/淺色/深色）。顏色存在 `localStorage` 的 `trip-theme`，套用方式是 `<html data-theme>`。
   - 匯率換算（`#money`，大字 rupiah）和行李清單（`#pack`，大字 koper）是選單頁最後兩個按鈕，各自一頁；不在旅遊資料頁。
-  - 行程沒有 `time` 時，左邊顯示淡色小字「未定」（`u("tbd")`），不是小圓點。
+  - 行程沒有 `time` 時，左邊顯示淡色小字「時間未定」（`u("tbd")`），不是小圓點。
   - 每段車程的小字會寫「到 目的地」（`goBlock()`），有 `label` 的話改用 label。
   - 大字裡有 j g p q y 時加 `has-desc`，列表頁會多留底部空間，尾巴才不會壓到下面。
   - 每日頁最下面「前一天／後一天」中間有日曆圓鈕，點開是從下方滑出的日期面板（`showJump()`），18 天按城市分組。

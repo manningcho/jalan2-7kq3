@@ -54,7 +54,7 @@
     driver: ["給司機看", "Tunjukkan ke sopir", "Show the driver"],
     nav: ["導航", "Rute", "Route"],
     goTo: ["到 ", "Ke ", "To "],
-    tbd: ["未定", "Belum pasti", "TBD"],
+    tbd: ["時間未定", "Waktu belum pasti", "Time TBD"],
     car: ["開車約", "Mobil sekitar", "Drive about"],
     walk: ["走路約", "Jalan kaki sekitar", "Walk about"],
     min: ["分", "menit", "min"],
