@@ -20,3 +20,4 @@ tmp=$(mktemp -d)
 } > lq.js
 rm -rf "$tmp"
 echo "lq.js: $(grep -c 'data:image' lq.js) 張，$(( $(stat -f%z lq.js) / 1024 ))KB"
+./make-sw.sh   # 圖換了，離線清單和版本號也要跟著更新

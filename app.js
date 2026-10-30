@@ -1200,4 +1200,8 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fit(); placeSays(); });
   if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", placeSays); // 字型晚到，字寬會變
   render();
+  // 離線版：把整個網站存一份在手機裡（sw.js），到印尼網路不穩也打得開
+  if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+  }
 })();
