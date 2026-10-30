@@ -29,7 +29,14 @@
     countdown: ["還有 {n} 天出發", "{n} hari lagi berangkat", "{n} days to go"],
     coverSub: ["一家五口的印尼行程", "Perjalanan keluarga ke Indonesia", "A family trip to Indonesia"],
     madeFor: ["made for 桌桌's family", "made for 桌桌's family", "made for 桌桌's family"],
-    tipDial: ["其他頁右下角的 {ic} 點開可以轉轉看，快速跳到任何一頁", "Di halaman lain, ketuk {ic} di pojok kanan bawah lalu putar untuk pindah halaman", "On other pages, tap {ic} at the bottom right and spin to jump to any page"],
+    tipDial: ["其他頁角落的 {ic} 點開可以轉轉看，快速跳到任何一頁", "Di halaman lain, ketuk {ic} di pojok bawah lalu putar untuk pindah halaman", "On other pages, tap {ic} in the corner and spin to jump to any page"],
+    tipDialHere: ["角落的 {ic} 點開可以轉轉看，快速跳到任何一頁", "Ketuk {ic} di pojok bawah lalu putar untuk pindah halaman", "Tap {ic} in the corner and spin to jump to any page"],
+    tipDrag: ["按住 {ic} 可以拖到另一邊，左手也好按", "Tahan {ic} lalu geser ke sisi lain, pas untuk tangan kiri", "Hold {ic} and drag it to the other side, handy for left thumbs"],
+    tipDragOther: ["在其他頁按住 {ic} 可以拖到另一邊，左手也好按", "Di halaman lain, tahan {ic} lalu geser ke sisi lain", "On other pages, hold {ic} and drag it to the other side"],
+    tipJump: ["換日按鈕中間的 {cal} 可以直接跳到任何一天", "Ketuk {cal} di antara tombol hari untuk lompat ke hari mana saja", "Tap {cal} between the day buttons to jump to any day"],
+    tipDriver: ["「給司機看」會把地點放大，直接拿手機給司機看", "\"Tunjukkan ke sopir\" menampilkan alamat besar-besar untuk sopir", "\"Show the driver\" puts the place in big letters for the driver"],
+    tipCopy: ["電話號碼旁的「複製」可以直接複製號碼", "Ketuk \"Salin\" untuk menyalin nomor", "Tap \"Copy\" to copy a number"],
+    tipSpeak: ["點 {spk} 可以聽印尼文怎麼唸，再點一次停止", "Ketuk {spk} untuk mendengar cara bacanya", "Tap {spk} to hear how it sounds"],
     foodMore: ["還有想去的店，再丟出來，之後幫你加進清單", "Ada tempat lain yang ingin dikunjungi? Kabari saja, nanti kami tambahkan ke daftar", "Want to go somewhere else? Just let us know and we'll add it to the list"],
     tipHome: ["用瀏覽器的「加入主畫面」，就能像 App 一樣一點就打開", "Pilih \"Tambahkan ke Layar Utama\" di browser agar bisa dibuka seperti aplikasi", "Use \"Add to Home Screen\" in your browser to open it like an app"],
     back: ["返回", "Kembali", "Back"],
@@ -182,11 +189,21 @@
   function flowers() {
     return '<div class="flowers" aria-hidden="true"><span class="dash"></span>' + flower(4) + flower(8) + flower(4) + '<span class="dash"></span></div>';
   }
-  // 頁尾：小花分隔線下面放這一頁的灰色小字備註，像海報底部的說明；字裡的 {ic} 換成迷你小花按鈕
-  function footNotes(notes) {
-    var ic = '<span class="foot-ic" role="img" aria-label="' + esc(u("dial")) + '">' + DIAL_IC + "</span>";
-    return '<footer class="foot r">' + flowers() + notes.map(function (n) { return "<p>" + esc(n).replace("{ic}", ic) + "</p>"; }).join("") + "</footer>";
+  // 頁尾：小花分隔線下面放這一頁的灰色小字。一條就靜靜放著；好幾條就變成輪播，像滾輪一樣一條條從上面掉下來（startTicker）
+  // 字裡的 {ic} {cal} {spk} 換成迷你的小花按鈕、日曆鈕、喇叭
+  function tipHtml(n) {
+    var mini = function (cls, label, svg) { return '<span class="foot-ic' + cls + '" role="img" aria-label="' + esc(label) + '">' + svg + "</span>"; };
+    return esc(n).replace("{ic}", mini("", u("dial"), DIAL_IC)).replace("{cal}", mini(" is-soft", u("jumpTo"), ICON.cal)).replace("{spk}", mini(" is-say", u("listen"), ICON.speaker));
   }
+  function footNotes(notes) {
+    var body = notes.length < 2 ? "<p>" + tipHtml(notes[0]) + "</p>" :
+      '<div class="tick" data-tick="1" role="note">' + notes.map(function (n, i) {
+        return '<p class="tick-i' + (i ? "" : " is-on") + '"' + (i ? ' aria-hidden="true"' : "") + ">" + tipHtml(n) + "</p>";
+      }).join("") + "</div>";
+    return '<footer class="foot r">' + flowers() + body + "</footer>";
+  }
+  // 有小花按鈕的頁面都會輪播的小技巧
+  function commonTips() { return [u("tipDialHere"), u("tipDrag"), u("tipHome")]; }
   function barcode(str) {
     var bars = "", x = 0;
     for (var i = 0; x < 116 && i < 200; i++) {
@@ -305,7 +322,7 @@
         return '<a class="mrow r' + (x[1] === "today" ? " is-today" : "") + '" href="#' + x[0] + '">' +
           (ic ? '<span class="mrow-ic"><img class="fade" src="' + esc(ic) + '" alt="" loading="lazy" decoding="async"></span>' : SPARK) +
           '<span class="mrow-t"><b>' + esc(u(x[1])) + "</b><small>" + esc(x[3] || u(x[2])) + "</small></span>" + ICON.arrow + "</a>";
-      }).join("") + "</nav>" + footNotes([u("tipDial"), u("tipHome")]) + "</main>";
+      }).join("") + "</nav>" + footNotes([u("tipDial"), u("tipDragOther"), u("tipHome"), u("artNote")]) + "</main>";
   }
 
   // ---------- 日期列表 ----------
@@ -339,7 +356,7 @@
     });
     return bar("No.#01", "menu") + '<main class="wrap">' +
       kicker(["14.12 – 31.12", u("mDays") + " 18", u("mCity") + " 4"]) +
-      '<section class="tword r">' + word("jadwal") + "</section>" + html + "</ol></section></main>";
+      '<section class="tword r">' + word("jadwal") + "</section>" + html + "</ol></section>" + footNotes(commonTips()) + "</main>";
   }
 
   // ---------- 單日 ----------
@@ -398,8 +415,9 @@
       hero(d.word, d.art) +
       '<section class="day-head r"><h1 class="dh-title">' + esc(L(d.title)) + "</h1>" +
       '<p class="dh-tz">' + SPARK + esc(tzNote(d.city)) + "</p></section>" +
-      // 小花線只當「這一頁到底了」的記號：放在今天最後一個行程下面、換日按鈕上面
-      '<ol class="flow">' + items + "</ol>" + flowers() + pager + "</main>";
+      // 小花線只當「這一頁到底了」的記號：小花線＋提示輪播放在換日按鈕下面，當整頁的結尾（跟其他頁一樣）
+      '<ol class="flow">' + items + "</ol>" + pager +
+      footNotes([u("tipJump")].concat(d.items.some(function (it) { return it.place || it.options; }) ? [u("tipDriver")] : [], commonTips())) + "</main>";
   }
 
   // ---------- 餐廳 ----------
@@ -421,7 +439,7 @@
     }).join("");
     return bar("No.#02", "menu") + '<main class="wrap">' +
       '<div class="keep">' + kicker([L(T.cities[cur.city]), u("mPlaces") + " " + pad(count)]) +
-      '<section class="tword r">' + word("makan") + "</section>" + tabs + "</div>" + foodBand(cur.id) + groups + footNotes([u("foodMore")]) + "</main>";
+      '<section class="tword r">' + word("makan") + "</section>" + tabs + "</div>" + foodBand(cur.id) + groups + footNotes([u("foodMore")].concat(commonTips())) + "</main>";
   }
 
   // ---------- 住宿 ----------
@@ -437,7 +455,7 @@
           (s.host ? '<p class="stay-meta">' + esc(u("host")) + "：" + esc(s.host) + "</p>" : "") +
           (s.phone ? '<p class="stay-meta">' + esc(u("phone")) + '：<span class="sel">' + esc(s.phone) + "</span></p>" : "") +
           placeActions(s.place) + "</div></li>";
-      }).join("") + "</ul></main>";
+      }).join("") + "</ul>" + footNotes([u("tipDriver")].concat(commonTips())) + "</main>";
   }
 
   // ---------- 旅遊資料 ----------
@@ -475,8 +493,8 @@
     var tickets = sec(u("ticketTitle"), '<ul class="list tickets">' + T.tickets.map(function (k) {
       return '<li class="tk"><span class="tk-ic">' + ICON[k.kind] + '</span><span><b>' + esc(k.date + "　" + L(k.t)) + "</b><small>" + esc(L(k.d)) + "</small></span></li>";
     }).join("") + "</ul>");
-    // 「插畫是 AI 畫的」說明放在頁尾小花線下面
-    var credits = Object.keys(T.photos || {}).length ? footNotes([u("artNote")]) : "";
+    // 「插畫是 AI 畫的」說明搬到選單頁的輪播了（從那頁開始就有很多插畫）
+    var credits = footNotes([u("tipCopy")].concat(commonTips()));
     return bar("No.#04", "menu") + '<main class="wrap">' +
       kicker(["WIB / WITA", u("mItems") + " 04"]) +
       pageHead("info", "p-info") + time + entry + emerg + tickets + credits + "</main>";
@@ -487,7 +505,7 @@
     return bar("No.#06", "menu") + '<main class="wrap">' +
       kicker(["IDR → TWD", "1 : " + T.rate.twd]) +
       pageHead("rupiah", "p-money") + moneyTool() +
-      footNotes([u("moneyRule"), u("moneyAsOf").replace("{r}", T.rate.twd).replace("{d}", T.rate.asOf.replace(/-/g, "-\u2060"))]) + "</main>"; // 日期不要從 - 斷行
+      footNotes([u("moneyRule"), u("moneyAsOf").replace("{r}", T.rate.twd).replace("{d}", T.rate.asOf.replace(/-/g, "-\u2060"))].concat(commonTips())) + "</main>"; // 日期不要從 - 斷行
   }
   function packCount() {
     var c = {}, n = 0;
@@ -498,7 +516,7 @@
   function viewPack() {
     return bar("No.#07", "menu") + '<main class="wrap">' +
       kicker([esc(u("mItems")) + " " + pad(T.packing.length), esc(u("mChecked")) + ' <b class="pk-n">' + pad(packCount()) + "</b>"], true) +
-      pageHead("koper", "p-pack") + packTool() + footNotes([u("packNote")]) + "</main>";
+      pageHead("koper", "p-pack") + packTool() + footNotes([u("packNote")].concat(commonTips())) + "</main>";
   }
   // 用手機內建的印尼文語音念出來（iPhone 是 Damayanti），不用另外放錄音檔
   var canSpeak = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
@@ -532,7 +550,7 @@
         return '<li class="ph r"><span class="ph-no">' + pad(i + 1) + '</span><span class="ph-top"><b class="ph-id">' + esc(p[0]) + "</b>" +
           (canSpeak ? '<button type="button" class="say" data-say="' + esc(p[0]) + '" aria-label="' + esc(u("listen") + "：" + p[0]) + '">' + ICON.speaker + "</button>" : "") +
           '</span><span class="ph-say">' + esc(p[1]) + '</span><span class="ph-mean">' + esc(mean) + "</span></li>";
-      }).join("") + "</ul>" + footNotes([u("learnNote")]) + "</main>";
+      }).join("") + "</ul>" + footNotes([u("learnNote")].concat(canSpeak ? [u("tipSpeak")] : [], commonTips())) + "</main>";
   }
 
   // ---------- 快速跳到其他天：從下方滑出的日期面板 ----------
@@ -988,6 +1006,20 @@
     sizeHint();
     drawCards(); // 字的方向跟著換
   }
+  // ---------- 頁尾輪播：每 4.5 秒換一條，點一下立刻換；分頁在背景時不換 ----------
+  var tickTimer = null;
+  function nextTip(t) {
+    var items = t.querySelectorAll(".tick-i"), cur = t.querySelector(".tick-i.is-on");
+    var nx = items[([].indexOf.call(items, cur) + 1) % items.length];
+    cur.classList.remove("is-on", "is-in"); cur.classList.add("is-out"); cur.setAttribute("aria-hidden", "true");
+    nx.classList.remove("is-out"); nx.classList.add("is-on", "is-in"); nx.removeAttribute("aria-hidden");
+  }
+  function startTicker() {
+    clearInterval(tickTimer);
+    var t = app.querySelector("[data-tick]");
+    if (!t) return;
+    tickTimer = setInterval(function () { if (!document.hidden && t.isConnected) nextTip(t); }, 4500);
+  }
   // 網頁閒下來時先把卡片建好、圖片下載並解碼，第一次打開才不會卡
   var warmTimer = null;
   function warmDial() {
@@ -1075,6 +1107,7 @@
     fadeIn(app);
     setPetals(!!(d && d.wedding)); // 只有 12/19、12/20 飄花瓣
     syncDial(h);
+    startTicker();
   }
   function convert(from) {
     var a = document.getElementById("idr"), b = document.getElementById("twd");
@@ -1091,6 +1124,8 @@
 
   document.addEventListener("click", function (e) {
     if (prefsOpen && !e.target.closest(".prefs")) setPrefsOpen(false); // 點選單外面就收起來
+    var tk = e.target.closest("[data-tick]");
+    if (tk) { nextTip(tk); startTicker(); return; } // 點輪播區＝馬上換下一條
     var t = e.target.closest("button");
     if (!t) return;
     if (t.dataset.prefs) {

@@ -118,6 +118,24 @@ button { font: inherit; color: inherit; }
 /* mini copy of the floating flower button inside a sentence: centred on the text's middle (≈0.37em above the baseline), small enough not to stretch the line */
 .foot-ic { display: inline-block; width: 18px; height: 18px; margin: 0 2px; border-radius: 50%; vertical-align: -0.32em; background: var(--ink); color: var(--paper); }
 .foot-ic svg { display: block; width: 12px; height: 12px; margin: 3px; }
+.foot-ic.is-soft { background: var(--card); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.foot-ic.is-say { background: var(--blue-soft); color: var(--blue); }
+/* tip reel: every tip sits in the same grid cell (so the box is as tall as the longest one and never jumps);
+   the next tip drops in from above with a small bounce, the old one slides down and out, like a slot-machine wheel */
+.tick { display: grid; width: 100%; overflow: hidden; padding: 3px 0; cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+.foot .tick-i { grid-area: 1 / 1; align-self: center; justify-self: center; opacity: 0; visibility: hidden; }
+.foot .tick-i.is-on { opacity: 1; visibility: visible; }
+.foot .tick-i.is-out { visibility: visible; }
+/* the old tip leaves first and fades quickly; the new one waits a beat before dropping, so the two never overlap */
+.motion .foot .tick-i.is-in { animation: tickIn .7s cubic-bezier(.2, .7, .3, 1) .18s both; }
+.motion .foot .tick-i.is-out { animation: tickOut .3s cubic-bezier(.5, 0, .75, 0) both; }
+@keyframes tickIn {
+  0% { transform: translateY(-110%); opacity: 0; }
+  50% { transform: translateY(12%); opacity: 1; }
+  75% { transform: translateY(-4%); }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes tickOut { 0% { transform: none; opacity: 1; } 65% { opacity: 0; } 100% { transform: translateY(70%); opacity: 0; } }
 
 /* the giant word */
 .hw {
