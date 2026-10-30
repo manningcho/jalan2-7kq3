@@ -104,7 +104,6 @@
     mDay: ["第幾天", "Hari ke", "Day"], mCity: ["城市", "Kota", "City"], mTime: ["時間", "Waktu", "Time"],
     mPages: ["頁數", "Halaman", "Pages"], mPlaces: ["地點", "Tempat", "Places"], mItems: ["項目", "Item", "Items"],
     indonesia: ["印尼", "Indonesia", "Indonesia"],
-    photoTitle: ["關於插畫", "Tentang ilustrasi", "About the illustrations"],
     artNote: ["每天的插畫都是 AI（OpenAI Codex）畫的，只是示意，建築和風景的細節不一定跟實景一樣。", "Semua ilustrasi dibuat oleh AI (OpenAI Codex), hanya gambaran; detail bangunan dan pemandangan bisa berbeda dari aslinya.", "All illustrations were made by AI (OpenAI Codex) and are only impressions; details may differ from the real places."]
   };
   var WEEK = [
@@ -179,6 +178,10 @@
   }
   function flowers() {
     return '<div class="flowers" aria-hidden="true"><span class="dash"></span>' + flower(4) + flower(8) + flower(4) + '<span class="dash"></span></div>';
+  }
+  // 頁尾：小花分隔線下面放這一頁的灰色小字備註，像海報底部的說明
+  function footNotes(notes) {
+    return '<footer class="foot r">' + flowers() + notes.map(function (n) { return "<p>" + esc(n) + "</p>"; }).join("") + "</footer>";
   }
   function barcode(str) {
     var bars = "", x = 0;
@@ -273,19 +276,17 @@
   function sec(title, body) { return '<section class="sec r"><h2 class="sec-h">' + SPARK + esc(title) + "</h2>" + body + "</section>"; }
   // 匯率換算和行李清單：選單頁的最後兩個按鈕，各自一頁
   function moneyTool() {
-    var r = T.rate.twd;
     return sec(u("moneyTitle"), '<div class="conv">' +
       '<label for="idr">' + esc(u("idr")) + '</label><input id="idr" inputmode="numeric" autocomplete="off" value="100.000">' +
       '<label for="twd">' + esc(u("twd")) + '</label><input id="twd" inputmode="decimal" autocomplete="off">' +
-      '<div class="quick">' + [10000, 50000, 100000, 500000].map(function (v) { return '<button type="button" data-idr="' + v + '">' + v.toLocaleString("id-ID") + "</button>"; }).join("") + "</div>" +
-      '<p class="fine">' + esc(u("moneyRule")) + '</p><p class="fine">' + esc(u("moneyAsOf").replace("{r}", r).replace("{d}", T.rate.asOf)) + "</p></div>");
+      '<div class="quick">' + [10000, 50000, 100000, 500000].map(function (v) { return '<button type="button" data-idr="' + v + '">' + v.toLocaleString("id-ID") + "</button>"; }).join("") + "</div></div>");
   }
   function packTool() {
     var checked = {};
     try { checked = JSON.parse(localStorage.getItem("trip-pack") || "{}"); } catch (e) {}
     return sec(u("packTitle"), '<ul class="list checks">' + T.packing.map(function (p, i) {
       return '<li><label><input type="checkbox" id="pk' + i + '" data-pack="' + i + '"' + (checked[i] ? " checked" : "") + "><span>" + esc(L(p)) + "</span></label></li>";
-    }).join("") + '</ul><p class="fine">' + esc(u("packNote")) + "</p>");
+    }).join("") + "</ul>");
   }
   function viewMenu() {
     var td = todayDay();
@@ -469,8 +470,8 @@
     var tickets = sec(u("ticketTitle"), '<ul class="list tickets">' + T.tickets.map(function (k) {
       return '<li class="tk"><span class="tk-ic">' + ICON[k.kind] + '</span><span><b>' + esc(k.date + "　" + L(k.t)) + "</b><small>" + esc(L(k.d)) + "</small></span></li>";
     }).join("") + "</ul>");
-    var credits = "";
-    if (Object.keys(T.photos || {}).length) credits = sec(u("photoTitle"), '<p class="fine">' + esc(u("artNote")) + "</p>");
+    // 「插畫是 AI 畫的」說明放在頁尾小花線下面
+    var credits = Object.keys(T.photos || {}).length ? footNotes([u("artNote")]) : "";
     return bar("No.#04", "menu") + '<main class="wrap">' +
       kicker(["WIB / WITA", u("mItems") + " 04"]) +
       pageHead("info", "p-info") + time + entry + emerg + tickets + credits + "</main>";
@@ -480,7 +481,8 @@
   function viewMoney() {
     return bar("No.#06", "menu") + '<main class="wrap">' +
       kicker(["IDR → TWD", "1 : " + T.rate.twd]) +
-      pageHead("rupiah", "p-money") + moneyTool() + flowers() + "</main>";
+      pageHead("rupiah", "p-money") + moneyTool() +
+      footNotes([u("moneyRule"), u("moneyAsOf").replace("{r}", T.rate.twd).replace("{d}", T.rate.asOf.replace(/-/g, "-\u2060"))]) + "</main>"; // 日期不要從 - 斷行
   }
   function packCount() {
     var c = {}, n = 0;
@@ -491,7 +493,7 @@
   function viewPack() {
     return bar("No.#07", "menu") + '<main class="wrap">' +
       kicker([esc(u("mItems")) + " " + pad(T.packing.length), esc(u("mChecked")) + ' <b class="pk-n">' + pad(packCount()) + "</b>"], true) +
-      pageHead("koper", "p-pack") + packTool() + flowers() + "</main>";
+      pageHead("koper", "p-pack") + packTool() + footNotes([u("packNote")]) + "</main>";
   }
   // 用手機內建的印尼文語音念出來（iPhone 是 Damayanti），不用另外放錄音檔
   var canSpeak = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
@@ -520,12 +522,12 @@
   function viewLearn() {
     return bar("No.#05", "menu") + '<main class="wrap">' +
       kicker([u("mItems") + " " + pad(T.phrases.length)]) +
-      pageHead("belajar", "p-learn") + '<p class="fine lead r">' + esc(u("learnNote")) + '</p><ul class="phrases">' + T.phrases.map(function (p, i) {
+      pageHead("belajar", "p-learn") + '<ul class="phrases">' + T.phrases.map(function (p, i) {
         var mean = lang === "en" ? p[2][1] : p[2][0];
         return '<li class="ph r"><span class="ph-no">' + pad(i + 1) + '</span><span class="ph-top"><b class="ph-id">' + esc(p[0]) + "</b>" +
           (canSpeak ? '<button type="button" class="say" data-say="' + esc(p[0]) + '" aria-label="' + esc(u("listen") + "：" + p[0]) + '">' + ICON.speaker + "</button>" : "") +
           '</span><span class="ph-say">' + esc(p[1]) + '</span><span class="ph-mean">' + esc(mean) + "</span></li>";
-      }).join("") + "</ul>" + flowers() + "</main>";
+      }).join("") + "</ul>" + footNotes([u("learnNote")]) + "</main>";
   }
 
   // ---------- 快速跳到其他天：從下方滑出的日期面板 ----------

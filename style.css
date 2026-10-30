@@ -111,6 +111,10 @@ button { font: inherit; color: inherit; }
 .flowers svg { width: 22px; height: 22px; }
 .flowers svg circle { fill: var(--paper); }
 .flowers .dash { flex: 1; max-width: 110px; border-top: 1px solid currentColor; opacity: .45; }
+/* page footer: the flower divider with the page's small grey notes under it, like the fine print at the foot of a poster */
+.foot { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.foot .flowers { align-self: stretch; margin-bottom: 8px; }
+.foot p { margin: 0; max-width: 30em; font-size: 13px; line-height: 1.6; color: var(--muted); text-wrap: balance; }
 
 /* the giant word */
 .hw {
@@ -315,15 +319,13 @@ button { font: inherit; color: inherit; }
 .copy { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 0; background: var(--blue-soft); color: var(--blue); font-weight: 700; font-size: 15px; cursor: pointer; }
 .tk-ic { color: var(--blue); display: flex; }
 .tk-ic svg { width: 24px; height: 24px; }
-.fine { font-size: 14px; color: var(--muted); margin: 0 2px; }
-.lead { margin: 0; }
 .conv { display: grid; grid-template-columns: auto 1fr; gap: 10px 12px; align-items: center; padding: 16px; background: var(--card); border-radius: 22px; }
 .conv label { font-weight: 700; }
 .conv input {
   width: 100%; min-width: 0; min-height: 58px; padding: 0 16px; border-radius: 16px; border: 1px solid var(--line);
   background: var(--paper); color: var(--ink); font-family: var(--f-mono); font-size: 24px; font-weight: 600;
 }
-.conv .quick, .conv .fine { grid-column: 1 / -1; }
+.conv .quick { grid-column: 1 / -1; }
 .quick { display: flex; flex-wrap: wrap; gap: 8px; }
 .quick button { min-height: 44px; padding: 0 12px; border-radius: 999px; border: 0; background: var(--paper); font-family: var(--f-mono); font-weight: 600; font-size: 14px; cursor: pointer; }
 .checks { padding: 0 6px; }
