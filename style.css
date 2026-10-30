@@ -582,3 +582,42 @@ button { font: inherit; color: inherit; }
 .wp-nav { top: 50%; margin-top: -22px; }
 .wp-prev { left: max(10px, env(safe-area-inset-left, 0px)); }
 .wp-next { right: max(10px, env(safe-area-inset-right, 0px)); }
+
+/* ---------- call buttons + confirm dialog ---------- */
+.copy.call { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.copy.call svg { width: 17px; height: 17px; }
+.stay-phone { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+.stay-phone .call { min-height: 36px; padding: 0 12px; font-size: 14px; }
+.callbox { position: fixed; inset: 0; z-index: 45; display: flex; align-items: flex-end; justify-content: center; background: rgba(10, 12, 20, .5); }
+.motion .callbox { animation: fadein .2s ease both; }
+.callbox-card {
+  width: 100%; max-width: 480px; margin: 0 12px calc(12px + env(safe-area-inset-bottom, 0px)); padding: 20px 18px 14px;
+  border-radius: 24px; background: var(--paper); display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -10px 30px rgba(10, 14, 25, .25);
+}
+.motion .callbox-card { animation: sheet .3s cubic-bezier(.2, .8, .2, 1) both; }
+.callbox-q { margin: 0; font-size: 18px; font-weight: 900; }
+.callbox-who { margin: 0 0 4px; font-size: 15px; color: var(--muted); }
+.callbox-go {
+  min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px;
+  background: var(--ink); color: var(--paper); text-decoration: none; font-family: var(--f-mono); font-weight: 600; font-size: 18px;
+}
+.callbox-go svg { width: 20px; height: 20px; }
+.callbox-no { min-height: 48px; border: 0; border-radius: 999px; background: var(--card); color: var(--ink); font-weight: 700; cursor: pointer; }
+/* handy links: small group headings inside the section */
+.link-h { margin: 6px 2px 2px; font-size: 13px; font-weight: 700; color: var(--muted); }
+
+/* ---------- local / Taiwan clock next to the menu button ---------- */
+.clk { flex: none; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; line-height: 1.25; font-family: var(--f-mono); white-space: nowrap; }
+.clk b { font-size: 13px; font-weight: 600; color: var(--ink); }
+.clk small { font-size: 11px; color: var(--muted); }
+.cover-bar .clk { margin-left: auto; margin-right: 10px; }
+
+/* ---------- weather chip at the right end of the day's meta row ---------- */
+.kicker .wx { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-style: normal; color: var(--ink); }
+.kicker .wx svg { width: 17px; height: 17px; color: var(--blue); }
+.kicker .wx b { font-weight: 600; }
+.kicker .wx small { font-size: 11px; color: var(--muted); letter-spacing: 0; }
+.kicker .wx.is-fc svg { color: var(--gold); }
+@media (max-width: 359px) {
+  .bar-label { visibility: hidden; }  /* very narrow phones: the clock needs the room; the meta row below already shows 02/18 */
+}

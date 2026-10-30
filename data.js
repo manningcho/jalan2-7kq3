@@ -43,6 +43,10 @@ window.TRIP = {
     { art: "cover5", wall: "wall/wall-5.jpg", tag: "bali" },
     { art: "cover6", wall: "wall/wall-6.jpg", tag: "kaohsiung × indonesia" }
   ],
+  // 天氣：12 月平均（Open-Meteo 歷史資料 2015–2024 的 12 月，rain＝一個月裡下雨 ≥1mm 的天數）；
+  // 出發前 16 天內改抓 Open-Meteo 的真實預報（app.js 的 wxRefresh），座標在 wx
+  climate: { jkt: { hi: 31, lo: 24, rain: 26 }, pwt: { hi: 29, lo: 23, rain: 29 }, yk: { hi: 29, lo: 23, rain: 28 }, bali: { hi: 29, lo: 24, rain: 28 }, tw: { hi: 20, lo: 15, rain: 15 } },
+  wx: { jkt: [-6.20, 106.82], pwt: [-7.42, 109.23], yk: [-7.80, 110.36], bali: [-8.69, 115.17], tw: [24.99, 121.30] },
   photos: {
     stupa: { src: "img/stupa.jpg", what: "Borobudur", by: "AI (OpenAI Codex)", top: "#587bbb" },
     cover1: { src: "img/cover-1.jpg", what: "Sizihwan, Kaohsiung", by: "AI (OpenAI Codex)", top: "#af9eab" },

@@ -44,6 +44,16 @@
     wpHintDesk: ["按右鍵「另存圖片」，存成桌布", "Klik kanan lalu \"Simpan gambar\"", "Right-click and choose \"Save image\""],
     wpPrev: ["上一張", "Sebelumnya", "Previous"],
     wpNext: ["下一張", "Berikutnya", "Next"],
+    call: ["撥打", "Telepon", "Call"],
+    callAsk: ["要撥打這支電話嗎？", "Telepon nomor ini?", "Call this number?"],
+    cancel: ["取消", "Batal", "Cancel"],
+    linksTitle: ["好用連結", "Tautan berguna", "Handy links"],
+    localShort: ["當地", "Lokal", "Local"],
+    twShort: ["台灣", "Taiwan", "Taiwan"],
+    wxAvg: ["12 月平均", "Rata-rata Des", "Dec avg"],
+    wxRain: ["雨", "Hujan", "Rain"],
+    wxTitle: ["天氣", "Cuaca", "Weather"],
+    tipWx: ["天氣是 12 月平均；出發前 16 天內會自動換成當天預報", "Cuaca rata-rata Desember; 16 hari sebelum berangkat berganti jadi prakiraan", "Weather shows December averages; within 16 days of the trip it switches to the real forecast"],
     tipHome: ["用瀏覽器的「加入主畫面」，就能像 App 一樣一點就打開", "Pilih \"Tambahkan ke Layar Utama\" di browser agar bisa dibuka seperti aplikasi", "Use \"Add to Home Screen\" in your browser to open it like an app"],
     back: ["返回", "Kembali", "Back"],
     prefs: ["設定", "Pengaturan", "Settings"],
@@ -176,6 +186,11 @@
     boat: '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13.5h18l-2.3 3.2q-.8 1.1-2.4 1.1H7q-2 0-2.8-1.9L3 13.5ZM6 13.5v-6h7l3.8 6M6 10.5h8.9M3 20q2.25-1.4 4.5 0t4.5 0 4.5 0 4.5 0"/></g></svg>',
     stay: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19V7M3 14h18v5M21 14v-2a3 3 0 0 0-3-3h-7v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="11" r="1.8" fill="currentColor"/></svg>',
     wedding: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="14" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="14" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 3.5h2.6l1.4 4.1-2 1.5a12.5 12.5 0 0 0 6.3 6.3l1.5-2 4.1 1.4v2.6a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+    sun: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    cloud: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10.5a3.8 3.8 0 0 0 .4-7.6A5.6 5.6 0 0 0 7.1 9.2 4.4 4.4 0 0 0 7 18z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+    rain: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 15h10.5a3.6 3.6 0 0 0 .4-7.2A5.4 5.4 0 0 0 7.1 6.6 4.2 4.2 0 0 0 7 15z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8.5 18l-1 2.5M12.5 18l-1 2.5M16.5 18l-1 2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    storm: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14.5h10.5a3.6 3.6 0 0 0 .4-7.2A5.4 5.4 0 0 0 7.1 6.1 4.2 4.2 0 0 0 7 14.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12.5 15.5l-2 3.2h3l-2 3.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="2.3" fill="currentColor"/></svg>',
     chev: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     arrow: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -275,8 +290,25 @@
   function bar(label, backTo) {
     return '<header class="bar"><div class="bar-in">' +
       '<a class="back" href="#' + backTo + '">' + ICON.left + "<span>" + esc(backTo === "home" ? u("home") : u("back")) + "</span></a>" +
-      '<span class="bar-label">' + esc(label) + "</span>" + prefs() + "</div></header>";
+      '<span class="bar-label">' + esc(label) + "</span>" + clockHtml() + prefs() + "</div></header>";
   }
+
+  // ---------- 上方的時間：當地／台灣（漢堡選單旁邊，每 15 秒更新）----------
+  function clockHtml() { return '<span class="clk" data-clk="1"></span>'; }
+  function clockCity() {
+    var h = (location.hash || "").replace(/^#/, ""), d = T.days.filter(function (x) { return dayId(x) === h; })[0] || todayDay();
+    return d ? d.city : "jkt"; // 出發前先顯示雅加達
+  }
+  function tickClock() {
+    var els = document.querySelectorAll("[data-clk]");
+    if (!els.length) return;
+    var fmt = function (tz) { try { return new Date().toLocaleTimeString("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } };
+    var c = clockCity(), tw = fmt("Asia/Taipei");
+    var html = c === "tw" ? "<b>" + esc(u("twShort")) + " " + tw + "</b>" :
+      "<b>" + esc(u("localShort")) + " " + fmt(c === "bali" ? "Asia/Makassar" : "Asia/Jakarta") + "</b><small>" + esc(u("twShort")) + " " + tw + "</small>";
+    els.forEach(function (el) { if (el.innerHTML !== html) el.innerHTML = html; });
+  }
+  setInterval(tickClock, 15000);
 
   // ---------- 封面 ----------
   function todayDay() { var t = todayStr(); return T.days.filter(function (d) { return d.date === t; })[0]; }
@@ -287,7 +319,7 @@
     var route = ["tw", "jkt", "pwt", "yk", "bali", "tw"].map(function (c) { return "<li>" + esc(L(T.cities[c])) + "</li>"; }).join("");
 
     return '<main class="wrap cover">' +
-      '<div class="cover-bar r">' + STAR + prefs() + "</div>" +
+      '<div class="cover-bar r">' + STAR + clockHtml() + prefs() + "</div>" +
       meta([[u("mTrip"), u("indonesia")], [u("mDate"), "14–31.12"], [u("mDays"), "18"], [u("mNo"), "#2026"]]) +
       coverHero() +
       '<section class="cover-body r"><p class="vert' + (lang === "zh" ? "" : " is-latin") + '" aria-hidden="true">' + esc(u("vert")) + "</p>" +
@@ -459,6 +491,25 @@
     wpOpen = false;
   }
 
+  // 印尼的市話／手機（0 開頭）改成 +62，台灣門號漫遊也撥得通
+  function telIntl(n) { var d = n.replace(/[^\d+]/g, ""); return d[0] === "0" ? "+62" + d.slice(1) : d; }
+  // 撥打前先跳確認視窗，避免誤觸；有兩個號碼（118 / 119）就讓人選
+  function showCall(btn) {
+    closeCall();
+    var nums = btn.dataset.call.split(","), ov = document.createElement("div");
+    ov.className = "callbox";
+    ov.setAttribute("role", "dialog");
+    ov.setAttribute("aria-modal", "true");
+    ov.setAttribute("aria-label", u("callAsk"));
+    ov.innerHTML = '<div class="callbox-card"><p class="callbox-q">' + esc(u("callAsk")) + '</p><p class="callbox-who">' + esc(btn.dataset.callLabel) + "</p>" +
+      nums.map(function (n) { return '<a class="callbox-go" href="tel:' + esc(n) + '" data-call-close="1">' + ICON.phone + esc(u("call")) + " " + esc(n) + "</a>"; }).join("") +
+      '<button type="button" class="callbox-no" data-call-close="1">' + esc(u("cancel")) + "</button></div>";
+    document.body.appendChild(ov);
+    ov.addEventListener("click", function (e) { if (e.target === ov || e.target.closest("[data-call-close]")) setTimeout(closeCall, 0); });
+    ov.querySelector(".callbox-no").focus({ preventScroll: true });
+  }
+  function closeCall() { var o = document.querySelector(".callbox"); if (o) o.remove(); }
+
   // ---------- 主選單 ----------
   function sec(title, body) { return '<section class="sec r"><h2 class="sec-h">' + SPARK + esc(title) + "</h2>" + body + "</section>"; }
   // 匯率換算和行李清單：選單頁的最後兩個按鈕，各自一頁
@@ -569,6 +620,44 @@
     if (it.links) h += '<div class="lnks">' + it.links.map(linkHtml).join("") + "</div>";
     return h + "</article></li>";
   }
+  // ---------- 天氣：日期那一行的右邊 ----------
+  // 平常顯示 12 月平均（T.climate）；出發前 16 天內抓 Open-Meteo 預報，存在這支手機（trip-wx），沒網路就用上次存的
+  function wxCache() { try { return JSON.parse(localStorage.getItem("trip-wx") || "{}"); } catch (e) { return {}; } }
+  function wxIcon(code) {
+    if (code == null) return ICON.rain; // 12 月是雨季：平均值用雨雲
+    if (code >= 95) return ICON.storm;
+    if (code >= 51) return ICON.rain;
+    if (code >= 2) return ICON.cloud;
+    return ICON.sun;
+  }
+  function wxHtml(d) {
+    var c = wxCache()[d.city], f = c && c.days && c.days[d.date], n = (T.climate || {})[d.city];
+    if (!f && !n) return "";
+    var hi = f ? f[0] : n.hi, lo = f ? f[1] : n.lo;
+    var note = f ? (f[3] >= 30 ? u("wxRain") + " " + f[3] + "%" : "") : u("wxAvg");
+    return '<em class="wx' + (f ? " is-fc" : "") + '" data-wx="' + d.date + '" title="' + esc(u("wxTitle")) + '">' + wxIcon(f ? f[2] : null) +
+      "<b>" + lo + "–" + hi + "°</b>" + (note ? "<small>" + esc(note) + "</small>" : "") + "</em>";
+  }
+  function wxRefresh(d) {
+    var ll = (T.wx || {})[d.city];
+    if (!ll || !window.fetch || !navigator.onLine) return;
+    var ahead = Math.round((parseDate(d.date) - parseDate(todayStr())) / 86400000);
+    if (ahead < 0 || ahead > 15) return; // 預報只到 16 天後
+    var cache = wxCache(), c = cache[d.city];
+    if (c && Date.now() - c.at < 3 * 3600000 && c.days[d.date]) return; // 3 小時內抓過就不再抓
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=" + ll[0] + "&longitude=" + ll[1] +
+      "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=16")
+      .then(function (r) { return r.json(); }).then(function (j) {
+        var days = {};
+        j.daily.time.forEach(function (t, i) {
+          days[t] = [Math.round(j.daily.temperature_2m_max[i]), Math.round(j.daily.temperature_2m_min[i]), j.daily.weather_code[i], j.daily.precipitation_probability_max[i] || 0];
+        });
+        var all = wxCache(); all[d.city] = { at: Date.now(), days: days };
+        try { localStorage.setItem("trip-wx", JSON.stringify(all)); } catch (e) {}
+        var el = app.querySelector('[data-wx="' + d.date + '"]');
+        if (el) el.outerHTML = wxHtml(d);
+      }).catch(function () {});
+  }
   function viewDay(d) {
     var i = T.days.indexOf(d), prev = T.days[i - 1], next = T.days[i + 1];
     var items = d.items.map(function (it) { return it.go ? goBlock(it) : card(it); }).join("");
@@ -577,13 +666,13 @@
       '<button type="button" class="pg-jump" data-jump="1" aria-label="' + esc(u("jumpTo")) + '" title="' + esc(u("jumpTo")) + '">' + ICON.cal + "</button>" +
       (next ? '<a class="pg-next" href="#' + dayId(next) + '"><span><small>' + esc(u("next")) + "</small>" + dm(next) + "</span>" + ICON.chev + "</a>" : "<span></span>") + "</nav>";
     return bar("No.#" + pad(i + 1) + " / 18", "days") + '<main class="wrap' + (d.wedding ? " is-wedding" : "") + '">' +
-      kicker([pad(i + 1) + "/18", dm(d) + " " + wk(d), L(T.cities[d.city]), tzCode(d.city)]) +
+      kicker([pad(i + 1) + "/18", dm(d) + " " + wk(d), L(T.cities[d.city]), tzCode(d.city)]).replace("</p>", wxHtml(d) + "</p>") +
       hero(d.word, d.art) +
       '<section class="day-head r"><h1 class="dh-title">' + esc(L(d.title)) + "</h1>" +
       '<p class="dh-tz">' + SPARK + esc(tzNote(d.city)) + "</p></section>" +
       // 小花線只當「這一頁到底了」的記號：小花線＋提示輪播放在換日按鈕下面，當整頁的結尾（跟其他頁一樣）
       '<ol class="flow">' + items + "</ol>" + pager +
-      footNotes([u("tipJump")].concat(d.items.some(function (it) { return it.place || it.options; }) ? [u("tipDriver")] : [], commonTips())) + "</main>";
+      footNotes([u("tipJump"), u("tipWx")].concat(d.items.some(function (it) { return it.place || it.options; }) ? [u("tipDriver")] : [], commonTips())) + "</main>";
   }
 
   // ---------- 餐廳 ----------
@@ -619,7 +708,7 @@
           '<h2 class="stay-name">' + esc(p.n) + '</h2><p class="stay-area">' + esc(p.a) + "</p>" +
           (s.inout ? '<p class="stay-meta">' + esc(L(s.inout)) + "</p>" : "") +
           (s.host ? '<p class="stay-meta">' + esc(u("host")) + "：" + esc(s.host) + "</p>" : "") +
-          (s.phone ? '<p class="stay-meta">' + esc(u("phone")) + '：<span class="sel">' + esc(s.phone) + "</span></p>" : "") +
+          (s.phone ? '<p class="stay-meta stay-phone">' + esc(u("phone")) + '：<span class="sel">' + esc(s.phone) + "</span>" + callBtn([telIntl(s.phone)], p.n) + "</p>" : "") +
           placeActions(s.place) + "</div></li>";
       }).join("") + "</ul>" + footNotes([u("tipDriver")].concat(commonTips())) + "</main>";
   }
@@ -639,13 +728,40 @@
       "Isi deklarasi kedatangan online (All Indonesia) maksimal 3 hari sebelum tiba. Cek lagi aturannya.",
       "Indonesia now uses an online arrival and customs form (All Indonesia), filled within 3 days of arrival. Double-check before you go."]]
   ];
+  // [顯示的號碼, 說明, 實際撥出的號碼（印尼市話改成 +62，台灣門號漫遊也撥得通）]
+  // 外交部資料（2026/10 查證）：雅加達代表處管雅加達、普禾加多、日惹；峇里島歸泗水辦事處管
   var EMERG = [
-    ["112", ["印尼緊急電話（警察、救護、消防）", "Darurat umum", "General emergency"]],
-    ["110", ["警察", "Polisi", "Police"]],
-    ["118 / 119", ["救護車", "Ambulans", "Ambulance"]],
-    ["0811-984-676", ["駐印尼台北經濟貿易代表處（急難救助）", "Kantor Dagang Taipei (darurat)", "Taipei Economic & Trade Office (emergencies)"]],
-    ["021-515-3939", ["駐印尼代表處（一般業務，上班時間）", "Kantor Dagang Taipei (umum)", "Taipei office (general, office hours)"]]
+    ["112", ["印尼緊急電話（警察、救護、消防）", "Darurat umum", "General emergency"], ["112"]],
+    ["110", ["警察", "Polisi", "Police"], ["110"]],
+    ["118 / 119", ["救護車", "Ambulans", "Ambulance"], ["118", "119"]],
+    ["0811-984-676", ["駐印尼代表處・急難救助（雅加達、普禾加多、日惹）", "Kantor Dagang Taipei Jakarta, darurat (Jakarta, Purwokerto, Yogyakarta)", "Taipei office Jakarta, emergencies (Jakarta, Purwokerto, Yogyakarta)"], ["+62811984676"]],
+    ["021-515-3939", ["駐印尼代表處・一般業務（上班時間）", "Kantor Dagang Taipei Jakarta, umum (jam kerja)", "Taipei office Jakarta, general (office hours)"], ["+62215153939"]],
+    ["0822-5766-9680", ["駐泗水辦事處・急難救助（峇里島，下班後與假日）", "Kantor Taipei Surabaya, darurat (Bali, di luar jam kerja)", "Taipei office Surabaya, emergencies (Bali, after hours)"], ["+6282257669680"]],
+    ["031-9901-4600", ["駐泗水辦事處（峇里島，上班時間）", "Kantor Taipei Surabaya (Bali, jam kerja)", "Taipei office Surabaya (Bali, office hours)"], ["+623199014600"]]
   ];
+  // 好用連結（2026/10 查證都是官方網址）
+  var LINKS = [
+    [["證件和規定", "Dokumen & aturan", "Documents & rules"], [
+      ["https://evisa.imigrasi.go.id/", "e-VOA", ["印尼電子落地簽官網", "Situs resmi visa elektronik", "Official e-visa site"]],
+      ["https://allindonesia.imigrasi.go.id/", "All Indonesia", ["入境與海關線上申報", "Deklarasi kedatangan & bea cukai", "Arrival and customs declaration"]],
+      ["https://lovebali.baliprov.go.id/", "Love Bali", ["峇里島觀光稅線上繳費", "Pungutan wisatawan Bali", "Bali tourist levy"]]
+    ]],
+    [["台灣官方", "Pemerintah Taiwan", "Taiwan government"], [
+      ["https://www.boca.gov.tw/sp-trwa-content-3117-e5522-1.html", "外交部領事局・印尼旅遊警示", ["最新旅遊警示和注意事項", "Peringatan perjalanan terbaru", "Latest travel advice"]],
+      ["https://www.boca.gov.tw/sp-foof-countrycp-02-12-c23b0-1.html", "外交部領事局・駐印尼館處", ["地址、電話、轄區", "Alamat, telepon, wilayah", "Addresses, phones, coverage"]],
+      ["https://www.roc-taiwan.org/id/", "駐印尼台北經濟貿易代表處", ["代表處官網", "Situs Kantor Dagang Taipei", "Taipei office website"]]
+    ]],
+    [["好用 App", "Aplikasi berguna", "Handy apps"], [
+      ["https://www.grab.com/id/en/", "Grab", ["叫車、外送", "Transportasi & pesan antar", "Rides and delivery"]],
+      ["https://www.gojek.com/en-id/", "Gojek", ["叫車、外送（印尼最普遍）", "Transportasi & pesan antar", "Rides and delivery (most common in Indonesia)"]],
+      ["https://translate.google.com/", "Google 翻譯", ["可以拍照翻譯菜單和招牌", "Bisa terjemahkan foto menu", "Translate menus and signs with the camera"]],
+      ["https://www.google.com/maps", "Google 地圖", ["導航、找店", "Navigasi & cari tempat", "Directions and places"]],
+      ["https://www.airbnb.com.tw/", "Airbnb", ["日惹和峇里島的住宿", "Penginapan Yogyakarta & Bali", "Our stays in Yogyakarta and Bali"]]
+    ]]
+  ];
+  function callBtn(nums, label) {
+    return '<button type="button" class="copy call" data-call="' + esc(nums.join(",")) + '" data-call-label="' + esc(label) + '">' + ICON.phone + esc(u("call")) + "</button>";
+  }
   function viewInfo() {
     var time = sec(u("timeTitle"), '<ul class="list kv">' +
       "<li><b>" + esc(L(T.cities.jkt) + "・" + L(T.cities.pwt) + "・" + L(T.cities.yk)) + "</b><span>WIB · " + esc(u("tzJava")) + "</span></li>" +
@@ -654,8 +770,13 @@
       return '<li class="para"><b>' + esc(L(e[0])) + "</b><p>" + esc(L(e[1])) + "</p></li>";
     }).join("") + "</ul>");
     var emerg = sec(u("emergTitle"), '<ul class="list">' + EMERG.map(function (e) {
-      return '<li class="phone-row"><span><b class="sel">' + esc(e[0]) + "</b><small>" + esc(L(e[1])) + '</small></span><button type="button" class="copy" data-copy="' + esc(e[0].split(" ")[0]) + '">' + esc(u("copy")) + "</button></li>";
+      return '<li class="phone-row"><span><b class="sel">' + esc(e[0]) + "</b><small>" + esc(L(e[1])) + "</small></span>" + callBtn(e[2], L(e[1])) + "</li>";
     }).join("") + "</ul>");
+    var links = sec(u("linksTitle"), LINKS.map(function (g) {
+      return '<h3 class="link-h">' + esc(L(g[0])) + '</h3><ul class="list">' + g[1].map(function (l) {
+        return '<li><a class="row" href="' + esc(l[0]) + '" target="_blank" rel="noopener"><span class="row-main"><b>' + esc(l[1]) + "</b><small>" + esc(L(l[2])) + '</small></span><span class="row-act">' + ICON.arrow + "</span></a></li>";
+      }).join("") + "</ul>";
+    }).join(""));
     var tickets = sec(u("ticketTitle"), '<ul class="list tickets">' + T.tickets.map(function (k) {
       return '<li class="tk"><span class="tk-ic">' + ICON[k.kind] + '</span><span><b>' + esc(k.date + "　" + L(k.t)) + "</b><small>" + esc(L(k.d)) + "</small></span></li>";
     }).join("") + "</ul>");
@@ -663,7 +784,7 @@
     var credits = footNotes([u("tipCopy")].concat(commonTips()));
     return bar("No.#04", "menu") + '<main class="wrap">' +
       kicker(["WIB / WITA", u("mItems") + " 04"]) +
-      pageHead("info", "p-info") + time + entry + emerg + tickets + credits + "</main>";
+      pageHead("info", "p-info") + time + entry + emerg + links + tickets + credits + "</main>";
   }
 
   // ---------- 學印尼文 ----------
@@ -1292,9 +1413,12 @@
     fadeIn(app);
     placeSays();
     setPetals(!!(d && d.wedding)); // 只有 12/19、12/20 飄花瓣
+    if (d) wxRefresh(d);
     syncDial(h);
     startTicker();
     closeWall();
+    closeCall();
+    tickClock();
     cvCur = 0; cvPos = [];
     cvShow(0);
     cvStart();
@@ -1344,6 +1468,8 @@
     } else if (t.dataset.idr) {
       document.getElementById("idr").value = (+t.dataset.idr).toLocaleString("id-ID");
       convert("idr");
+    } else if (t.dataset.call) {
+      showCall(t);
     } else if (t.dataset.copy) {
       var done = function () { t.textContent = u("copied"); setTimeout(function () { t.textContent = u("copy"); }, 1500); };
       try { navigator.clipboard.writeText(t.dataset.copy).then(done, function () { selectText(t); }); } catch (err) { selectText(t); }
@@ -1377,6 +1503,7 @@
       return;
     }
     if ((e.key === "Enter" || e.key === " ") && e.target.closest && e.target.closest("[data-cv]")) { e.preventDefault(); openWall(cvCur ? cvCur - 1 : 0); return; }
+    if (e.key === "Escape") closeCall();
     if (e.key === "Escape") { var o = document.querySelector(".driver"); if (o) o.remove(); if (prefsOpen) setPrefsOpen(false); closeJump(); closeDial(); }
   });
   window.addEventListener("hashchange", function () { prefsOpen = false; render(); window.scrollTo(0, 0); });
