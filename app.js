@@ -29,6 +29,8 @@
     countdown: ["還有 {n} 天出發", "{n} hari lagi berangkat", "{n} days to go"],
     coverSub: ["一家五口的印尼行程", "Perjalanan keluarga ke Indonesia", "A family trip to Indonesia"],
     madeFor: ["made for 桌桌's family", "made for 桌桌's family", "made for 桌桌's family"],
+    egg: ["從一張試算表開始", "Berawal dari satu spreadsheet", "It started with a spreadsheet"],
+    eggLabel: ["小彩蛋", "Kejutan kecil", "A little surprise"],
     tipDial: ["其他頁角落的 {ic} 點開可以轉轉看，快速跳到任何一頁", "Di halaman lain, ketuk {ic} di pojok bawah lalu putar untuk pindah halaman", "On other pages, tap {ic} in the corner and spin to jump to any page"],
     tipDialHere: ["角落的 {ic} 點開可以轉轉看，快速跳到任何一頁", "Ketuk {ic} di pojok bawah lalu putar untuk pindah halaman", "Tap {ic} in the corner and spin to jump to any page"],
     tipDrag: ["按住 {ic} 可以拖到另一邊，左手也好按", "Tahan {ic} lalu geser ke sisi lain, pas untuk tangan kiri", "Hold {ic} and drag it to the other side, handy for left thumbs"],
@@ -337,7 +339,7 @@
     var route = ["tw", "jkt", "pwt", "yk", "bali", "tw"].map(function (c) { return "<li>" + esc(L(T.cities[c])) + "</li>"; }).join("");
 
     return '<main class="wrap cover">' +
-      '<div class="cover-bar r">' + STAR + clockHtml() + prefs() + "</div>" +
+      '<div class="cover-bar r"><button type="button" class="egg-btn" data-egg="1" aria-label="' + esc(u("eggLabel")) + '">' + STAR + "</button>" + clockHtml() + prefs() + "</div>" +
       meta([[u("mTrip"), u("indonesia")], [u("mDate"), "14–31.12"], [u("mDays"), "18"], [u("mNo"), "#2026"]]) +
       coverHero() +
       '<section class="cover-body r"><p class="vert' + (lang === "zh" ? "" : " is-latin") + '" aria-hidden="true">' + esc(u("vert")) + "</p>" +
@@ -460,6 +462,95 @@
   }, { passive: false });
   document.addEventListener("touchend", function () { cvT = null; });
   document.addEventListener("touchcancel", function () { cvT = null; });
+
+  // ---------- 小彩蛋：點封面左上角的星星，試算表的格子一格一格飛起來，拼成那顆八角星 ----------
+  // 這個網站是從一張 Google 試算表開始的。全部用 SVG 畫、Web Animations 動，不用下載圖片，沒網路也能播。
+  var EGG_COLS = 7, EGG_ROWS = 8, eggOpen = false;
+  function eggStarPts() { // 八角星的 16 個頂點（跟 STAR 同一個形狀），放大到 160、置中在 (100, 100)
+    var d = "24 0 26.6 19 40.9 7.1 29 21.4 48 24 29 26.6 40.9 40.9 26.6 29 24 48 21.4 29 7.1 40.9 19 26.6 0 24 19 21.4 7.1 7.1 21.4 19".split(" ").map(Number), pts = [];
+    for (var i = 0; i < d.length; i += 2) pts.push([20 + d[i] * 160 / 48, 20 + d[i + 1] * 160 / 48]);
+    return pts;
+  }
+  function eggInside(p, poly) {
+    for (var c = false, i = 0, j = poly.length - 1; i < poly.length; j = i++)
+      if ((poly[i][1] > p[1]) !== (poly[j][1] > p[1]) && p[0] < (poly[j][0] - poly[i][0]) * (p[1] - poly[i][1]) / (poly[j][1] - poly[i][1]) + poly[i][0]) c = !c;
+    return c;
+  }
+  function eggTargets(n, poly) { // 沿著星星的輪廓平均排 n 個點（格子排成星星的邊，形狀一眼就看得出來）
+    var segs = [], total = 0;
+    poly.forEach(function (p, i) { var q = poly[(i + 1) % poly.length], l = Math.hypot(q[0] - p[0], q[1] - p[1]); segs.push([p, q, l]); total += l; });
+    var out = [], k = 0, acc = 0;
+    for (var i = 0; i < n; i++) {
+      var want = (i + .5) * total / n;
+      while (acc + segs[k][2] < want) { acc += segs[k][2]; k++; }
+      var t = (want - acc) / segs[k][2], a = segs[k][0], b = segs[k][1];
+      out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+    }
+    return out;
+  }
+  function eggSvg(color) {
+    var cw = 24, ch = 15, x0 = 100 - cw * EGG_COLS / 2, y0 = 100 - ch * EGG_ROWS / 2, cells = "", txt = "";
+    for (var r = 0; r < EGG_ROWS; r++) for (var c = 0; c < EGG_COLS; c++) {
+      var head = r === 0 || c === 0, x = x0 + c * cw, y = y0 + r * ch;
+      cells += '<rect class="egg-c' + (head ? " is-h" : "") + '" x="' + x + '" y="' + y + '" width="' + cw + '" height="' + ch + '"/>';
+      // 表頭寫 A B C…、1 2 3…；資料格裡畫幾條灰色短線當作字
+      if (r === 0 && c > 0) txt += '<text class="egg-t" x="' + (x + cw / 2) + '" y="' + (y + 10.5) + '">' + "ABCDEF"[c - 1] + "</text>";
+      else if (c === 0 && r > 0) txt += '<text class="egg-t" x="' + (x + cw / 2) + '" y="' + (y + 10.5) + '">' + r + "</text>";
+      else if (!head && (r * 3 + c * 5) % 4) txt += '<rect class="egg-t" x="' + (x + 4) + '" y="' + (y + 6) + '" width="' + (6 + (r * 7 + c * 3) % 12) + '" height="3" rx="1.5"/>';
+    }
+    return '<svg class="egg-art" viewBox="0 0 200 200" aria-hidden="true">' +
+      '<g class="egg-sheet">' + cells + '<g class="egg-txt">' + txt + "</g>" +
+      '<rect class="egg-sel" x="' + (x0 + cw) + '" y="' + (y0 + ch) + '" width="' + cw + '" height="' + ch + '"/></g>' +
+      '<path class="egg-star" d="M' + eggStarPts().map(function (p) { return p[0].toFixed(1) + " " + p[1].toFixed(1); }).join("L") + 'Z" fill="' + color + '"/></svg>';
+  }
+  function openEgg() {
+    closeEgg(true);
+    var star = app.querySelector(".cover-bar .star"), color = star ? getComputedStyle(star).color : "#5677ae";
+    var ov = document.createElement("div");
+    ov.className = "egg"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", u("eggLabel"));
+    ov.innerHTML = '<div class="egg-card">' + eggSvg(color) + '<p class="egg-cap">' + esc(u("egg")) + "<small>made with Claude</small></p></div>";
+    document.body.appendChild(ov);
+    eggOpen = true;
+    ov.addEventListener("click", function () { closeEgg(); });
+    requestAnimationFrame(function () { ov.classList.add("is-on"); eggPlay(ov, color); });
+  }
+  function eggPlay(ov, color) {
+    if (!ov.animate) { ov.classList.add("is-done"); return; } // 太舊的瀏覽器：直接顯示星星
+    var cells = [].slice.call(ov.querySelectorAll(".egg-c")), poly = eggStarPts(), pts = eggTargets(cells.length, poly);
+    var ang = function (x, y) { return Math.atan2(y - 100, x - 100); };
+    // 格子和星星上的點都照「繞圓心的角度」排好再一一配對，飛的時候就像一起旋轉著聚過去
+    var order = cells.map(function (el) { var x = +el.getAttribute("x") + 12, y = +el.getAttribute("y") + 7.5; return { el: el, x: x, y: y, a: ang(x, y) }; })
+      .sort(function (a, b) { return a.a - b.a; });
+    pts = pts.slice().sort(function (a, b) { return ang(a[0], a[1]) - ang(b[0], b[1]); });
+    var ease = "cubic-bezier(.5, 0, .2, 1)", T0 = 900; // 先讓大家看一下試算表，選取框閃一閃
+    ov.querySelector(".egg-sel").animate([{ opacity: 1 }, { opacity: .2 }, { opacity: 1 }, { opacity: 0 }], { duration: T0, fill: "forwards" });
+    ov.querySelector(".egg-txt").animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, delay: T0 - 100, fill: "forwards" });
+    order.forEach(function (o, i) {
+      var p = pts[(i + 9) % pts.length], d = T0 + i * 14; // 錯開一點，一格接一格飛
+      o.el.animate([
+        { transform: "translate(0,0) rotate(0deg) scale(1,1)", fill: o.el.classList.contains("is-h") ? "#e6f4ea" : "#ffffff" },
+        { transform: "translate(" + (p[0] - o.x) * .55 + "px," + (p[1] - o.y) * .55 + "px) rotate(120deg) scale(.5,.7)", fill: color, offset: .6 },
+        { transform: "translate(" + (p[0] - o.x) + "px," + (p[1] - o.y) + "px) rotate(225deg) scale(.24,.38)", fill: color }
+      ], { duration: 900, delay: d, easing: ease, fill: "forwards" });
+    });
+    var tEnd = T0 + order.length * 14 + 900;
+    ov.querySelector(".egg-sheet").animate([{ opacity: 1 }, { opacity: 0 }], { duration: 450, delay: tEnd + 150, fill: "forwards" }); // 輪廓排好停一下，實心星星才浮出來
+    ov.querySelector(".egg-star").animate([
+      { opacity: 0, transform: "scale(.86) rotate(-20deg)" },
+      { opacity: 1, transform: "scale(1.06) rotate(4deg)", offset: .7 },
+      { opacity: 1, transform: "scale(1) rotate(0deg)" }
+    ], { duration: 650, delay: tEnd + 100, easing: "cubic-bezier(.3, 1.4, .5, 1)", fill: "forwards" });
+    ov.querySelector(".egg-cap").animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 500, delay: tEnd + 600, fill: "forwards" });
+  }
+  function closeEgg(now) {
+    var ov = document.querySelector(".egg");
+    eggOpen = false;
+    if (!ov) return;
+    if (now) { ov.remove(); return; }
+    ov.classList.remove("is-on");
+    setTimeout(function () { ov.remove(); }, 250);
+  }
+  document.addEventListener("keydown", function (e) { if (eggOpen && e.key === "Escape") closeEgg(); });
 
   // ---------- 桌布浮層：暗色遮罩、右上 X、左右換張、長按存圖 ----------
   var wpOpen = false, wpIdx = 0;
@@ -1503,6 +1594,7 @@
     var wpc = e.target.closest("[data-wp-close]"), wps = e.target.closest("[data-wp-step]");
     if (wpc) { if (!wpc.closest(".wp").dataset.swiped) closeWall(); return; } // 剛滑完換張，不算點背景
     if (wps) { wallShow(+wps.dataset.wpStep); return; }
+    if (e.target.closest("[data-egg]")) { openEgg(); return; } // 封面左上角的星星：小彩蛋
     var cv = e.target.closest("[data-cv]");
     if (cv) { if (!cvMoved) openWall(cvCur ? cvCur - 1 : 0); return; } // 第一張（婆羅浮屠）點開就從第 1 張桌布開始
     var tk = e.target.closest("[data-tick]");
