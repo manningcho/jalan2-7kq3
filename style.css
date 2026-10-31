@@ -399,10 +399,10 @@ button { font: inherit; color: inherit; }
 .petal { position: absolute; top: -24px; left: var(--x); display: none; }
 .motion .petal { display: block; animation: fall var(--dur) linear var(--delay) infinite; will-change: transform; }
 .petal i { display: block; width: var(--s); opacity: var(--o); animation: sway var(--sw) ease-in-out var(--delay) infinite alternate; }
-.petal svg { display: block; width: var(--s); height: calc(var(--s) * 1.4); fill: #fffaf0; filter: drop-shadow(0 1px 1.5px rgba(154, 91, 51, .45)); }
-/* on light paper white petals need a warmer edge to show up */
-:root:not([data-theme="dark"]) .petal svg { filter: drop-shadow(0 0 1px rgba(154, 91, 51, .55)) drop-shadow(0 1px 2px rgba(154, 91, 51, .45)); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .petal svg { filter: drop-shadow(0 1px 1.5px rgba(154, 91, 51, .45)); } }
+.petal img { display: block; width: var(--s); height: var(--s); filter: drop-shadow(0 1px 1.5px rgba(154, 91, 51, .45)); }
+/* on light paper white flowers need a warmer edge to show up */
+:root:not([data-theme="dark"]) .petal img { filter: drop-shadow(0 0 1px rgba(154, 91, 51, .55)) drop-shadow(0 1px 2px rgba(154, 91, 51, .45)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .petal img { filter: drop-shadow(0 1px 1.5px rgba(154, 91, 51, .45)); } }
 @keyframes fall { to { transform: translateY(calc(100vh + 48px)) rotate(var(--rot)); } }
 @keyframes sway { from { transform: translateX(-16px) rotate(-25deg); } to { transform: translateX(16px) rotate(25deg); } }
 

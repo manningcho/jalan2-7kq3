@@ -1073,18 +1073,21 @@
       if (e.target === ov || e.target.closest("[data-close-jump]") || e.target.closest(".jump-day")) closeJump();
     });
   }
-  // ---------- 婚禮那兩天：飄落的白色茉莉花瓣 ----------
-  var PETAL = '<svg viewBox="0 0 10 14" aria-hidden="true"><path d="M5 .5C8.2 3.4 9.6 7.2 5 13.5.4 7.2 1.8 3.4 5 .5Z"/></svg>';
+  // ---------- 婚禮那兩天：飄落的茉莉花（melati，爪哇婚禮的花） ----------
+  // 圖是 Codex 畫的 img/melati-1..6.png：1–3 盛開的花（正面、斜、側），4–5 花苞，6 一片花瓣。
+  // 盛開的花出現機會多一點。
+  var MELATI = [1, 1, 2, 2, 3, 3, 4, 5, 6];
   function setPetals(on) {
     var box = document.querySelector(".petals");
     if (!on) { if (box) box.remove(); return; }
     if (box) return; // 已經在飄（例如 12/19 換到 12/20、換語言），就讓它繼續
     var html = "";
     for (var i = 0; i < 12; i++) {
-      var dur = 10 + Math.random() * 8; // 每片落下 10–18 秒，起點和大小都不同
+      var dur = 10 + Math.random() * 8; // 每朵落下 10–18 秒，起點和大小都不同
+      var n = MELATI[Math.floor(Math.random() * MELATI.length)];
       html += '<span class="petal" style="--x:' + (Math.random() * 100).toFixed(1) + "%;--dur:" + dur.toFixed(1) + "s;--delay:" + (-Math.random() * dur).toFixed(1) +
-        "s;--rot:" + (Math.random() < .5 ? -1 : 1) * Math.round(180 + Math.random() * 360) + 'deg"><i style="--s:' + (10 + Math.random() * 6).toFixed(1) +
-        "px;--sw:" + (2.5 + Math.random() * 2).toFixed(1) + "s;--o:" + (.6 + Math.random() * .35).toFixed(2) + '">' + PETAL + "</i></span>";
+        "s;--rot:" + (Math.random() < .5 ? -1 : 1) * Math.round(180 + Math.random() * 360) + 'deg"><i style="--s:' + (18 + Math.random() * 10).toFixed(1) +
+        "px;--sw:" + (2.5 + Math.random() * 2).toFixed(1) + "s;--o:" + (.75 + Math.random() * .25).toFixed(2) + '"><img src="img/melati-' + n + '.png" alt=""></i></span>';
     }
     box = document.createElement("div");
     box.className = "petals";
