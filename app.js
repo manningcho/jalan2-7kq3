@@ -29,6 +29,8 @@
     countdown: ["還有 {n} 天出發", "{n} hari lagi berangkat", "{n} days to go"],
     coverSub: ["一家五口的印尼行程", "Perjalanan keluarga ke Indonesia", "A family trip to Indonesia"],
     madeFor: ["made for 桌桌's family", "made for 桌桌's family", "made for 桌桌's family"],
+    egg: ["從一張試算表開始", "Berawal dari satu spreadsheet", "It started with a spreadsheet"],
+    eggLabel: ["小彩蛋", "Kejutan kecil", "A little surprise"],
     tipDial: ["其他頁角落的 {ic} 點開可以轉轉看，快速跳到任何一頁", "Di halaman lain, ketuk {ic} di pojok bawah lalu putar untuk pindah halaman", "On other pages, tap {ic} in the corner and spin to jump to any page"],
     tipDialHere: ["角落的 {ic} 點開可以轉轉看，快速跳到任何一頁", "Ketuk {ic} di pojok bawah lalu putar untuk pindah halaman", "Tap {ic} in the corner and spin to jump to any page"],
     tipDrag: ["按住 {ic} 可以拖到另一邊，左手也好按", "Tahan {ic} lalu geser ke sisi lain, pas untuk tangan kiri", "Hold {ic} and drag it to the other side, handy for left thumbs"],
@@ -337,7 +339,7 @@
     var route = ["tw", "jkt", "pwt", "yk", "bali", "tw"].map(function (c) { return "<li>" + esc(L(T.cities[c])) + "</li>"; }).join("");
 
     return '<main class="wrap cover">' +
-      '<div class="cover-bar r">' + STAR + clockHtml() + prefs() + "</div>" +
+      '<div class="cover-bar r"><button type="button" class="egg-btn" data-egg="1" aria-label="' + esc(u("eggLabel")) + '">' + STAR + "</button>" + clockHtml() + prefs() + "</div>" +
       meta([[u("mTrip"), u("indonesia")], [u("mDate"), "14–31.12"], [u("mDays"), "18"], [u("mNo"), "#2026"]]) +
       coverHero() +
       '<section class="cover-body r"><p class="vert' + (lang === "zh" ? "" : " is-latin") + '" aria-hidden="true">' + esc(u("vert")) + "</p>" +
@@ -460,6 +462,31 @@
   }, { passive: false });
   document.addEventListener("touchend", function () { cvT = null; });
   document.addEventListener("touchcancel", function () { cvT = null; });
+
+  // ---------- 小彩蛋：點封面左上角的星星，跳出一張小插畫「試算表長出八角星」----------
+  // 這個網站是從一張 Google 試算表開始的。插畫是 Codex 畫的（img/egg.jpg），會跟著網站一起存進手機，沒網路也看得到。
+  var eggOpen = false;
+  function openEgg() {
+    closeEgg(true);
+    var ov = document.createElement("div");
+    ov.className = "egg"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", u("eggLabel"));
+    ov.innerHTML = '<div class="egg-card"><img class="egg-art" src="img/egg.jpg" alt="" draggable="false">' +
+      '<p class="egg-cap">' + esc(u("egg")) + "<small>made with Claude</small></p></div>";
+    document.body.appendChild(ov);
+    eggOpen = true;
+    ov.addEventListener("click", function () { closeEgg(); });
+    var img = ov.querySelector("img"), go = function () { requestAnimationFrame(function () { ov.classList.add("is-on"); }); };
+    if (img.decode) img.decode().then(go, go); else go(); // 圖解碼好才開始彈出，不會先看到空白卡片
+  }
+  function closeEgg(now) {
+    var ov = document.querySelector(".egg");
+    eggOpen = false;
+    if (!ov) return;
+    if (now) { ov.remove(); return; }
+    ov.classList.remove("is-on");
+    setTimeout(function () { ov.remove(); }, 250);
+  }
+  document.addEventListener("keydown", function (e) { if (eggOpen && e.key === "Escape") closeEgg(); });
 
   // ---------- 桌布浮層：暗色遮罩、右上 X、左右換張、長按存圖 ----------
   var wpOpen = false, wpIdx = 0;
@@ -1503,6 +1530,7 @@
     var wpc = e.target.closest("[data-wp-close]"), wps = e.target.closest("[data-wp-step]");
     if (wpc) { if (!wpc.closest(".wp").dataset.swiped) closeWall(); return; } // 剛滑完換張，不算點背景
     if (wps) { wallShow(+wps.dataset.wpStep); return; }
+    if (e.target.closest("[data-egg]")) { openEgg(); return; } // 封面左上角的星星：小彩蛋
     var cv = e.target.closest("[data-cv]");
     if (cv) { if (!cvMoved) openWall(cvCur ? cvCur - 1 : 0); return; } // 第一張（婆羅浮屠）點開就從第 1 張桌布開始
     var tk = e.target.closest("[data-tick]");
