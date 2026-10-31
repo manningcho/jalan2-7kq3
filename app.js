@@ -817,7 +817,7 @@
     }).join("");
     return bar("No.#04", "menu") + '<main class="wrap">' +
       kicker(["15.12 – 31.12", u("mItems") + " " + pad(T.tickets.length)]) +
-      '<section class="tword r">' + word("tiket") + '</section><ul class="tixes">' + tix + "</ul>" +
+      pageHead("tiket", "p-transport") + '<ul class="tixes">' + tix + "</ul>" +
       footNotes([u("tipTix")].concat(commonTips())) + "</main>";
   }
 
