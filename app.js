@@ -19,6 +19,16 @@
     if (meta) meta.setAttribute("content", getComputedStyle(root).getPropertyValue("--paper").trim() || "#e9e7e2");
   }
   applyTheme();
+  // 手機最上面狀態列的顏色是 Safari 自己塗的（照 theme-color）。打開遮罩時要「當下」就改成疊上遮罩後的顏色，
+  // 不然 Safari 會等遮罩淡入完才自己重新取色，頂部就慢半拍才變暗。a = [r, g, b, 透明度]，不給就是還原。
+  function barTint(a) {
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+    var base = getComputedStyle(document.documentElement).getPropertyValue("--paper").trim() || "#e9e7e2";
+    if (!a) { meta.setAttribute("content", base); return; }
+    var h = base.replace("#", ""), c = [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); });
+    meta.setAttribute("content", "#" + c.map(function (v, i) { return ("0" + Math.round(v * (1 - a[3]) + a[i] * a[3]).toString(16)).slice(-2); }).join(""));
+  }
   try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme); } catch (e) {}
   var prefsOpen = false; // 右上角選單是否打開
 
@@ -473,6 +483,7 @@
     ov.innerHTML = '<div class="egg-card"><img class="egg-art" src="img/egg.jpg" alt="" draggable="false">' +
       '<p class="egg-cap">' + esc(u("egg")) + "<small>made with Claude</small></p></div>";
     document.body.appendChild(ov);
+    barTint([10, 12, 20, .32]); // 跟 .egg 的遮罩同一個顏色
     eggOpen = true;
     ov.addEventListener("click", function () { closeEgg(); });
     var img = ov.querySelector("img"), go = function () { requestAnimationFrame(function () { ov.classList.add("is-on"); }); };
@@ -482,6 +493,7 @@
     var ov = document.querySelector(".egg");
     eggOpen = false;
     if (!ov) return;
+    barTint();
     if (now) { ov.remove(); return; }
     ov.classList.remove("is-on");
     setTimeout(function () { ov.remove(); }, 250);
@@ -509,6 +521,7 @@
       '<button type="button" class="wp-x" data-wp-close="1" aria-label="' + esc(u("close")) + '">' + ICON.x + "</button>";
     document.body.appendChild(ov);
     document.documentElement.classList.add("wp-open");
+    barTint([8, 10, 18, .82]); // 跟 .wp-scrim 同一個顏色
     wpOpen = true;
     wallShow(0);
     ov.querySelector(".wp-x").focus({ preventScroll: true });
@@ -552,6 +565,7 @@
     var ov = document.querySelector(".wp");
     if (ov) ov.remove();
     document.documentElement.classList.remove("wp-open");
+    barTint();
     wpOpen = false;
   }
 
