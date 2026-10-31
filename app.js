@@ -78,7 +78,7 @@
     prefs: ["設定", "Pengaturan", "Settings"],
     langLabel: ["語言", "Bahasa", "Language"],
     themeLabel: ["顏色", "Tampilan", "Appearance"],
-    soundLabel: ["背景聲音（海浪和海鳥）", "Suara latar (ombak & burung)", "Ambient sound (waves & birds)"],
+    soundLabel: ["背景聲音（跟著城市和天氣換）", "Suara latar (ikut kota & cuaca)", "Ambient sound (by city & weather)"],
     soundOn: ["開", "Nyala", "On"], soundOff: ["關", "Mati", "Off"],
     themeAuto: ["跟手機", "Ikuti HP", "Auto"],
     themeLight: ["淺色", "Terang", "Light"],
@@ -305,22 +305,77 @@
       '<p class="prefs-h">' + esc(u("soundLabel")) + "</p>" + seg("data-sound", [["on", u("soundOn")], ["off", u("soundOff")]], soundOn ? "on" : "off", u("soundLabel")) +
       "</div></div>";
   }
-  // ---------- 背景聲音：sound.js 播的海浪錄音（CC0）。預設關；打開過會記住 ----------
+  // ---------- 背景聲音：跟著城市、當地天氣和白天晚上換（錄音都是 CC0，見 sound.js）。預設關；打開過會記住 ----------
+  // 選哪一段：那個城市「現在」在下雨 → 雨聲；現在是晚上 → 夜晚蟲鳴（峇里島例外，晚上還是海浪）；其他 → 城市的基本聲音。
+  // 哪個城市：每日頁用那一天的城市；其他頁旅途中用今天的城市，出發前用峇里島（海浪）。
+  // 天氣：Open-Meteo 的「現在」天氣，每個城市 15 分鐘查一次；沒網路查不到就只看當地時間（18:00–6:00 算晚上）。
+  // 換段時 3 秒交叉淡化；不用的那段停掉、放掉記憶體。
   // iPhone 不准網頁自己出聲，一定要使用者點一下：記住「開」的話，等第一次點畫面才開始播。
   // 切到背景就暫停；念印尼文時先調小，念完再恢復。iPhone 側邊的靜音鍵打開時聽不到（系統規定）。
-  var soundOn = false, sndCtx = null, snd = null, SND_VOL = 0.7;
+  var SND_BASE = { bali: "waves", tw: "waves", pwt: "birds", jkt: "city", yk: "city" };
+  var soundOn = false, sndCtx = null, sndMaster = null, sndCur = null, sndKey = "", SND_VOL = 0.7, sndWx = {}, sndAsk = {};
   try { soundOn = localStorage.getItem("trip-sound") === "on"; } catch (e) {}
-  function sndVol(v, sec) { if (snd) snd.out.gain.setTargetAtTime(v, sndCtx.currentTime, sec || 0.4); }
+  function sndVol(v, sec) { if (sndMaster) sndMaster.gain.setTargetAtTime(v, sndCtx.currentTime, sec || 0.4); }
+  function sndCity() {
+    var h = (location.hash || "").replace(/^#/, ""), d = T.days.filter(function (x) { return dayId(x) === h; })[0] || todayDay();
+    return d ? d.city : "bali";
+  }
+  function sndLocalHour(city) {
+    try { return +new Date().toLocaleString("en-GB", { timeZone: city === "bali" ? "Asia/Makassar" : city === "tw" ? "Asia/Taipei" : "Asia/Jakarta", hour: "2-digit", hourCycle: "h23" }); }
+    catch (e) { return new Date().getHours(); }
+  }
+  function sndScene() {
+    var city = sndCity(), w = sndWx[city], fresh = w && Date.now() - w.at < 3600000;
+    var night = fresh ? !w.day : (function (h) { return h >= 18 || h < 6; })(sndLocalHour(city));
+    if (fresh && w.rain) return "rain";
+    if (night && city !== "bali") return "night";
+    return SND_BASE[city] || "waves";
+  }
+  function sndNeedWx(city) { // 需要查天氣嗎：有座標、有網路、15 分鐘內沒查過、5 分鐘內沒失敗過
+    var w = sndWx[city], a = sndAsk[city];
+    return !!(T.wx || {})[city] && !!window.fetch && navigator.onLine && !(w && Date.now() - w.at < 900000) && !(a && Date.now() - a < 300000);
+  }
+  function sndWeather(city) { // 查那個城市現在的天氣；查完（或失敗）都會再選一次聲音
+    var ll = T.wx[city];
+    sndAsk[city] = Date.now();
+    return fetch("https://api.open-meteo.com/v1/forecast?latitude=" + ll[0] + "&longitude=" + ll[1] + "&current=weather_code,is_day,precipitation&timezone=auto")
+      .then(function (r) { return r.json(); }).then(function (j) {
+        var c = j.current || {};
+        sndWx[city] = { at: Date.now(), day: c.is_day === 1, rain: c.precipitation > 0 || (c.weather_code >= 51 && c.weather_code <= 99 && c.weather_code !== 71 && c.weather_code !== 73 && c.weather_code !== 75) };
+      }).catch(function () {});
+  }
+  function sndApply() { // 要查天氣就先查（最多等 2 秒），查到再選，免得先播錯的那段又馬上換掉
+    if (!soundOn || !sndCtx) return;
+    var city = sndCity();
+    if (!sndNeedWx(city)) return sndPick();
+    var done = false, go = function () { if (!done) { done = true; sndPick(); } };
+    sndWeather(city).then(go, go);
+    setTimeout(go, 2000);
+  }
+  function sndPick() { // 選好該播哪一段，跟現在的不一樣就交叉淡化過去
+    if (!soundOn || !sndCtx) return;
+    var key = sndScene();
+    if (key === sndKey) return;
+    var old = sndCur, t = sndCtx.currentTime;
+    sndKey = key;
+    sndCur = SOUND.loop(sndCtx, sndMaster, "snd/" + key + ".m4a");
+    var mine = sndCur;
+    mine.ready.then(function () {
+      if (sndCur !== mine) return;
+      mine.out.gain.setTargetAtTime(1, sndCtx.currentTime, 1); // 新的慢慢進來（約 3 秒）
+      if (old) { old.out.gain.setTargetAtTime(0, sndCtx.currentTime, 1); setTimeout(function () { old.stop(); }, 5000); }
+    });
+  }
   function startSound() {
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC || !window.SOUND) return;
-    if (!sndCtx) sndCtx = new AC();
+    if (!sndCtx) { sndCtx = new AC(); sndMaster = sndCtx.createGain(); sndMaster.gain.value = 0; sndMaster.connect(sndCtx.destination); }
     if (sndCtx.state !== "running") sndCtx.resume();
-    if (!snd) snd = SOUND.loop(sndCtx, sndCtx.destination, "snd/waves.m4a");
-    snd.ready.then(function () { if (soundOn) sndVol(SND_VOL, 0.8); }); // 載好才慢慢淡入
+    sndApply();
+    sndVol(SND_VOL, 0.8); // 慢慢淡入
   }
   function stopSound() {
-    if (!snd) return;
+    if (!sndMaster) return;
     sndVol(0, 0.25);
     setTimeout(function () { if (!soundOn && sndCtx) sndCtx.suspend(); }, 1200);
   }
@@ -329,10 +384,12 @@
     document.addEventListener("pointerdown", sndKick, true);
     document.addEventListener("keydown", sndKick, true);
   }
-  window.__sound = function () { return { on: soundOn, state: sndCtx && sndCtx.state, vol: snd && +snd.out.gain.value.toFixed(2) }; }; // 給 tools 的測試看狀態
+  setInterval(sndApply, 60000); // 天黑、天亮、天氣變了都會跟著換
+  window.addEventListener("hashchange", function () { setTimeout(sndApply, 50); }); // 換到別的城市那天
+  window.__sound = function () { return { on: soundOn, state: sndCtx && sndCtx.state, vol: sndMaster && +sndMaster.gain.value.toFixed(2), scene: sndKey, city: sndCity(), wx: sndWx[sndCity()] || null }; }; // 給 tools 的測試看狀態
   document.addEventListener("visibilitychange", function () {
     if (!sndCtx || !soundOn) return;
-    if (document.hidden) sndCtx.suspend(); else sndCtx.resume();
+    if (document.hidden) sndCtx.suspend(); else { sndCtx.resume(); sndApply(); }
   });
 
   function setPrefsOpen(open) {
@@ -968,7 +1025,7 @@
     ut.rate = .85; // 放慢一點比較好跟著唸
     ut.onend = ut.onerror = function () { btn.classList.remove("is-playing"); if (soundOn) sndVol(SND_VOL, 0.6); };
     btn.classList.add("is-playing");
-    if (soundOn) sndVol(0.12, 0.15); // 念句子時海浪聲先調小
+    if (soundOn) sndVol(0.12, 0.15); // 念句子時背景聲音先調小
     speechSynthesis.speak(ut);
   }
   function viewLearn() {
