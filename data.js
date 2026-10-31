@@ -28,7 +28,7 @@ window.TRIP = {
   },
   // 選單每一列左邊的小插畫（key 是連到的頁面）
   menuArt: {
-    days: "img/m-days.jpg", "food-jkt": "img/m-food.jpg", stay: "img/m-stay.jpg", info: "img/m-info.jpg",
+    days: "img/m-days.jpg", "food-jkt": "img/m-food.jpg", stay: "img/m-stay.jpg", transport: "img/m-transport.jpg", info: "img/m-info.jpg",
     learn: "img/m-learn.jpg", money: "img/m-money.jpg", pack: "img/m-pack.jpg"
   },
   // 插畫：OpenAI Codex 生成（2026/10），1280×924 JPG；top 是圖片上緣 20% 的平均天空色，大字和漸層用它才不會有色差
@@ -497,14 +497,30 @@ window.TRIP = {
     ]}
   ],
 
-  // 交通票券（不放訂位代號和付款資料）
+  // 交通票券（交通頁 #transport 用；不放訂位代號、座位和付款資料）
+  // from / to：c 是機場或車站代碼（大字），n 是名稱和航廈；no 是航班或車次；info 是票下半部的小字
   tickets: [
-    { date: "12/15", kind: "flight", t: ["桃園 T1 → 雅加達 T3", "Taoyuan T1 → Jakarta T3", "Taoyuan T1 → Jakarta T3"], d: ["華航 CI761・9:10 – 13:40", "China Airlines CI761 · 9.10 – 13.40", "China Airlines CI761 · 9:10 – 13:40"] },
-    { date: "12/16", kind: "train", t: ["雅加達 → 普禾加多", "Jakarta → Purwokerto", "Jakarta → Purwokerto"], d: ["8:50 出發・車次待補", "8.50 · nama kereta menyusul", "8:50 · train TBA"] },
-    { date: "12/23", kind: "train", t: ["普禾加多 → 日惹", "Purwokerto → Yogyakarta", "Purwokerto → Yogyakarta"], d: ["KA Ranggajati 商務艙・11:59 – 13:50", "KA Ranggajati Eksekutif · 11.59 – 13.50", "KA Ranggajati, executive · 11:59 – 13:50"] },
-    { date: "12/25", kind: "flight", t: ["日惹 YIA → 峇里島 DPS", "Yogyakarta YIA → Bali DPS", "Yogyakarta YIA → Bali DPS"], d: ["Garuda GA252・13:40 – 16:10・托運 1 件 23kg", "Garuda GA252 · 13.40 – 16.10 · bagasi 1 × 23 kg", "Garuda GA252 · 13:40 – 16:10 · 1 bag, 23 kg"] },
-    { date: "12/31", kind: "flight", t: ["峇里島 DPS → 桃園 T1", "Bali DPS → Taoyuan T1", "Bali DPS → Taoyuan T1"], d: ["華航 CI772・15:45 – 21:00・托運每人 1 件", "China Airlines CI772 · 15.45 – 21.00 · bagasi 1 koli/orang", "China Airlines CI772 · 15:45 – 21:00 · 1 bag each"] }
+    { date: "2026-12-15", kind: "flight", no: ["華航 CI761", "China Airlines CI761", "China Airlines CI761"],
+      from: { c: "TPE", n: ["桃園 T1", "Taoyuan T1", "Taoyuan T1"] }, to: { c: "CGK", n: ["雅加達 T3", "Jakarta T3", "Jakarta T3"] },
+      dep: "9:10", arr: "13:40",
+      info: [["飛行約 5.5 小時", "Terbang ± 5,5 jam", "About 5.5 hours"], ["托運每人 1 件", "Bagasi 1 koli/orang", "1 checked bag each"]] },
+    { date: "2026-12-16", kind: "train", no: ["車次待補", "Nama kereta menyusul", "Train TBA"],
+      from: { c: "JKT", n: ["Gambir 或 Pasar Senen", "Gambir / Pasar Senen", "Gambir or Pasar Senen"] }, to: { c: "PWT", n: ["普禾加多站", "Stasiun Purwokerto", "Purwokerto Station"] },
+      dep: "8:50", arr: "13:00",
+      info: [["哪一站上車待確認", "Stasiun keberangkatan belum pasti", "Departure station TBC"], ["車上有供餐和點心", "Ada makanan di kereta", "Meals on board"]] },
+    { date: "2026-12-23", kind: "train", no: ["KA Ranggajati 商務艙", "KA Ranggajati Eksekutif", "KA Ranggajati, executive"],
+      from: { c: "PWT", n: ["普禾加多站", "Stasiun Purwokerto", "Purwokerto Station"] }, to: { c: "YK", n: ["日惹 Tugu 站", "Stasiun Yogyakarta (Tugu)", "Yogyakarta (Tugu)"] },
+      dep: "11:59", arr: "13:50", info: [] },
+    { date: "2026-12-25", kind: "flight", no: ["Garuda GA252", "Garuda GA252", "Garuda GA252"],
+      from: { c: "YIA", n: ["日惹國際機場", "Bandara YIA", "Yogyakarta Intl"] }, to: { c: "DPS", n: ["峇里島", "Bali", "Bali"] },
+      dep: "13:40", arr: "16:10",
+      info: [["日惹和峇里島差 1 小時，抵達是峇里島時間", "Tiba pukul 16.10 waktu Bali (WITA)", "Lands 16:10 Bali time (1 h ahead)"], ["托運 1 件 23kg", "Bagasi 1 × 23 kg", "1 checked bag, 23 kg"]] },
+    { date: "2026-12-31", kind: "flight", no: ["華航 CI772", "China Airlines CI772", "China Airlines CI772"],
+      from: { c: "DPS", n: ["峇里島國際線", "Bali (internasional)", "Bali (international)"] }, to: { c: "TPE", n: ["桃園 T1", "Taoyuan T1", "Taoyuan T1"] },
+      dep: "15:45", arr: "21:00",
+      info: [["飛行約 5 小時 15 分", "Terbang ± 5 jam 15 menit", "About 5 h 15 min"], ["托運每人 1 件", "Bagasi 1 koli/orang", "1 checked bag each"]] }
   ],
+
 
   // 匯率（參考值，出發前更新）
   rate: { twd: 560, asOf: "2026-08" },

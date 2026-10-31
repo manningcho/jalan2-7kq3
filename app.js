@@ -89,11 +89,15 @@
     stay: ["住宿", "Penginapan", "Where we stay"],
     staySub: ["四間飯店和 villa", "Empat hotel & villa", "Four hotels and villas"],
     info: ["旅遊資料", "Info perjalanan", "Travel info"],
-    infoSub: ["時差・入境・緊急電話・機票火車", "Waktu · masuk · darurat · tiket", "Time · entry · emergency · tickets"],
+    infoSub: ["時差・入境・緊急電話・好用連結", "Waktu · masuk · darurat · tautan", "Time · entry · emergency · links"],
     learn: ["學一點印尼文", "Belajar bahasa Indonesia", "Learn some Indonesian"],
     learnSub: ["附中文唸法", "Dengan cara baca Mandarin", "With Chinese pronunciation"],
     moneySub: ["印尼盾和台幣互換", "Rupiah ke dolar Taiwan", "Rupiah ↔ Taiwan dollar"],
     packSub: ["出發前勾一勾", "Centang sebelum berangkat", "Tick off before you go"],
+    transport: ["交通", "Transportasi", "Getting around"],
+    transportSub: ["機票和火車，五段路", "Tiket pesawat & kereta", "Flights and trains, five legs"],
+    tixDay: ["看那天的行程", "Lihat jadwal hari itu", "See that day"],
+    tipTix: ["點票卡會跳到那一天的行程", "Ketuk tiket untuk membuka jadwal hari itu", "Tap a ticket to open that day's plan"],
     mChecked: ["已勾", "Dicentang", "Ticked"],
     map: ["地圖", "Peta", "Map"],
     driver: ["給司機看", "Tunjukkan ke sopir", "Show the driver"],
@@ -124,6 +128,7 @@
     dLearn: ["印尼文", "Belajar", "Learn"],
     dMoney: ["匯率", "Kurs", "Money"],
     dPack: ["行李", "Koper", "Packing"],
+    dTransport: ["交通", "Tiket", "Tickets"],
     listen: ["聽發音", "Dengarkan", "Listen"],
     openMap: ["打開地圖", "Buka peta", "Open map"],
     tzJava: ["比台灣慢 1 小時", "1 jam lebih lambat dari Taiwan", "1 hour behind Taiwan"],
@@ -141,7 +146,6 @@
     twd: ["台幣", "NT$", "NT$"],
     entryTitle: ["入境", "Masuk Indonesia", "Entry"],
     emergTitle: ["緊急電話", "Nomor darurat", "Emergency numbers"],
-    ticketTitle: ["機票和火車", "Tiket pesawat & kereta", "Flights & trains"],
     packTitle: ["行李清單", "Daftar barang bawaan", "Packing list"],
     packNote: ["勾選只存在這支手機上", "Centang hanya tersimpan di HP ini", "Ticks are saved on this phone only"],
     learnNote: ["唸法是用中文字大概拼的，聽起來像就好", "Cara baca ditulis dengan huruf Mandarin, kira-kira saja", "Pronunciation spelled with Chinese characters, roughly"],
@@ -611,11 +615,11 @@
   }
   function viewMenu() {
     var td = todayDay();
-    var rows = [["days", "days", "daysSub"], ["food-jkt", "food", "foodSub"], ["stay", "stay", "staySub"], ["info", "info", "infoSub"], ["learn", "learn", "learnSub"],
+    var rows = [["days", "days", "daysSub"], ["food-jkt", "food", "foodSub"], ["stay", "stay", "staySub"], ["transport", "transport", "transportSub"], ["info", "info", "infoSub"], ["learn", "learn", "learnSub"],
       ["money", "moneyTitle", "moneySub"], ["pack", "packTitle", "packSub"]];
     if (td) rows.unshift([dayId(td), "today", null, md(td) + " " + L(td.title)]);
     return bar("No.#00", "home") + '<main class="wrap">' + posterTop("DAFTAR") +
-      meta([[u("mTrip"), u("indonesia")], [u("mPages"), "07"], [u("mDays"), "18"]]) +
+      meta([[u("mTrip"), u("indonesia")], [u("mPages"), "08"], [u("mDays"), "18"]]) +
       '<section class="tword r">' + word("daftar") + "</section>" +
       '<nav class="menu">' + rows.map(function (x) {
         var ic = (T.menuArt || {})[x[0]];
@@ -796,6 +800,27 @@
       }).join("") + "</ul>" + footNotes([u("tipDriver")].concat(commonTips())) + "</main>";
   }
 
+  // ---------- 交通：機票和火車，一段一張票卡（像登機證），點了跳到那天 ----------
+  function viewTransport() {
+    var tix = T.tickets.map(function (k) {
+      var d = T.days.filter(function (x) { return x.date === k.date; })[0];
+      // 代碼、名稱、時間排成三列對齊：名稱折成兩行時，兩邊的時間還是在同一高度
+      return '<li class="r"><a class="tix" href="#' + (d ? dayId(d) : "days") + '">' +
+        '<span class="tix-top"><span class="tix-date">' + (d ? esc(dm(d) + " " + wk(d)) : "") + '</span><em class="chip chip-' + k.kind + '">' + ICON[k.kind] + esc(u(k.kind)) + "</em></span>" +
+        '<span class="tix-route"><b class="tix-code">' + esc(k.from.c) + '</b><span class="tix-path" aria-hidden="true"><i></i>' + ICON[k.kind] + '<i></i></span><b class="tix-code is-to">' + esc(k.to.c) + "</b>" +
+        '<small class="tix-name">' + esc(L(k.from.n)) + '</small><small class="tix-name is-to">' + esc(L(k.to.n)) + "</small>" +
+        '<span class="tix-time">' + esc(k.dep) + '</span><span class="tix-time is-to">' + esc(k.arr) + "</span></span>" +
+        '<span class="tix-tear" aria-hidden="true"></span>' +
+        '<span class="tix-foot"><b class="tix-no">' + esc(L(k.no)) + "</b>" +
+        k.info.map(function (x) { return "<small>" + esc(L(x)) + "</small>"; }).join("") +
+        '<span class="tix-go">' + esc(u("tixDay")) + ICON.arrow + "</span></span></a></li>";
+    }).join("");
+    return bar("No.#04", "menu") + '<main class="wrap">' +
+      kicker(["15.12 – 31.12", u("mItems") + " " + pad(T.tickets.length)]) +
+      '<section class="tword r">' + word("tiket") + '</section><ul class="tixes">' + tix + "</ul>" +
+      footNotes([u("tipTix")].concat(commonTips())) + "</main>";
+  }
+
   // ---------- 旅遊資料 ----------
   var ENTRY = [
     [["電子落地簽 e-VOA", "e-VOA (Visa on Arrival elektronik)", "e-VOA (electronic visa on arrival)"],
@@ -860,19 +885,17 @@
         return '<li><a class="row" href="' + esc(l[0]) + '" target="_blank" rel="noopener"><span class="row-main"><b>' + esc(l[1]) + "</b><small>" + esc(L(l[2])) + '</small></span><span class="row-act">' + ICON.arrow + "</span></a></li>";
       }).join("") + "</ul>";
     }).join(""));
-    var tickets = sec(u("ticketTitle"), '<ul class="list tickets">' + T.tickets.map(function (k) {
-      return '<li class="tk"><span class="tk-ic">' + ICON[k.kind] + '</span><span><b>' + esc(k.date + "　" + L(k.t)) + "</b><small>" + esc(L(k.d)) + "</small></span></li>";
-    }).join("") + "</ul>");
+    // 機票和火車搬到自己的「交通」頁了（viewTransport）
     // 「插畫是 AI 畫的」說明搬到選單頁的輪播了（從那頁開始就有很多插畫）
     var credits = footNotes([u("tipCopy")].concat(commonTips()));
-    return bar("No.#04", "menu") + '<main class="wrap">' +
+    return bar("No.#05", "menu") + '<main class="wrap">' +
       kicker(["WIB / WITA", u("mItems") + " 04"]) +
-      pageHead("info", "p-info") + time + entry + emerg + links + tickets + credits + "</main>";
+      pageHead("info", "p-info") + time + entry + emerg + links + credits + "</main>";
   }
 
   // ---------- 學印尼文 ----------
   function viewMoney() {
-    return bar("No.#06", "menu") + '<main class="wrap">' +
+    return bar("No.#07", "menu") + '<main class="wrap">' +
       kicker(["IDR → TWD", "1 : " + T.rate.twd]) +
       pageHead("rupiah", "p-money") + moneyTool() +
       footNotes([u("moneyRule"), u("moneyAsOf").replace("{r}", T.rate.twd).replace("{d}", T.rate.asOf.replace(/-/g, "-\u2060"))].concat(commonTips())) + "</main>"; // 日期不要從 - 斷行
@@ -884,7 +907,7 @@
     return n;
   }
   function viewPack() {
-    return bar("No.#07", "menu") + '<main class="wrap">' +
+    return bar("No.#08", "menu") + '<main class="wrap">' +
       kicker([esc(u("mItems")) + " " + pad(T.packing.length), esc(u("mChecked")) + ' <b class="pk-n">' + pad(packCount()) + "</b>"], true) +
       pageHead("koper", "p-pack") + packTool() + footNotes([u("packNote")].concat(commonTips())) + "</main>";
   }
@@ -913,7 +936,7 @@
     speechSynthesis.speak(ut);
   }
   function viewLearn() {
-    return bar("No.#05", "menu") + '<main class="wrap">' +
+    return bar("No.#06", "menu") + '<main class="wrap">' +
       kicker([u("mItems") + " " + pad(T.phrases.length)]) +
       pageHead("belajar", "p-learn") + '<ul class="phrases">' + T.phrases.map(function (p, i) {
         var mean = lang === "en" ? p[2][1] : p[2][0];
@@ -999,7 +1022,7 @@
   // ---------- 右下角快速選單：點開像一本扇形色票卡，手指沿圓弧滑可以轉 ----------
   // 7 張扇形卡以按鈕為圓心排開，每張 22.5°，一次露出 4 張（中心角 258.75° 到 191.25°）。
   // 可以無限轉：卡片排成一圈，位置 p（0＝最上面那格）超出 -1.5～5.5 就從另一頭接回來；換邊的地方在畫面外、卡片完全透明，看不出來
-  var DIAL = [["days", "dDays"], ["food-jkt", "dFood"], ["stay", "dStay"], ["info", "dInfo"], ["learn", "dLearn"], ["money", "dMoney"], ["pack", "dPack"]];
+  var DIAL = [["days", "dDays"], ["food-jkt", "dFood"], ["stay", "dStay"], ["transport", "dTransport"], ["info", "dInfo"], ["learn", "dLearn"], ["money", "dMoney"], ["pack", "dPack"]];
   var D_STEP = 22.5, D_TOP = 270 - D_STEP / 2, D_LO = D_TOP - 3 * D_STEP, D_N = DIAL.length;
   // 卡片尺寸：內半徑 38（留一圈給按鈕）、色塊從 150 開始、外半徑 250；每張兩邊各留 0.5° 縫
   var C_R0 = 38, C_R1 = 150, C_R = 250, C_HALF = (D_STEP / 2 - .5) * Math.PI / 180;
@@ -1496,6 +1519,7 @@
     else if (h === "days") html = viewDays();
     else if (h.indexOf("food") === 0) html = viewFood(h.split("-")[1]);
     else if (h === "stay") html = viewStay();
+    else if (h === "transport") html = viewTransport();
     else if (h === "info") html = viewInfo();
     else if (h === "learn") html = viewLearn();
     else if (h === "money") html = viewMoney();

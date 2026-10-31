@@ -329,7 +329,6 @@ button { font: inherit; color: inherit; }
 .list { list-style: none; margin: 0; padding: 0 16px; background: var(--card); border-radius: 22px; }
 .list > li + li { border-top: 1px solid var(--line); }
 /* tickets keep a perforated tear line */
-.tickets > li + li { border-top: 1px dashed var(--line); }
 .row { display: flex; align-items: center; gap: 12px; min-height: 66px; padding: 10px 0; text-decoration: none; }
 .row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.35; }
 .row-main b { font-size: 18px; }
@@ -641,3 +640,28 @@ button { font: inherit; color: inherit; }
 .egg-cap { margin: 11px 0 0; text-align: center; font-size: 13px; font-weight: 500; letter-spacing: .04em; color: var(--ink); opacity: 0; transform: translateY(5px); transition: opacity .5s ease .55s, transform .5s ease .55s; }
 .egg.is-on .egg-cap { opacity: 1; transform: none; }
 .egg-cap small { display: block; margin-top: 3px; font-family: var(--f-mono); font-size: 10px; font-weight: 400; letter-spacing: .08em; color: var(--muted); }
+
+/* ---------- transport page: one boarding-pass card per leg (#transport) ---------- */
+.tixes { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.tix { display: block; position: relative; padding: 16px 18px 14px; border-radius: 22px; background: var(--card); color: var(--ink); text-decoration: none; -webkit-tap-highlight-color: transparent; }
+.tix:active { transform: scale(.985); }
+.tix-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tix-date { font-family: var(--f-mono); font-size: 14px; font-weight: 600; letter-spacing: .04em; color: var(--muted); }
+.tix-route { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; column-gap: 6px; margin-top: 14px; }
+.tix-route .is-to { grid-column: 3; text-align: right; }
+.tix-code { font-family: var(--f-display); font-weight: 400; font-size: clamp(32px, 10.5vw, 44px); line-height: .9; letter-spacing: -.02em; color: var(--blue); }
+.tix-name { grid-column: 1; align-self: start; margin-top: 6px; font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+.tix-time { grid-column: 1; margin-top: 4px; font-family: var(--f-mono); font-size: 20px; font-weight: 600; color: var(--ink); }
+.tix-path { align-self: center; display: flex; align-items: center; gap: 4px; color: var(--blue); }
+.tix-path i { width: clamp(8px, 3vw, 16px); border-top: 1.5px dashed currentColor; opacity: .55; }
+.tix-path svg { width: 20px; height: 20px; }
+/* the tear line, with a half-circle bite out of each side like a real ticket stub */
+.tix-tear { display: block; position: relative; margin: 14px -18px 12px; border-top: 1.5px dashed var(--line); }
+.tix-tear::before, .tix-tear::after { content: ""; position: absolute; top: -12px; width: 22px; height: 22px; border-radius: 50%; background: var(--paper); }
+.tix-tear::before { left: -11px; }
+.tix-tear::after { right: -11px; }
+.tix-foot { display: flex; flex-direction: column; gap: 3px; }
+.tix-no { font-size: 16px; font-weight: 700; }
+.tix-foot small { font-size: 13px; color: var(--muted); }
+.tix-go { align-self: flex-end; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--blue); }
+.tix-go svg { width: 16px; height: 16px; }
