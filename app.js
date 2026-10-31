@@ -72,6 +72,7 @@
     wxAvg: ["12 月平均", "Rata-rata Des", "Dec avg"],
     wxRain: ["雨", "Hujan", "Rain"],
     wxTitle: ["天氣", "Cuaca", "Weather"],
+    wipeHint: ["用手指擦擦玻璃", "Usap kacanya", "Wipe the glass"],
     tipWx: ["天氣是 12 月平均；出發前 16 天內會自動換成當天預報", "Cuaca rata-rata Desember; 16 hari sebelum berangkat berganti jadi prakiraan", "Weather shows December averages; within 16 days of the trip it switches to the real forecast"],
     tipHome: ["用瀏覽器的「加入主畫面」，就能像 App 一樣一點就打開", "Pilih \"Tambahkan ke Layar Utama\" di browser agar bisa dibuka seperti aplikasi", "Use \"Add to Home Screen\" in your browser to open it like an app"],
     back: ["返回", "Kembali", "Back"],
@@ -1095,6 +1096,23 @@
     box.innerHTML = html;
     document.body.appendChild(box);
   }
+  // ---------- 下雨天：每日頁插畫起霧、玻璃上有雨滴，可以用手指擦開（glass.js） ----------
+  // 用的是背景聲音同一份「現在的天氣」（sndWx，15 分鐘查一次）。網址加 ?rain=1 不管天氣都會下雨（試看用）
+  var RAIN_FORCE = /[?&]rain=1/.test(location.search);
+  function setGlass(d) {
+    if (!window.GLASS) return;
+    GLASS.stop();
+    var art = d && app.querySelector(".hero-art"), p = d && (T.photos || {})[d.art];
+    if (!art || !p) return;
+    var go = function () {
+      if (!art.isConnected) return; // 已經換頁了
+      GLASS.start(art, p.src, ART.topColor(d.art), ART.FRAME, { motion: document.documentElement.classList.contains("motion"), hint: u("wipeHint") });
+    };
+    if (RAIN_FORCE) return go();
+    var w = sndWx[d.city];
+    if (w && Date.now() - w.at < 3600000) { if (w.rain) go(); return; }
+    if (sndNeedWx(d.city)) sndWeather(d.city).then(function () { var w2 = sndWx[d.city]; if (w2 && w2.rain) go(); });
+  }
   // 圖片載完才淡入；已經在快取裡的就直接顯示，不重播
   function fadeIn(root) {
     root.querySelectorAll(".fade:not(.is-loaded)").forEach(function (el) {
@@ -1645,6 +1663,7 @@
     fadeIn(app);
     placeSays();
     setPetals(!!(d && d.wedding)); // 只有 12/19、12/20 飄花瓣
+    setGlass(d); // 那個城市現在在下雨：插畫起霧、有雨滴
     if (d) wxRefresh(d);
     syncDial(h);
     startTicker();
