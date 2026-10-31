@@ -85,7 +85,7 @@ window.TRIP = {
   // 地點：n 名稱、a 區域（給司機看）、q 導航用的搜尋字、map 地圖連結
   places: {
     tpe:   { n: "桃園國際機場 T1", a: "Taoyuan, Taiwan", q: "Taoyuan International Airport Terminal 1" },
-    cgk:   { n: "Soekarno-Hatta International Airport (CGK)", a: "Tangerang, Banten", q: "Soekarno-Hatta International Airport" },
+    cgk:   { n: "Soekarno-Hatta International Airport T3 (CGK)", a: "Tangerang, Banten", q: "Soekarno-Hatta International Airport Terminal 3" },
     harris:{ n: "HARRIS Suites Puri Mansion", a: "Puri Mansion, Kembangan, Jakarta Barat", q: "HARRIS Suites Puri Mansion", map: "https://maps.app.goo.gl/ENnsafzJh2t17X3Z9" },
     anneve:{ n: "Ann & Eve Atelier", a: "Taman Ratu, Kedoya Utara, Jakarta Barat", q: "Ann & Eve Atelier Kedoya", map: "https://maps.app.goo.gl/bZt6miKM5SF92m2K9" },
     bsteak:{ n: "B'Steak Grill & Pancake Greenville", a: "Green Ville, Duri Kepa, Jakarta Barat", q: "B'Steak Grill & Pancake Greenville", map: "https://maps.app.goo.gl/ipBZyYfBnsstAsqf7" },
@@ -109,7 +109,7 @@ window.TRIP = {
     silver:{ n: "Borobudur Silver Resto", a: "Mungkid, Magelang", q: "Borobudur Silver Resto", map: "https://maps.app.goo.gl/qnAbNgLS3gtTMv7UA" },
     vanbloemen:{ n: "Van Bloemen 1881", a: "Kembanglimus, Borobudur", q: "Van Bloemen 1881", map: "https://maps.app.goo.gl/uuxdTvYpVJ73pdULA" },
     yia:   { n: "Yogyakarta International Airport (YIA)", a: "Kulon Progo", q: "Yogyakarta International Airport" },
-    dps:   { n: "Bandara I Gusti Ngurah Rai (DPS)", a: "Tuban, Badung, Bali", q: "Ngurah Rai International Airport" },
+    dps:   { n: "Bandara I Gusti Ngurah Rai – Terminal Internasional (DPS)", a: "Tuban, Badung, Bali", q: "Ngurah Rai International Airport International Terminal" },
     casa:  { n: "Casa Adem", a: "Gang Lange, Seminyak, Bali", q: "Casa Adem, Gang Lange, Seminyak, Bali" },
     monkey:{ n: "Ubud Monkey Forest", a: "Ubud, Gianyar", q: "Ubud Monkey Forest" },
     tegalalang:{ n: "Tegalalang Rice Terrace", a: "Tegalalang, Gianyar", q: "Tegalalang Rice Terrace" },
@@ -137,9 +137,9 @@ window.TRIP = {
       title: ["抵達雅加達・試禮服", "Tiba di Jakarta · fitting gaun", "Arrive in Jakarta · dress fitting"],
       items: [
         { time: "6:00", t: ["桃園機場報到", "Check-in di Bandara Taoyuan", "Check in at Taoyuan Airport"], place: "tpe" },
-        { time: "9:00", kind: "flight", t: ["起飛前往雅加達", "Terbang ke Jakarta", "Fly to Jakarta"],
-          note: ["航班號碼待補", "Nomor penerbangan menyusul", "Flight number to be added"] },
-        { time: "13:40", t: ["抵達雅加達機場", "Tiba di Bandara Soekarno-Hatta", "Land at Soekarno-Hatta Airport"], place: "cgk",
+        { time: "9:10", kind: "flight", t: ["華航 CI761 飛雅加達", "China Airlines CI761 ke Jakarta", "China Airlines CI761 to Jakarta"],
+          note: ["桃園 T1 出發，飛行約 5.5 小時", "Dari Taoyuan T1, terbang ± 5,5 jam", "From Taoyuan T1, about 5.5 hours"] },
+        { time: "13:40", t: ["抵達雅加達機場 T3", "Tiba di Bandara Soekarno-Hatta T3", "Land at Soekarno-Hatta T3"], place: "cgk",
           note: ["雅加達比台灣慢 1 小時，手錶記得調", "Jakarta 1 jam lebih lambat dari Taiwan", "Jakarta is 1 hour behind Taiwan"] },
         { go: ["car", 28, "20.7 km", "cgk", "harris"] },
         { time: "14:30", kind: "stay", t: ["入住飯店", "Check-in hotel", "Check in at the hotel"], place: "harris" },
@@ -499,7 +499,7 @@ window.TRIP = {
 
   // 交通票券（不放訂位代號和付款資料）
   tickets: [
-    { date: "12/15", kind: "flight", t: ["台北 → 雅加達", "Taipei → Jakarta", "Taipei → Jakarta"], d: ["9:00 起飛・13:40 抵達・航班待補", "9.00 – 13.40 · nomor menyusul", "9:00 – 13:40 · flight no. TBA"] },
+    { date: "12/15", kind: "flight", t: ["桃園 T1 → 雅加達 T3", "Taoyuan T1 → Jakarta T3", "Taoyuan T1 → Jakarta T3"], d: ["華航 CI761・9:10 – 13:40", "China Airlines CI761 · 9.10 – 13.40", "China Airlines CI761 · 9:10 – 13:40"] },
     { date: "12/16", kind: "train", t: ["雅加達 → 普禾加多", "Jakarta → Purwokerto", "Jakarta → Purwokerto"], d: ["8:50 出發・車次待補", "8.50 · nama kereta menyusul", "8:50 · train TBA"] },
     { date: "12/23", kind: "train", t: ["普禾加多 → 日惹", "Purwokerto → Yogyakarta", "Purwokerto → Yogyakarta"], d: ["KA Ranggajati 商務艙・11:59 – 13:50", "KA Ranggajati Eksekutif · 11.59 – 13.50", "KA Ranggajati, executive · 11:59 – 13:50"] },
     { date: "12/25", kind: "flight", t: ["日惹 YIA → 峇里島 DPS", "Yogyakarta YIA → Bali DPS", "Yogyakarta YIA → Bali DPS"], d: ["Garuda GA252・13:40 – 16:10・托運 1 件 23kg", "Garuda GA252 · 13.40 – 16.10 · bagasi 1 × 23 kg", "Garuda GA252 · 13:40 – 16:10 · 1 bag, 23 kg"] },
