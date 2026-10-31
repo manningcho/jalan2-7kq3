@@ -392,6 +392,7 @@ button { font: inherit; color: inherit; }
 .ph-id { font-family: var(--f-display); font-weight: 400; font-size: 24px; color: var(--blue); line-height: 1.25; letter-spacing: -.01em; }
 .ph-say { font-size: 18px; font-weight: 700; }
 .ph-mean { font-size: 16px; color: var(--muted); }
+.ph-note { grid-column: 2; margin-top: 2px; font-size: 12px; line-height: 1.5; color: var(--muted); opacity: .8; }
 
 /* ---------- driver card ---------- */
 /* ---------- wedding days: falling jasmine petals (taps pass through) ---------- */

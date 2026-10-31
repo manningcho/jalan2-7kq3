@@ -542,6 +542,7 @@ window.TRIP = {
     ["Air putih", "阿一兒 不地", ["白開水", "Plain water"]],
     ["Tolong", "多弄", ["請幫忙", "Please help"]],
     ["Tidak, terima kasih", "低搭，德里瑪 卡西", ["不用了，謝謝", "No, thank you"]],
-    ["Selamat menempuh hidup baru!", "四啦嗎 麼呢不 ㄏㄧ˙都 怕如", ["新婚快樂！（直譯：恭喜展開新生活。新娘教的）", "Happy married life! (lit. \"congrats on starting a new life\", taught by the bride)"]]
+    ["Selamat menempuh hidup baru!", "四啦嗎 麼呢不 ㄏㄧ˙都 怕如", ["新婚快樂！", "Happy married life!"],
+      ["（直譯：恭喜展開新生活。新娘教的，Claude 記下來）", "(lit. \"congrats on starting a new life\" · taught by the bride, noted by Claude)"]]
   ]
 };

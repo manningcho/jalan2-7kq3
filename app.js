@@ -920,7 +920,8 @@
         // 喇叭放在句子第一行的尾巴（placeSays() 量好位置）；長句斷行時就不會卡在兩行字中間
         var say = canSpeak ? '<button type="button" class="say" data-say="' + esc(p[0]) + '" aria-label="' + esc(u("listen") + "：" + p[0]) + '">' + ICON.speaker + "</button>" : "";
         return '<li class="ph r"><span class="ph-no">' + pad(i + 1) + '</span><span class="ph-top"><b class="ph-id">' + esc(p[0]) + "</b>" + say +
-          '</span><span class="ph-say">' + esc(p[1]) + '</span><span class="ph-mean">' + esc(mean) + "</span></li>";
+          '</span><span class="ph-say">' + esc(p[1]) + '</span><span class="ph-mean">' + esc(mean) + "</span>" +
+          (p[3] ? '<span class="ph-note">' + esc(lang === "en" ? p[3][1] : p[3][0]) + "</span>" : "") + "</li>"; // 第 4 欄（可省略）：小字註解
       }).join("") + "</ul>" + footNotes([u("learnNote")].concat(canSpeak ? [u("tipSpeak")] : [], commonTips())) + "</main>";
   }
 
