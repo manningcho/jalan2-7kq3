@@ -1099,6 +1099,8 @@
   // ---------- 下雨天：每日頁插畫起霧、玻璃上有雨滴，可以用手指擦開（glass.js） ----------
   // 用的是背景聲音同一份「現在的天氣」（sndWx，15 分鐘查一次）。網址加 ?rain=1 不管天氣都會下雨（試看用）
   var RAIN_FORCE = /[?&]rain=1/.test(location.search);
+  // 試看網址沒指定哪一天時，直接開 12/16（普禾加多，有火山的那張）
+  if (RAIN_FORCE && !location.hash && history.replaceState) history.replaceState(null, "", location.pathname + location.search + "#d1216");
   function setGlass(d) {
     if (!window.GLASS) return;
     GLASS.stop();
