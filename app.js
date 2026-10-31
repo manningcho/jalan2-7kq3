@@ -490,7 +490,6 @@
     ov.innerHTML = '<div class="egg-card"><img class="egg-art" src="img/egg.jpg" alt="" draggable="false">' +
       '<p class="egg-cap">' + esc(u("egg")) + "<small>made with Claude</small></p></div>";
     document.body.appendChild(ov);
-    barTint([10, 12, 20, .32]); // 跟 .egg 的遮罩同一個顏色
     eggOpen = true;
     ov.addEventListener("click", function () { closeEgg(); });
     var img = ov.querySelector("img"), go = function () { requestAnimationFrame(function () { ov.classList.add("is-on"); }); };
@@ -500,7 +499,6 @@
     var ov = document.querySelector(".egg");
     eggOpen = false;
     if (!ov) return;
-    barTint();
     if (now) { ov.remove(); return; }
     ov.classList.remove("is-on");
     setTimeout(function () { ov.remove(); }, 250);

@@ -630,9 +630,10 @@ button { font: inherit; color: inherit; }
 /* ---------- easter egg: tap the cover's star → a small illustration pops up ---------- */
 .egg-btn { padding: 0; margin: 0; border: 0; background: none; color: inherit; line-height: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .egg-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; border-radius: 8px; }
-.egg { position: fixed; inset: 0; z-index: 46; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(10, 12, 20, .32); opacity: 0; transition: opacity .25s ease; cursor: pointer; }
+/* no dimmed backdrop on purpose: the card just floats up over the cover (a dim layer made iPhone Safari's status bar lag behind) */
+.egg { position: fixed; inset: 0; z-index: 46; display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 0; transition: opacity .25s ease; cursor: pointer; }
 .egg.is-on { opacity: 1; }
-.egg-card { width: min(250px, 72vw); padding: 12px 12px 14px; border-radius: 22px; background: var(--paper); box-shadow: 0 18px 50px rgba(10, 12, 20, .28); transform: scale(.9) translateY(8px); transition: transform .45s cubic-bezier(.3, 1.5, .5, 1); }
+.egg-card { width: min(250px, 72vw); padding: 12px 12px 14px; border-radius: 22px; background: var(--paper); box-shadow: 0 2px 6px rgba(10, 12, 20, .12), 0 22px 60px rgba(10, 12, 20, .34); border: 1px solid var(--line); transform: scale(.9) translateY(8px); transition: transform .45s cubic-bezier(.3, 1.5, .5, 1); }
 .egg.is-on .egg-card { transform: none; }
 .egg-art { display: block; width: 100%; aspect-ratio: 1; border-radius: 14px; filter: blur(6px); transform: scale(1.04); transition: filter .7s ease .1s, transform .9s ease .1s; }
 .egg.is-on .egg-art { filter: none; transform: none; }
