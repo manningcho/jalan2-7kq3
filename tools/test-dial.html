@@ -28,27 +28,27 @@ f.onload=async function(){ try {
   async function open(){ btn.click(); await settle(); }
   ok('day page shows button', btn && !d.querySelector('.dial').hidden && d.documentElement.classList.contains('has-dial'));
   await sleep(1700);
-  ok('cards built ahead of first open', d.querySelectorAll('.dial-item').length===7 && /M/.test(d.querySelector('.dial-hint-band').getAttribute('d')));
+  ok('cards built ahead of first open', d.querySelectorAll('.dial-item').length===8 && /M/.test(d.querySelector('.dial-hint-band').getAttribute('d')));
   await open();
   ok('opens', d.querySelector('.dial').classList.contains('is-open'), vis());
   ok('days marked current on a day page', d.querySelector('.dial-item.is-cur').dataset.k==='days');
   var hits=[258.75,236.25,213.75,191.25].map(function(a){ var e=at(pt(a)); var it=e&&e.closest('.dial-item'); return it?it.dataset.k.replace('-jkt',''):'-'; }).join(',');
-  ok('taps land on the right wedge', hits==='days,food,stay,info', hits);
+  ok('taps land on the right wedge', hits==='days,food,stay,transport', hits);
   var hits2=[258.75,236.25,213.75,191.25].map(function(a){ var e=at(pt(a,60)); var it=e&&e.closest('.dial-item'); return it?it.dataset.k.replace('-jkt',''):'-'; }).join(',');
-  ok('near the centre too (boxes do not overlap-steal)', hits2==='days,food,stay,info', hits2);
+  ok('near the centre too (boxes do not overlap-steal)', hits2==='days,food,stay,transport', hits2);
   var gap=at(pt(247.5, 245)); ok('the gap between two cards is not a card', !(gap&&gap.closest('.dial-item')), gap&&gap.tagName);
   var beyond=at(pt(225, 262)); ok('just past the outer edge is not a card', !(beyond&&beyond.closest('.dial-item')));
   var el=await drag(191.25, 236.25, 10, 16, 150);
   ok('drag starts on a card', !!el.closest('.dial-item'), el.getAttribute('class'));
   var h0=w.location.hash; el.closest('.dial-item').click(); await settle();
-  ok('slow drag turns 2 steps', vis()==='stay,info,learn,money', vis());
+  ok('slow drag turns 2 steps', vis()==='stay,transport,info,learn', vis());
   ok('drag does not navigate or close', w.location.hash===h0 && d.querySelector('.dial').classList.contains('is-open'), w.location.hash);
   await drag(213.75, 221.75, 3, 16, 0); await settle();
-  ok('quick flick adds one step', vis()==='info,learn,money,pack', vis());
+  ok('quick flick adds one step', vis()==='transport,info,learn,money', vis());
   await drag(200, 268, 12, 16, 150); await settle();
-  ok('keeps going past the last card (07 then 01)', vis()==='days,food,stay,pack', vis());
+  ok('keeps going past the last card (08 then 01)', vis()==='days,food,money,pack', vis());
   await drag(266, 131, 18, 16, 150); await settle();
-  ok('drag back to start', vis()==='days,food,stay,info', vis());
+  ok('drag back to start', vis()==='days,food,stay,transport', vis());
   // spin 20 steps one way, then 20 back: every card moves exactly one slot per step, never sweeps across
   function angles(){ return [].map.call(d.querySelectorAll('.dial-item'),function(e){ return parseFloat(/rotate\(([-\d.]+)deg/.exec(e.style.transform)[1]); }); }
   var jumps=0, counts=[];
@@ -63,13 +63,13 @@ f.onload=async function(){ try {
   await settle();
   ok('20 steps each way: every card moves exactly one slot', jumps===0, jumps+' jumps');
   ok('always 4 cards showing while spinning', counts.every(function(c){return c===4}), counts.join(''));
-  ok('back where it started after 20 + 20', vis()==='days,food,stay,info', vis());
+  ok('back where it started after 20 + 20', vis()==='days,food,stay,transport', vis());
   // dragging on the dimmed backdrop beside the cards also turns, and does not close
   async function dragAt(r, from, to){ var p0=pt(from,r), el=at(p0); pe('pointerdown', el, p0); for (var i=1;i<=10;i++){ await sleep(16); pe('pointermove', el, pt(from+(to-from)*i/10, r)); } await sleep(150); pe('pointerup', el, pt(to,r)); el.click(); return el; }
   var bg=await dragAt(300, 200, 245); await settle();
-  ok('drag on backdrop turns 2 steps', vis()==='stay,info,learn,money' && d.querySelector('.dial').classList.contains('is-open'), (bg&&bg.className)+' '+vis());
+  ok('drag on backdrop turns 2 steps', vis()==='stay,transport,info,learn' && d.querySelector('.dial').classList.contains('is-open'), (bg&&bg.className)+' '+vis());
   await dragAt(300, 245, 200); await settle();
-  ok('drag on backdrop back', vis()==='days,food,stay,info', vis());
+  ok('drag on backdrop back', vis()==='days,food,stay,transport', vis());
   // mouse
   PT='mouse';
   var p0=pt(191.25), m=at(p0);
@@ -77,22 +77,22 @@ f.onload=async function(){ try {
   ok('browser drag of link/image is blocked', ds.defaultPrevented);
   ok('cards are not draggable', [].every.call(d.querySelectorAll('.dial-item'),function(a){return a.getAttribute('draggable')==='false'}));
   await drag(191.25, 236.25, 10, 16, 150); await settle();
-  ok('mouse drag turns 2 steps', vis()==='stay,info,learn,money', vis());
+  ok('mouse drag turns 2 steps', vis()==='stay,transport,info,learn', vis());
   await drag(236.25, 191.25, 10, 16, 150); await settle();
-  ok('mouse drag back', vis()==='days,food,stay,info', vis());
+  ok('mouse drag back', vis()==='days,food,stay,transport', vis());
   PT='touch';
   var hub=d.querySelector('.dial-scrim');
   for (var k=0;k<3;k++) hub.dispatchEvent(new w.WheelEvent('wheel',{deltaY:20,bubbles:true,cancelable:true}));
   await settle();
-  ok('trackpad: small scrolls add up to one step', vis()==='food,stay,info,learn', vis());
+  ok('trackpad: small scrolls add up to one step', vis()==='food,stay,transport,info', vis());
   for (var k=0;k<15;k++) hub.dispatchEvent(new w.WheelEvent('wheel',{deltaY:-4,bubbles:true,cancelable:true}));
   await settle();
-  ok('trackpad: tiny scrolls add up too', vis()==='days,food,stay,info', vis());
+  ok('trackpad: tiny scrolls add up too', vis()==='days,food,stay,transport', vis());
   await sleep(300);
   hub.dispatchEvent(new w.WheelEvent('wheel',{deltaY:100,bubbles:true,cancelable:true})); await settle();
-  ok('mouse wheel notch turns one step', vis()==='food,stay,info,learn', vis());
+  ok('mouse wheel notch turns one step', vis()==='food,stay,transport,info', vis());
   hub.dispatchEvent(new w.WheelEvent('wheel',{deltaY:-100,bubbles:true,cancelable:true})); await settle();
-  ok('hidden cards not tappable', [].every.call(d.querySelectorAll('.dial-item.is-off .dial-hit'),function(e){return w.getComputedStyle(e).pointerEvents==='none'}) && d.querySelectorAll('.dial-item.is-off').length===3);
+  ok('hidden cards not tappable', [].every.call(d.querySelectorAll('.dial-item.is-off .dial-hit'),function(e){return w.getComputedStyle(e).pointerEvents==='none'}) && d.querySelectorAll('.dial-item.is-off').length===4);
   var p=pt(213.75), t=at(p);
   pe('pointerdown', t, p); pe('pointermove', t, [p[0]+3,p[1]+2]); pe('pointerup', t, [p[0]+3,p[1]+2]); t.closest('.dial-item').click(); await settle();
   ok('tap with small wobble navigates', w.location.hash==='#stay', w.location.hash);
@@ -116,7 +116,7 @@ f.onload=async function(){ try {
   go('pack'); await sleep(300); await open();
   ok('pack opens turned to show itself', vis()==='info,learn,money,pack', vis());
   go('d1214'); await sleep(300); await open();
-  d.querySelectorAll('.dial-item')[6].focus(); await settle();
+  d.querySelectorAll('.dial-item')[7].focus(); await settle();
   ok('focus hidden card turns dial', vis()==='days,food,stay,pack', vis());
   d.querySelector('.dial-scrim').click(); await settle();
   // other overlays hide the button (it sits above the paper grain now)
@@ -133,7 +133,7 @@ f.onload=async function(){ try {
   go('home'); await sleep(300);
   ok('hidden on cover', d.querySelector('.dial').hidden);
   var bad=[];
-  for (var k2 of ['days','d1220','d1231','food-bali','stay','info','learn','money','pack']) {
+  for (var k2 of ['days','d1220','d1231','food-bali','stay','transport','info','learn','money','pack']) {
     go(k2); await sleep(250); w.scrollTo(0, 1e6); await sleep(150);
     var last=d.querySelector('.wrap').lastElementChild.getBoundingClientRect(), b=btn.getBoundingClientRect();
     if (!(last.bottom < b.top)) bad.push(k2+':'+Math.round(last.bottom)+'/'+Math.round(b.top));
@@ -149,10 +149,10 @@ f.onload=async function(){ try {
   await open();
   function ptL(th, r){ return pt(180-th, r); }   // mirrored: logical angle -> screen angle
   var hl=[258.75,236.25,213.75,191.25].map(function(a){ var e=at(ptL(a)); var it=e&&e.closest('.dial-item'); return it?it.dataset.k.replace('-jkt',''):'-'; }).join(',');
-  ok('left: cards fan up-right, taps land on the right card', hl==='days,food,stay,info', hl);
+  ok('left: cards fan up-right, taps land on the right card', hl==='days,food,stay,transport', hl);
   async function dragL(from, to){ var p0=ptL(from), el=at(p0); pe('pointerdown', el, p0); for (var i=1;i<=10;i++){ await sleep(16); pe('pointermove', el, ptL(from+(to-from)*i/10)); } await sleep(150); pe('pointerup', el, ptL(to)); }
   await dragL(191.25, 236.25); await settle();
-  ok('left: dragging along the arc turns the same way', vis()==='stay,info,learn,money', vis());
+  ok('left: dragging along the arc turns the same way', vis()==='stay,transport,info,learn', vis());
   var hb=d.querySelector('.dial-hint-band').getBoundingClientRect();
   ok('left: hint band sits up-right of the button', hb.left > btn.getBoundingClientRect().left, Math.round(hb.left));
   d.querySelector('.dial-scrim').click(); await settle();
