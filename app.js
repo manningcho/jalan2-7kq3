@@ -307,7 +307,7 @@
   }
   // ---------- 背景聲音：跟著城市、當地天氣和白天晚上換（錄音都是 CC0，見 sound.js）。預設關；打開過會記住 ----------
   // 選哪一段：那個城市「現在」在下雨 → 雨聲；現在是晚上 → 夜晚蟲鳴（峇里島例外，晚上還是海浪）；其他 → 城市的基本聲音。
-  // 哪個城市：每日頁用那一天的城市；其他頁旅途中用今天的城市，出發前用峇里島（海浪）。
+  // 只有每日行程頁會換：用那一天的城市。首頁、選單、交通這些頁面固定播海浪（網站的招牌聲音，首頁的圖幾乎都有海；2026/10/31 使用者決定）。
   // 天氣：Open-Meteo 的「現在」天氣，每個城市 15 分鐘查一次；沒網路查不到就只看當地時間（18:00–6:00 算晚上）。
   // 換段時 3 秒交叉淡化；不用的那段停掉、放掉記憶體。
   // iPhone 不准網頁自己出聲，一定要使用者點一下：記住「開」的話，等第一次點畫面才開始播。
@@ -316,16 +316,18 @@
   var soundOn = false, sndCtx = null, sndMaster = null, sndCur = null, sndKey = "", SND_VOL = 0.7, sndWx = {}, sndAsk = {};
   try { soundOn = localStorage.getItem("trip-sound") === "on"; } catch (e) {}
   function sndVol(v, sec) { if (sndMaster) sndMaster.gain.setTargetAtTime(v, sndCtx.currentTime, sec || 0.4); }
-  function sndCity() {
-    var h = (location.hash || "").replace(/^#/, ""), d = T.days.filter(function (x) { return dayId(x) === h; })[0] || todayDay();
-    return d ? d.city : "bali";
+  function sndCity() { // 每日頁的城市；不是每日頁就回傳空字串（固定播海浪）
+    var h = (location.hash || "").replace(/^#/, ""), d = T.days.filter(function (x) { return dayId(x) === h; })[0];
+    return d ? d.city : "";
   }
   function sndLocalHour(city) {
     try { return +new Date().toLocaleString("en-GB", { timeZone: city === "bali" ? "Asia/Makassar" : city === "tw" ? "Asia/Taipei" : "Asia/Jakarta", hour: "2-digit", hourCycle: "h23" }); }
     catch (e) { return new Date().getHours(); }
   }
   function sndScene() {
-    var city = sndCity(), w = sndWx[city], fresh = w && Date.now() - w.at < 3600000;
+    var city = sndCity();
+    if (!city) return "waves";
+    var w = sndWx[city], fresh = w && Date.now() - w.at < 3600000;
     var night = fresh ? !w.day : (function (h) { return h >= 18 || h < 6; })(sndLocalHour(city));
     if (fresh && w.rain) return "rain";
     if (night && city !== "bali") return "night";
@@ -347,7 +349,7 @@
   function sndApply() { // 要查天氣就先查（最多等 2 秒），查到再選，免得先播錯的那段又馬上換掉
     if (!soundOn || !sndCtx) return;
     var city = sndCity();
-    if (!sndNeedWx(city)) return sndPick();
+    if (!city || !sndNeedWx(city)) return sndPick();
     var done = false, go = function () { if (!done) { done = true; sndPick(); } };
     sndWeather(city).then(go, go);
     setTimeout(go, 2000);
