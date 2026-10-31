@@ -78,7 +78,7 @@
     prefs: ["設定", "Pengaturan", "Settings"],
     langLabel: ["語言", "Bahasa", "Language"],
     themeLabel: ["顏色", "Tampilan", "Appearance"],
-    soundLabel: ["背景聲音（海浪）", "Suara latar (ombak)", "Ambient sound (waves)"],
+    soundLabel: ["背景聲音（海浪和海鳥）", "Suara latar (ombak & burung)", "Ambient sound (waves & birds)"],
     soundOn: ["開", "Nyala", "On"], soundOff: ["關", "Mati", "Off"],
     themeAuto: ["跟手機", "Ikuti HP", "Auto"],
     themeLight: ["淺色", "Terang", "Light"],
@@ -305,10 +305,10 @@
       '<p class="prefs-h">' + esc(u("soundLabel")) + "</p>" + seg("data-sound", [["on", u("soundOn")], ["off", u("soundOff")]], soundOn ? "on" : "off", u("soundLabel")) +
       "</div></div>";
   }
-  // ---------- 背景聲音：sound.js 合成的海浪聲。預設關；打開過會記住 ----------
+  // ---------- 背景聲音：sound.js 播的海浪錄音（CC0）。預設關；打開過會記住 ----------
   // iPhone 不准網頁自己出聲，一定要使用者點一下：記住「開」的話，等第一次點畫面才開始播。
   // 切到背景就暫停；念印尼文時先調小，念完再恢復。iPhone 側邊的靜音鍵打開時聽不到（系統規定）。
-  var soundOn = false, sndCtx = null, snd = null, sndTimer = null, SND_VOL = 0.55;
+  var soundOn = false, sndCtx = null, snd = null, SND_VOL = 0.7;
   try { soundOn = localStorage.getItem("trip-sound") === "on"; } catch (e) {}
   function sndVol(v, sec) { if (snd) snd.out.gain.setTargetAtTime(v, sndCtx.currentTime, sec || 0.4); }
   function startSound() {
@@ -316,14 +316,10 @@
     if (!AC || !window.SOUND) return;
     if (!sndCtx) sndCtx = new AC();
     if (sndCtx.state !== "running") sndCtx.resume();
-    if (!snd) { snd = SOUND.waves(sndCtx, sndCtx.destination); snd.out.gain.value = 0; }
-    snd.until(sndCtx.currentTime + 20);
-    clearInterval(sndTimer);
-    sndTimer = setInterval(function () { snd.until(sndCtx.currentTime + 20); }, 2000); // 一直往後排浪
-    sndVol(SND_VOL, 0.8); // 慢慢淡入
+    if (!snd) snd = SOUND.loop(sndCtx, sndCtx.destination, "snd/waves.m4a");
+    snd.ready.then(function () { if (soundOn) sndVol(SND_VOL, 0.8); }); // 載好才慢慢淡入
   }
   function stopSound() {
-    clearInterval(sndTimer);
     if (!snd) return;
     sndVol(0, 0.25);
     setTimeout(function () { if (!soundOn && sndCtx) sndCtx.suspend(); }, 1200);
@@ -336,7 +332,7 @@
   window.__sound = function () { return { on: soundOn, state: sndCtx && sndCtx.state, vol: snd && +snd.out.gain.value.toFixed(2) }; }; // 給 tools 的測試看狀態
   document.addEventListener("visibilitychange", function () {
     if (!sndCtx || !soundOn) return;
-    if (document.hidden) sndCtx.suspend(); else { sndCtx.resume(); snd && snd.until(sndCtx.currentTime + 20); }
+    if (document.hidden) sndCtx.suspend(); else sndCtx.resume();
   });
 
   function setPrefsOpen(open) {
