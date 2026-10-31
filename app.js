@@ -19,15 +19,22 @@
     if (meta) meta.setAttribute("content", getComputedStyle(root).getPropertyValue("--paper").trim() || "#e9e7e2");
   }
   applyTheme();
-  // 手機最上面狀態列的顏色是 Safari 自己塗的（照 theme-color）。打開遮罩時要「當下」就改成疊上遮罩後的顏色，
-  // 不然 Safari 會等遮罩淡入完才自己重新取色，頂部就慢半拍才變暗。a = [r, g, b, 透明度]，不給就是還原。
+  // 手機最上面狀態列的顏色：iOS 26 的 Safari 不看 theme-color，而是取「貼在畫面最上緣、實心的固定元素」的顏色，
+  // 也就是 body::before 那條頂部色帶。半透明、正在淡入的遮罩它不採用，要等之後重新取色，頂部就慢半拍才變暗。
+  // 所以打開遮罩的當下，直接把那條色帶換成「底色疊上遮罩」的實心顏色（theme-color 也一起改，給其他瀏覽器）。
+  // a = [r, g, b, 透明度]，不給就是還原。
   function barTint(a) {
-    var meta = document.querySelector('meta[name="theme-color"]');
-    if (!meta) return;
-    var base = getComputedStyle(document.documentElement).getPropertyValue("--paper").trim() || "#e9e7e2";
-    if (!a) { meta.setAttribute("content", base); return; }
+    var root = document.documentElement, meta = document.querySelector('meta[name="theme-color"]');
+    var base = getComputedStyle(root).getPropertyValue("--paper").trim() || "#e9e7e2";
+    if (!a) {
+      root.classList.remove("bar-tinted"); root.style.removeProperty("--bar-top");
+      if (meta) meta.setAttribute("content", base);
+      return;
+    }
     var h = base.replace("#", ""), c = [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); });
-    meta.setAttribute("content", "#" + c.map(function (v, i) { return ("0" + Math.round(v * (1 - a[3]) + a[i] * a[3]).toString(16)).slice(-2); }).join(""));
+    var mix = "#" + c.map(function (v, i) { return ("0" + Math.round(v * (1 - a[3]) + a[i] * a[3]).toString(16)).slice(-2); }).join("");
+    root.style.setProperty("--bar-top", mix); root.classList.add("bar-tinted");
+    if (meta) meta.setAttribute("content", mix);
   }
   try { window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme); } catch (e) {}
   var prefsOpen = false; // 右上角選單是否打開
