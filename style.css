@@ -625,22 +625,15 @@ button { font: inherit; color: inherit; }
 /* app.js fitClock(): if one line still doesn't fit, drop the Taiwan half */
 .clk-short .clk-tw { display: none; }
 
-/* ---------- easter egg: tap the cover's star → spreadsheet cells fly into the star ---------- */
+/* ---------- easter egg: tap the cover's star → a small illustration pops up ---------- */
 .egg-btn { padding: 0; margin: 0; border: 0; background: none; color: inherit; line-height: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .egg-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; border-radius: 8px; }
 .egg { position: fixed; inset: 0; z-index: 46; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(10, 12, 20, .32); opacity: 0; transition: opacity .25s ease; cursor: pointer; }
 .egg.is-on { opacity: 1; }
-.egg-card { width: min(250px, 72vw); padding: 18px 16px 14px; border-radius: 22px; background: var(--paper); box-shadow: 0 18px 50px rgba(10, 12, 20, .28); transform: scale(.94); transition: transform .3s cubic-bezier(.3, 1.4, .5, 1); }
+.egg-card { width: min(250px, 72vw); padding: 12px 12px 14px; border-radius: 22px; background: var(--paper); box-shadow: 0 18px 50px rgba(10, 12, 20, .28); transform: scale(.9) translateY(8px); transition: transform .45s cubic-bezier(.3, 1.5, .5, 1); }
 .egg.is-on .egg-card { transform: none; }
-.egg-art { display: block; width: 100%; height: auto; overflow: visible; }
-.egg-c { fill: #fff; stroke: #c8ccd2; stroke-width: .6; transform-box: fill-box; transform-origin: center; }
-.egg-c.is-h { fill: #e6f4ea; }
-.egg-t { font: 600 7px var(--f-mono); fill: #8a9099; text-anchor: middle; }
-rect.egg-t { fill: #c3c8cf; }
-.egg-sel { fill: none; stroke: #1a73e8; stroke-width: 1.6; }
-.egg-star { opacity: 0; transform-box: fill-box; transform-origin: center; }
-.egg.is-done .egg-sheet { display: none; }
-.egg.is-done .egg-star { opacity: 1; }
-.egg-cap { margin: 10px 0 0; text-align: center; font-size: 13px; font-weight: 500; letter-spacing: .04em; color: var(--ink); opacity: 0; }
+.egg-art { display: block; width: 100%; aspect-ratio: 1; border-radius: 14px; filter: blur(6px); transform: scale(1.04); transition: filter .7s ease .1s, transform .9s ease .1s; }
+.egg.is-on .egg-art { filter: none; transform: none; }
+.egg-cap { margin: 11px 0 0; text-align: center; font-size: 13px; font-weight: 500; letter-spacing: .04em; color: var(--ink); opacity: 0; transform: translateY(5px); transition: opacity .5s ease .55s, transform .5s ease .55s; }
+.egg.is-on .egg-cap { opacity: 1; transform: none; }
 .egg-cap small { display: block; margin-top: 3px; font-family: var(--f-mono); font-size: 10px; font-weight: 400; letter-spacing: .08em; color: var(--muted); }
-.egg.is-done .egg-cap { opacity: 1; }

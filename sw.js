@@ -6,7 +6,7 @@
 // 下面兩段由 make-sw.sh 自動產生：新增或換掉 img/ 的圖之後跑一次 ./make-sw.sh（make-lq.sh 會順便跑）。
 
 // <make-sw>
-var VERSION = "9d4af7e1cb";
+var VERSION = "a9a89c3a3d";
 var FONT_CSS = "https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap";
 var ASSETS = [
   "./",
@@ -33,6 +33,7 @@ var ASSETS = [
   "img/cover-4.jpg",
   "img/cover-5.jpg",
   "img/cover-6.jpg",
+  "img/egg.jpg",
   "img/gate.jpg",
   "img/home.jpg",
   "img/lake.jpg",
