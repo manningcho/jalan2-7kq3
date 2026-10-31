@@ -38,13 +38,37 @@
     stop();
     var g = { dead: false };
     cur = g;
-    Promise.all([getAssets(), load(src)]).then(function (r) {
+    var hw = art.parentNode && art.parentNode.querySelector(".hw");
+    Promise.all([getAssets(), load(src), settled(hw)]).then(function (r) {
       if (g.dead || !art.isConnected) return;
-      build(g, art, r[1], r[0], top, frame, opts || {});
+      build(g, art, r[1], r[0], top, frame, opts || {}, hw);
     }).catch(function () {});
   }
 
-  function build(g, art, illu, A, top, frame, opts) {
+  // 大字的字母有進場動畫、字型也要載完，等好了再量位置（最多等 3 秒）
+  function settled(hw) {
+    var wait = [];
+    if (document.fonts && document.fonts.ready) wait.push(document.fonts.ready);
+    if (hw && hw.getAnimations) hw.getAnimations({ subtree: true }).forEach(function (a) { wait.push(a.finished.catch(function () {})); });
+    return Promise.race([Promise.all(wait), new Promise(function (ok) { setTimeout(ok, 3000); })]);
+  }
+  // 把伸進插畫的那半截大字畫進「玻璃後面的景色」：霧裡看到糊糊的字，擦開才是清楚的字
+  function paintWord(x, hw, o, dpr) {
+    var cs = getComputedStyle(hw), spans = hw.querySelectorAll(".hw-in span");
+    x.save(); x.scale(dpr, dpr);
+    x.font = cs.fontStyle + " " + cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+    x.fillStyle = cs.color; x.textBaseline = "alphabetic";
+    var m = x.measureText("Hg"), fs = parseFloat(cs.fontSize);
+    var fa = m.fontBoundingBoxAscent || fs * .9, fd = m.fontBoundingBoxDescent || fs * .25;
+    for (var i = 0; i < spans.length; i++) {
+      var r = spans[i].getBoundingClientRect();
+      // 字母是行高壓扁的小區塊：基線＝區塊頂＋上下平分的行距＋字型上半部高度
+      x.fillText(spans[i].textContent, r.left - o.left, r.top - o.top + (r.height - (fa + fd)) / 2 + fa);
+    }
+    x.restore();
+  }
+
+  function build(g, art, illu, A, top, frame, opts, hw) {
     var svg = art.querySelector("svg.art");
     if (!svg) return;
     var fogTex = A[0], shade = A[1], dmask = A[2];
@@ -66,6 +90,7 @@
     var gr = bx.createLinearGradient(0, 0, 0, 110 * s);
     gr.addColorStop(0, top); gr.addColorStop(.35, rgba(top, .55)); gr.addColorStop(1, rgba(top, 0));
     bx.fillStyle = gr; bx.fillRect(0, 0, W, 110 * s);
+    if (hw) paintWord(bx, hw, art.getBoundingClientRect(), dpr);
 
     // 霧：插畫縮很小再放大（＝模糊），蓋一層淡淡的白，再疊上霧珠的質感
     var fog = canvas(W, H), fx = fog.getContext("2d");
@@ -73,11 +98,20 @@
     sm.getContext("2d").drawImage(base, 0, 0, sm.width, sm.height);
     var mdx = md.getContext("2d"); mdx.imageSmoothingQuality = "high"; mdx.drawImage(sm, 0, 0, md.width, md.height);
     fx.imageSmoothingQuality = "high"; fx.drawImage(md, 0, 0, W, H);
-    fx.fillStyle = "rgba(226,232,244,.16)"; fx.fillRect(0, 0, W, H);
+    // 白霧上淡下濃：最上面那條是大字伸進來的地方，天空要跟字同色，字才融得進去
+    var hz = fx.createLinearGradient(0, 0, 0, H);
+    hz.addColorStop(0, "rgba(226,232,244,0)"); hz.addColorStop(.3, "rgba(226,232,244,.03)"); hz.addColorStop(.65, "rgba(226,232,244,.16)"); hz.addColorStop(1, "rgba(226,232,244,.2)");
+    fx.fillStyle = hz; fx.fillRect(0, 0, W, H);
     var T = Math.round(240 * dpr), tile = canvas(T, T);
     tile.getContext("2d").drawImage(fogTex, 0, 0, T, T);
-    fx.globalCompositeOperation = "overlay"; fx.globalAlpha = .45; fx.fillStyle = fx.createPattern(tile, "repeat"); fx.fillRect(0, 0, W, H);
-    fx.globalCompositeOperation = "source-over"; fx.globalAlpha = 1;
+    // 霧珠質感一樣上面淡一點：先鋪滿，再用上淡下濃的漸層裁透明度，最後疊上去
+    var tx = canvas(W, H), tc = tx.getContext("2d");
+    tc.fillStyle = tc.createPattern(tile, "repeat"); tc.fillRect(0, 0, W, H);
+    var tg = tc.createLinearGradient(0, 0, 0, H);
+    tg.addColorStop(0, "rgba(0,0,0,.2)"); tg.addColorStop(.45, "rgba(0,0,0,.45)"); tg.addColorStop(1, "rgba(0,0,0,.5)");
+    tc.globalCompositeOperation = "destination-in"; tc.fillStyle = tg; tc.fillRect(0, 0, W, H);
+    fx.globalCompositeOperation = "overlay"; fx.drawImage(tx, 0, 0);
+    fx.globalCompositeOperation = "source-over";
 
     // 哪裡有霧：黑＝有霧，擦掉的地方變透明，之後慢慢補回來
     var mk = canvas(W, H), mx = mk.getContext("2d");
@@ -261,6 +295,7 @@
       art.classList.remove("has-glass");
     }
     g.off = cleanup;
+    window.__glassBase = function () { return base; };
     window.__glass = function () { return { w: W, h: H, drops: drops.length, fade: fade, sliding: drops.filter(function (d) { return d.v != null; }).length }; };
   }
 

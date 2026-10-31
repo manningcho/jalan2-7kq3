@@ -407,9 +407,10 @@ button { font: inherit; color: inherit; }
 @keyframes sway { from { transform: translateX(-16px) rotate(-25deg); } to { transform: translateX(16px) rotate(25deg); } }
 
 /* ---------- rainy days: fogged glass with raindrops over the day illustration (glass.js); side swipes wipe, vertical drags still scroll ---------- */
-.glass { position: absolute; left: 0; top: 0; width: 100%; height: 100%; touch-action: pan-y; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
-.has-glass .a-kb { animation: none; } /* the fog is made from the still picture, so keep the picture still under it */
-.glass-hint { position: absolute; left: 50%; bottom: 16%; transform: translateX(-50%); padding: 6px 13px; border-radius: 99px; background: rgba(20, 30, 60, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: #fff; font-family: var(--f-body); font-size: 12px; letter-spacing: .12em; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .8s ease; }
+.glass { position: absolute; left: 0; top: 0; z-index: 2; width: 100%; height: 100%; touch-action: pan-y; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.has-glass .a-kb { animation: none; }
+.has-glass .hero-over { z-index: 3; } /* the glass sits above the giant word (z 1) so the word's lower half fogs like the sky; the weather stays on top */ /* the fog is made from the still picture, so keep the picture still under it */
+.glass-hint { position: absolute; z-index: 3; left: 50%; bottom: 16%; transform: translateX(-50%); padding: 6px 13px; border-radius: 99px; background: rgba(20, 30, 60, .3); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: #fff; font-family: var(--f-body); font-size: 12px; letter-spacing: .12em; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .8s ease; }
 .glass-hint.is-in { opacity: 1; }
 .glass-hint.is-in.is-gone { opacity: 0; }
 
