@@ -78,6 +78,8 @@
     prefs: ["設定", "Pengaturan", "Settings"],
     langLabel: ["語言", "Bahasa", "Language"],
     themeLabel: ["顏色", "Tampilan", "Appearance"],
+    soundLabel: ["背景聲音（海浪）", "Suara latar (ombak)", "Ambient sound (waves)"],
+    soundOn: ["開", "Nyala", "On"], soundOff: ["關", "Mati", "Off"],
     themeAuto: ["跟手機", "Ikuti HP", "Auto"],
     themeLight: ["淺色", "Terang", "Light"],
     themeDark: ["深色", "Gelap", "Dark"],
@@ -300,8 +302,43 @@
       '<p class="prefs-h">' + esc(u("langLabel")) + "</p>" + seg("data-lang", LANGS.map(function (l, i) { return [l, names[i]]; }), lang, u("langLabel")) +
       '<p class="prefs-h">' + esc(u("themeLabel")) + "</p>" +
       seg("data-theme-pick", [["auto", u("themeAuto")], ["light", u("themeLight")], ["dark", u("themeDark")]], theme, u("themeLabel")) +
+      '<p class="prefs-h">' + esc(u("soundLabel")) + "</p>" + seg("data-sound", [["on", u("soundOn")], ["off", u("soundOff")]], soundOn ? "on" : "off", u("soundLabel")) +
       "</div></div>";
   }
+  // ---------- 背景聲音：sound.js 合成的海浪聲。預設關；打開過會記住 ----------
+  // iPhone 不准網頁自己出聲，一定要使用者點一下：記住「開」的話，等第一次點畫面才開始播。
+  // 切到背景就暫停；念印尼文時先調小，念完再恢復。iPhone 側邊的靜音鍵打開時聽不到（系統規定）。
+  var soundOn = false, sndCtx = null, snd = null, sndTimer = null, SND_VOL = 0.55;
+  try { soundOn = localStorage.getItem("trip-sound") === "on"; } catch (e) {}
+  function sndVol(v, sec) { if (snd) snd.out.gain.setTargetAtTime(v, sndCtx.currentTime, sec || 0.4); }
+  function startSound() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC || !window.SOUND) return;
+    if (!sndCtx) sndCtx = new AC();
+    if (sndCtx.state !== "running") sndCtx.resume();
+    if (!snd) { snd = SOUND.waves(sndCtx, sndCtx.destination); snd.out.gain.value = 0; }
+    snd.until(sndCtx.currentTime + 20);
+    clearInterval(sndTimer);
+    sndTimer = setInterval(function () { snd.until(sndCtx.currentTime + 20); }, 2000); // 一直往後排浪
+    sndVol(SND_VOL, 0.8); // 慢慢淡入
+  }
+  function stopSound() {
+    clearInterval(sndTimer);
+    if (!snd) return;
+    sndVol(0, 0.25);
+    setTimeout(function () { if (!soundOn && sndCtx) sndCtx.suspend(); }, 1200);
+  }
+  if (soundOn) { // 記住是開的：第一次點畫面就開始
+    var sndKick = function () { document.removeEventListener("pointerdown", sndKick, true); document.removeEventListener("keydown", sndKick, true); if (soundOn) startSound(); };
+    document.addEventListener("pointerdown", sndKick, true);
+    document.addEventListener("keydown", sndKick, true);
+  }
+  window.__sound = function () { return { on: soundOn, state: sndCtx && sndCtx.state, vol: snd && +snd.out.gain.value.toFixed(2) }; }; // 給 tools 的測試看狀態
+  document.addEventListener("visibilitychange", function () {
+    if (!sndCtx || !soundOn) return;
+    if (document.hidden) sndCtx.suspend(); else { sndCtx.resume(); snd && snd.until(sndCtx.currentTime + 20); }
+  });
+
   function setPrefsOpen(open) {
     prefsOpen = open;
     document.querySelectorAll(".prefs").forEach(function (p) {
@@ -933,8 +970,9 @@
     var v = idVoice();
     if (v) ut.voice = v;
     ut.rate = .85; // 放慢一點比較好跟著唸
-    ut.onend = ut.onerror = function () { btn.classList.remove("is-playing"); };
+    ut.onend = ut.onerror = function () { btn.classList.remove("is-playing"); if (soundOn) sndVol(SND_VOL, 0.6); };
     btn.classList.add("is-playing");
+    if (soundOn) sndVol(0.12, 0.15); // 念句子時海浪聲先調小
     speechSynthesis.speak(ut);
   }
   function viewLearn() {
@@ -1592,6 +1630,11 @@
       try { localStorage.setItem("trip-theme", theme); } catch (err) {}
       applyTheme();
       document.querySelectorAll("[data-theme-pick]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.themePick === theme); });
+    } else if (t.dataset.sound) {
+      soundOn = t.dataset.sound === "on";
+      try { localStorage.setItem("trip-sound", soundOn ? "on" : "off"); } catch (err) {}
+      if (soundOn) startSound(); else stopSound();
+      document.querySelectorAll("[data-sound]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.sound === (soundOn ? "on" : "off")); });
     } else if (t.dataset.lang) {
       lang = t.dataset.lang;
       try { localStorage.setItem("trip-lang", lang); } catch (err) {}

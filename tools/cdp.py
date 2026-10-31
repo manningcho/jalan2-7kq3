@@ -4,7 +4,7 @@ import base64, json, os, socket, struct, subprocess, sys, tempfile, time, urllib
 url, rate, wait, jsfile = sys.argv[1], float(sys.argv[2]), int(sys.argv[3]), sys.argv[4]
 port = 9333 + os.getpid() % 500
 chrome = subprocess.Popen(["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "--headless=new", "--window-size=" + os.environ.get("WIN", "390,844"),
-  "--force-device-scale-factor=3", "--user-data-dir=" + tempfile.mkdtemp(), "--remote-debugging-port=%d" % port, "about:blank"],
+  "--force-device-scale-factor=3", "--autoplay-policy=no-user-gesture-required", "--user-data-dir=" + tempfile.mkdtemp(), "--remote-debugging-port=%d" % port, "about:blank"],
   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 try:
     for _ in range(50):
