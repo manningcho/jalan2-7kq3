@@ -410,7 +410,7 @@ window.TRIP = {
         { time: "12:45", t: ["抵達機場，辦登機和出境", "Tiba di bandara, check-in & imigrasi", "At the airport: check-in and immigration"], place: "dps",
           note: ["起飛前 3 小時到，時間很充裕", "Tiba 3 jam sebelum terbang, waktunya cukup", "3 hours before the flight, plenty of time"] },
         { time: "15:45", kind: "flight", t: ["華航 CI772 飛桃園", "China Airlines CI772 ke Taipei", "China Airlines CI772 to Taipei"], place: "dps",
-          note: ["托運行李 2 件", "Bagasi 2 koli", "2 checked bags"] },
+          note: ["托運行李每人 1 件", "Bagasi 1 koli per orang", "1 checked bag per person"] },
         { time: "21:00", t: ["抵達桃園 T1，旅程結束", "Tiba di Taoyuan T1", "Land at Taoyuan T1, trip complete"], place: "tpe" }
       ]
     }
@@ -503,7 +503,7 @@ window.TRIP = {
     { date: "12/16", kind: "train", t: ["雅加達 → 普禾加多", "Jakarta → Purwokerto", "Jakarta → Purwokerto"], d: ["8:50 出發・車次待補", "8.50 · nama kereta menyusul", "8:50 · train TBA"] },
     { date: "12/23", kind: "train", t: ["普禾加多 → 日惹", "Purwokerto → Yogyakarta", "Purwokerto → Yogyakarta"], d: ["KA Ranggajati 商務艙・11:59 – 13:50", "KA Ranggajati Eksekutif · 11.59 – 13.50", "KA Ranggajati, executive · 11:59 – 13:50"] },
     { date: "12/25", kind: "flight", t: ["日惹 YIA → 峇里島 DPS", "Yogyakarta YIA → Bali DPS", "Yogyakarta YIA → Bali DPS"], d: ["Garuda GA252・13:40 – 16:10・托運 1 件 23kg", "Garuda GA252 · 13.40 – 16.10 · bagasi 1 × 23 kg", "Garuda GA252 · 13:40 – 16:10 · 1 bag, 23 kg"] },
-    { date: "12/31", kind: "flight", t: ["峇里島 DPS → 桃園 T1", "Bali DPS → Taoyuan T1", "Bali DPS → Taoyuan T1"], d: ["華航 CI772・15:45 – 21:00・托運 2 件", "China Airlines CI772 · 15.45 – 21.00 · bagasi 2 koli", "China Airlines CI772 · 15:45 – 21:00 · 2 bags"] }
+    { date: "12/31", kind: "flight", t: ["峇里島 DPS → 桃園 T1", "Bali DPS → Taoyuan T1", "Bali DPS → Taoyuan T1"], d: ["華航 CI772・15:45 – 21:00・托運每人 1 件", "China Airlines CI772 · 15.45 – 21.00 · bagasi 1 koli/orang", "China Airlines CI772 · 15:45 – 21:00 · 1 bag each"] }
   ],
 
   // 匯率（參考值，出發前更新）
