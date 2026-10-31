@@ -68,7 +68,7 @@ window.TRIP = {
     plane: { src: "img/plane.jpg", what: "Berangkat", by: "AI (OpenAI Codex)", top: "#5279be" },
     home: { src: "img/home.jpg", what: "Pulang", by: "AI (OpenAI Codex)", top: "#557ab6" },
     "p-info": { src: "img/p-info.jpg", what: "Bandara Ngurah Rai", by: "AI (OpenAI Codex)", top: "#557ab6" },
-    "p-transport": { src: "img/p-transport.jpg", what: "Kereta di Jawa", by: "AI (OpenAI Codex)", top: "#4f79bf" },
+    "p-transport": { src: "img/p-transport.jpg", what: "Kereta di Jawa", by: "AI (OpenAI Codex)", top: "#5579b4" },
     "p-learn": { src: "img/p-learn.jpg", what: "Pasar", by: "AI (OpenAI Codex)", top: "#5a78ac" },
     "p-money": { src: "img/p-money.jpg", what: "Warung", by: "AI (OpenAI Codex)", top: "#5478b5" },
     "p-pack": { src: "img/p-pack.jpg", what: "Dermaga", by: "AI (OpenAI Codex)", top: "#6086c0" }
