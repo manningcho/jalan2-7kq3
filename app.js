@@ -752,7 +752,9 @@
       (prev ? '<a href="#' + dayId(prev) + '">' + ICON.left + "<span><small>" + esc(u("prev")) + "</small>" + dm(prev) + "</span></a>" : "<span></span>") +
       '<button type="button" class="pg-jump" data-jump="1" aria-label="' + esc(u("jumpTo")) + '" title="' + esc(u("jumpTo")) + '">' + ICON.cal + "</button>" +
       (next ? '<a class="pg-next" href="#' + dayId(next) + '"><span><small>' + esc(u("next")) + "</small>" + dm(next) + "</span>" + ICON.chev + "</a>" : "<span></span>") + "</nav>";
-    return bar("No.#" + pad(i + 1) + " / 18", "days") + '<main class="wrap' + (d.wedding ? " is-wedding" : "") + '">' +
+    // 「返回」回到進來的那一頁：從交通頁點票卡進來就回交通頁；在每日頁之間換天不會忘記入口；直接打開網址就回日期列表
+    if (!isDayRoute(lastRoute)) dayBack = lastRoute || "days";
+    return bar("No.#" + pad(i + 1) + " / 18", dayBack) + '<main class="wrap' + (d.wedding ? " is-wedding" : "") + '">' +
       kicker([pad(i + 1) + "/18", dm(d) + " " + wk(d), L(T.cities[d.city]), tzCode(d.city)]) +
       hero(d.word, d.art, wxHtml(d)) + // 天氣放在插畫天空的右上角（跟封面的小字一樣），日期那行才排得下一行
       '<section class="day-head r"><h1 class="dh-title">' + esc(L(d.title)) + "</h1>" +
@@ -1510,6 +1512,8 @@
   // ---------- 路由 ----------
   var app = document.getElementById("app");
   var lastRoute = null; // 上一次畫的是哪一頁
+  var dayBack = "days"; // 每日頁的「返回」要回哪一頁
+  function isDayRoute(h) { return !!h && T.days.some(function (x) { return dayId(x) === h; }); }
   function render() {
     var h = (location.hash || "").replace(/^#/, "") || "home";
     var html;
