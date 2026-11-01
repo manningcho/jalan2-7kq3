@@ -180,7 +180,7 @@
     }
 
     // ---------- 手指擦 ----------
-    var last = null, wiped = false, hint = null;
+    var last = null, wiped = false, hint = null, touchAt = 0;
     function stamp(x, y) {
       mx.globalCompositeOperation = "destination-out";
       mx.drawImage(brush, x - BR, y - BR);
@@ -192,9 +192,10 @@
       }
     }
     function at(e) { var r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H]; }
-    function down(e) { last = at(e); stamp(last[0], last[1]); dirty = true; }
+    function down(e) { last = at(e); stamp(last[0], last[1]); dirty = true; touchAt = performance.now(); }
     function move(e) {
       if (!last) return;
+      touchAt = performance.now();
       var p = at(e), dx = p[0] - last[0], dy = p[1] - last[1], dist = Math.sqrt(dx * dx + dy * dy), step = BR / 3;
       for (var t = step; t <= dist; t += step) stamp(last[0] + dx * t / dist, last[1] + dy * t / dist);
       if (dist >= step) last = p;
@@ -223,7 +224,7 @@
       io = new IntersectionObserver(function (es) { seen = es[0].isIntersecting; });
       io.observe(cv);
     }
-    var prev = 0, nextSlide = 1.5, nextSpawn = .6, dirty = true, raf = 0;
+    var prev = 0, nextSlide = 1.5, nextSpawn = .6, dirty = true, raf = 0, fogAcc = 0, REFOG = 18;
     function slideOne() {
       // 挑一顆比較大的開始往下滑；沒有的話在上半部生一顆新的水滴形
       var big = drops.filter(function (d) { return !d.v && d.w > 9 * dpr && d.y < H * .7; });
@@ -240,8 +241,17 @@
       prev = now;
       if (document.hidden || !seen) return;
       if (fade < 1) { fade = Math.min(1, fade + dt / 1.6); dirty = true; } // 霧慢慢起來
-      // 擦開的地方慢慢回霧（大約 10 秒回到七成）
-      mx.fillStyle = "rgba(0,0,0," + (dt * .11).toFixed(4) + ")"; mx.fillRect(0, 0, W, H);
+      // 擦開的地方慢慢回霧：全清到全霧大約 18 秒，手指還在擦、剛放開 1.2 秒內先不回
+      // 畫布的透明度只有 256 級，每格畫面補一點點會被四捨五入成 0（之前回不來就是這樣），
+      // 所以累積時間，每次至少補一級，用「相加」補上去
+      if (!last && now - touchAt > 1200) fogAcc += dt;
+      var lv = Math.floor(fogAcc / (REFOG / 255));
+      if (lv > 0) {
+        fogAcc -= lv * REFOG / 255;
+        mx.globalCompositeOperation = "lighter";
+        mx.fillStyle = "rgba(0,0,0," + ((lv + .3) / 255).toFixed(5) + ")"; mx.fillRect(0, 0, W, H);
+        mx.globalCompositeOperation = "source-over";
+      }
       if (opts.motion) {
         nextSlide -= dt; nextSpawn -= dt;
         if (nextSlide <= 0) { slideOne(); nextSlide = rnd(3.5, 8); }
@@ -296,6 +306,7 @@
     }
     g.off = cleanup;
     window.__glassBase = function () { return base; };
+    window.__glassFog = function (fx, fy) { return mx.getImageData(Math.round(fx * W), Math.round(fy * H), 1, 1).data[3] / 255; }; // 測試用：那一點的霧有多少（0–1）
     window.__glass = function () { return { w: W, h: H, drops: drops.length, fade: fade, sliding: drops.filter(function (d) { return d.v != null; }).length }; };
   }
 
