@@ -93,14 +93,15 @@
     if (hw) paintWord(bx, hw, art.getBoundingClientRect(), dpr);
 
     // 霧：插畫模糊、蓋一層淡淡的白，再疊上霧珠的質感
-    // 模糊的做法：一次縮一半、縮兩次，再一次放大一倍、一路放大回來。
+    // 模糊的做法：先縮到固定寬度，再縮一半一次、放大回來（2026/11/02 使用者選「模糊減半」：
+    // 模糊越大，夕陽的粉黃越會暈進山裡，擦開後山是藍的，看起來很突兀）。
     // 一次縮很小再一口氣放大，山的邊緣會變成一階一階的鋸齒（2026/11/02 使用者發現）
     var fog = canvas(W, H), fx = fog.getContext("2d");
     // 先縮到固定的 360 寬（跟插畫的 viewBox 一樣），霧的濃淡才不會因為螢幕寬窄而不同
     var lv = [], src = canvas(360, 260), cw = 360, ch = 260, k, s0 = src.getContext("2d");
     s0.imageSmoothingQuality = "high"; s0.drawImage(base, 0, 0, cw, ch);
     lv.push(src);
-    for (k = 0; k < 2; k++) {
+    for (k = 0; k < 1; k++) {
       cw = Math.max(4, Math.round(cw / 2)); ch = Math.max(4, Math.round(ch / 2));
       var dn = canvas(cw, ch), dnx = dn.getContext("2d");
       dnx.imageSmoothingQuality = "high"; dnx.drawImage(src, 0, 0, cw, ch);
@@ -114,7 +115,7 @@
     fx.imageSmoothingQuality = "high"; fx.drawImage(src, 0, 0, W, H);
     // 白霧上淡下濃：最上面那條是大字伸進來的地方，天空要跟字同色，字才融得進去
     var hz = fx.createLinearGradient(0, 0, 0, H);
-    hz.addColorStop(0, "rgba(226,232,244,0)"); hz.addColorStop(.3, "rgba(226,232,244,.03)"); hz.addColorStop(.65, "rgba(226,232,244,.16)"); hz.addColorStop(1, "rgba(226,232,244,.2)");
+    hz.addColorStop(0, "rgba(226,232,244,0)"); hz.addColorStop(.3, "rgba(226,232,244,.05)"); hz.addColorStop(.65, "rgba(226,232,244,.21)"); hz.addColorStop(1, "rgba(226,232,244,.26)");
     fx.fillStyle = hz; fx.fillRect(0, 0, W, H);
     var T = Math.round(240 * dpr), tile = canvas(T, T);
     tile.getContext("2d").drawImage(fogTex, 0, 0, T, T);
