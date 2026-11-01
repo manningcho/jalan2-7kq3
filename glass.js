@@ -92,12 +92,23 @@
     bx.fillStyle = gr; bx.fillRect(0, 0, W, 110 * s);
     if (hw) paintWord(bx, hw, art.getBoundingClientRect(), dpr);
 
-    // 霧：插畫縮很小再放大（＝模糊），蓋一層淡淡的白，再疊上霧珠的質感
+    // 霧：插畫模糊、蓋一層淡淡的白，再疊上霧珠的質感
+    // 模糊的做法：一次縮一半、縮四次，再一次放大一倍、一路放大回來。
+    // 一次縮很小再一口氣放大，山的邊緣會變成一階一階的鋸齒（2026/11/02 使用者發現）
     var fog = canvas(W, H), fx = fog.getContext("2d");
-    var sm = canvas(W / 11, H / 11), md = canvas(W / 3, H / 3);
-    sm.getContext("2d").drawImage(base, 0, 0, sm.width, sm.height);
-    var mdx = md.getContext("2d"); mdx.imageSmoothingQuality = "high"; mdx.drawImage(sm, 0, 0, md.width, md.height);
-    fx.imageSmoothingQuality = "high"; fx.drawImage(md, 0, 0, W, H);
+    var lv = [], src = base, cw = W, ch = H, k;
+    for (k = 0; k < 3; k++) {
+      cw = Math.max(4, Math.round(cw / 2)); ch = Math.max(4, Math.round(ch / 2));
+      var dn = canvas(cw, ch), dnx = dn.getContext("2d");
+      dnx.imageSmoothingQuality = "high"; dnx.drawImage(src, 0, 0, cw, ch);
+      lv.push(dn); src = dn;
+    }
+    for (k = lv.length - 2; k >= 0; k--) {
+      var upx = lv[k].getContext("2d");
+      upx.imageSmoothingQuality = "high"; upx.globalCompositeOperation = "copy"; upx.drawImage(src, 0, 0, lv[k].width, lv[k].height);
+      src = lv[k];
+    }
+    fx.imageSmoothingQuality = "high"; fx.drawImage(src, 0, 0, W, H);
     // 白霧上淡下濃：最上面那條是大字伸進來的地方，天空要跟字同色，字才融得進去
     var hz = fx.createLinearGradient(0, 0, 0, H);
     hz.addColorStop(0, "rgba(226,232,244,0)"); hz.addColorStop(.3, "rgba(226,232,244,.03)"); hz.addColorStop(.65, "rgba(226,232,244,.16)"); hz.addColorStop(1, "rgba(226,232,244,.2)");
@@ -113,16 +124,29 @@
     fx.globalCompositeOperation = "overlay"; fx.drawImage(tx, 0, 0);
     fx.globalCompositeOperation = "source-over";
 
-    // 哪裡有霧：黑＝有霧，擦掉的地方變透明，之後慢慢補回來
-    var mk = canvas(W, H), mx = mk.getContext("2d");
-    mx.fillStyle = "#000"; mx.fillRect(0, 0, W, H);
+    // 哪裡有霧：用程式自己的小數記，每格 2 CSS px，1＝有霧、0＝擦乾淨；每次畫之前轉成遮罩、放大蓋上去。
+    // 不直接在畫布上慢慢補：畫布透明度只有 256 級，每次補的量太小會被捨去，霧就回不來（2026/11/02）
+    var GW = Math.max(8, Math.round(cssW / 2)), GH = Math.max(8, Math.round(cssH / 2));
+    var fogv = new Float32Array(GW * GH), murky = false, mkDirty = true;
+    for (k = 0; k < fogv.length; k++) fogv[k] = 1;
+    var mk = canvas(GW, GH), mkx = mk.getContext("2d"), mkImg = mkx.createImageData(GW, GH);
     var layer = canvas(W, H), lx = layer.getContext("2d");
-
-    // 手指的筆刷：中間全擦、邊緣柔
-    var BR = Math.round(20 * dpr), brush = canvas(BR * 2, BR * 2), brx = brush.getContext("2d");
-    var bg = brx.createRadialGradient(BR, BR, 0, BR, BR, BR);
-    bg.addColorStop(0, "rgba(0,0,0,1)"); bg.addColorStop(.55, "rgba(0,0,0,.9)"); bg.addColorStop(1, "rgba(0,0,0,0)");
-    brx.fillStyle = bg; brx.fillRect(0, 0, BR * 2, BR * 2);
+    var BR = 20 * dpr; // 手指擦的半徑
+    // 在 (x, y) 半徑 r 的圓裡把霧帶走：中間帶走 hard，往外柔柔地變少
+    function clearAt(x, y, r, hard) {
+      var gx = x / W * GW, gy = y / H * GH, gr = r / W * GW;
+      var x0 = Math.max(0, Math.floor(gx - gr)), x1 = Math.min(GW - 1, Math.ceil(gx + gr));
+      var y0 = Math.max(0, Math.floor(gy - gr)), y1 = Math.min(GH - 1, Math.ceil(gy + gr));
+      for (var yy = y0; yy <= y1; yy++) {
+        for (var xx = x0; xx <= x1; xx++) {
+          var ex = xx + .5 - gx, ey = yy + .5 - gy, d = Math.sqrt(ex * ex + ey * ey) / gr;
+          if (d >= 1) continue;
+          var t = d < .35 ? 0 : (d - .35) / .65, a = hard * (1 - t * t * (3 - 2 * t)); // 邊緣用平滑曲線收掉
+          fogv[yy * GW + xx] *= 1 - a;
+        }
+      }
+      murky = true; mkDirty = true;
+    }
 
     // ---------- 雨滴 ----------
     var drops = [];
@@ -162,8 +186,14 @@
     // ---------- 畫 ----------
     var fade = 0;
     function draw() {
+      if (mkDirty) {
+        var md = mkImg.data;
+        for (var q = 0, n = fogv.length; q < n; q++) md[q * 4 + 3] = fogv[q] * 255;
+        mkx.putImageData(mkImg, 0, 0);
+        mkDirty = false;
+      }
       lx.globalCompositeOperation = "copy"; lx.drawImage(fog, 0, 0);
-      lx.globalCompositeOperation = "destination-in"; lx.drawImage(mk, 0, 0);
+      lx.globalCompositeOperation = "destination-in"; lx.imageSmoothingQuality = "high"; lx.drawImage(mk, 0, 0, W, H);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, W, H);
       ctx.save();
@@ -182,9 +212,7 @@
     // ---------- 手指擦 ----------
     var last = null, wiped = false, hint = null, touchAt = 0;
     function stamp(x, y) {
-      mx.globalCompositeOperation = "destination-out";
-      mx.drawImage(brush, x - BR, y - BR);
-      mx.globalCompositeOperation = "source-over";
+      clearAt(x, y, BR, 1);
       // 擦過的地方，雨滴也一起抹掉
       for (var i = drops.length - 1; i >= 0; i--) {
         var d = drops[i], dx = d.x - x, dy = d.y - y;
@@ -224,7 +252,7 @@
       io = new IntersectionObserver(function (es) { seen = es[0].isIntersecting; });
       io.observe(cv);
     }
-    var prev = 0, nextSlide = 1.5, nextSpawn = .6, dirty = true, raf = 0, fogAcc = 0, REFOG = 18;
+    var prev = 0, nextSlide = 1.5, nextSpawn = .6, dirty = true, raf = 0, REFOG = 18;
     function slideOne() {
       // 挑一顆比較大的開始往下滑；沒有的話在上半部生一顆新的水滴形
       var big = drops.filter(function (d) { return !d.v && d.w > 9 * dpr && d.y < H * .7; });
@@ -241,16 +269,14 @@
       prev = now;
       if (document.hidden || !seen) return;
       if (fade < 1) { fade = Math.min(1, fade + dt / 1.6); dirty = true; } // 霧慢慢起來
-      // 擦開的地方慢慢回霧：全清到全霧大約 18 秒，手指還在擦、剛放開 1.2 秒內先不回
-      // 畫布的透明度只有 256 級，每格畫面補一點點會被四捨五入成 0（之前回不來就是這樣），
-      // 所以累積時間，每次至少補一級，用「相加」補上去
-      if (!last && now - touchAt > 1200) fogAcc += dt;
-      var lv = Math.floor(fogAcc / (REFOG / 255));
-      if (lv > 0) {
-        fogAcc -= lv * REFOG / 255;
-        mx.globalCompositeOperation = "lighter";
-        mx.fillStyle = "rgba(0,0,0," + ((lv + .3) / 255).toFixed(5) + ")"; mx.fillRect(0, 0, W, H);
-        mx.globalCompositeOperation = "source-over";
+      // 擦開的地方慢慢回霧：全清到全霧大約 18 秒；手指還在擦、剛放開 1.2 秒內先不回
+      if (murky && !last && now - touchAt > 1200) {
+        var inc = dt / REFOG, any = false;
+        for (var q = 0, n = fogv.length; q < n; q++) {
+          var v = fogv[q];
+          if (v < 1) { v += inc; fogv[q] = v > 1 ? 1 : v; any = true; }
+        }
+        murky = any; mkDirty = true;
       }
       if (opts.motion) {
         nextSlide -= dt; nextSpawn -= dt;
@@ -272,11 +298,9 @@
         d.y += d.v * dt;
         d.jx += (Math.random() - .5) * dt * 30 * dpr; d.jx *= .9; d.x += d.jx * dt * 8;
         if (d.y - d.ly > 1) {
-          // 滑過的地方把霧帶走，留下一條清楚的水痕
-          mx.globalCompositeOperation = "destination-out";
-          mx.strokeStyle = "rgba(0,0,0,.95)"; mx.lineWidth = d.w * .5; mx.lineCap = "round";
-          mx.beginPath(); mx.moveTo(d.lx, d.ly - d.h * .2); mx.lineTo(d.x, d.y - d.h * .2); mx.stroke();
-          mx.globalCompositeOperation = "source-over";
+          // 滑過的地方把霧帶走，留下一條比較清楚的水痕（邊緣柔，不是切開的長條）
+          var tr = d.w * .32, seg = Math.sqrt((d.x - d.lx) * (d.x - d.lx) + (d.y - d.ly) * (d.y - d.ly)), sn = Math.max(1, Math.ceil(seg / (tr * .5)));
+          for (var si = 1; si <= sn; si++) clearAt(d.lx + (d.x - d.lx) * si / sn, d.ly + (d.y - d.ly) * si / sn - d.h * .2, tr, .85);
           d.lx = d.x; d.ly = d.y;
           // 碰到別的水滴就吃掉，變大一點
           for (var j = drops.length - 1; j >= 0; j--) {
@@ -306,7 +330,7 @@
     }
     g.off = cleanup;
     window.__glassBase = function () { return base; };
-    window.__glassFog = function (fx, fy) { return mx.getImageData(Math.round(fx * W), Math.round(fy * H), 1, 1).data[3] / 255; }; // 測試用：那一點的霧有多少（0–1）
+    window.__glassFog = function (fx, fy) { return fogv[Math.min(GH - 1, Math.floor(fy * GH)) * GW + Math.min(GW - 1, Math.floor(fx * GW))]; }; // 測試用：那一點的霧有多少（0–1）
     window.__glass = function () { return { w: W, h: H, drops: drops.length, fade: fade, sliding: drops.filter(function (d) { return d.v != null; }).length }; };
   }
 
