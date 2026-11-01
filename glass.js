@@ -93,11 +93,14 @@
     if (hw) paintWord(bx, hw, art.getBoundingClientRect(), dpr);
 
     // 霧：插畫模糊、蓋一層淡淡的白，再疊上霧珠的質感
-    // 模糊的做法：一次縮一半、縮四次，再一次放大一倍、一路放大回來。
+    // 模糊的做法：一次縮一半、縮兩次，再一次放大一倍、一路放大回來。
     // 一次縮很小再一口氣放大，山的邊緣會變成一階一階的鋸齒（2026/11/02 使用者發現）
     var fog = canvas(W, H), fx = fog.getContext("2d");
-    var lv = [], src = base, cw = W, ch = H, k;
-    for (k = 0; k < 3; k++) {
+    // 先縮到固定的 360 寬（跟插畫的 viewBox 一樣），霧的濃淡才不會因為螢幕寬窄而不同
+    var lv = [], src = canvas(360, 260), cw = 360, ch = 260, k, s0 = src.getContext("2d");
+    s0.imageSmoothingQuality = "high"; s0.drawImage(base, 0, 0, cw, ch);
+    lv.push(src);
+    for (k = 0; k < 2; k++) {
       cw = Math.max(4, Math.round(cw / 2)); ch = Math.max(4, Math.round(ch / 2));
       var dn = canvas(cw, ch), dnx = dn.getContext("2d");
       dnx.imageSmoothingQuality = "high"; dnx.drawImage(src, 0, 0, cw, ch);
