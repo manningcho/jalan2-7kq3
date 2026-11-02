@@ -20,5 +20,6 @@ tools/run.sh perf       # 量第一次打開的速度（不算在 all 裡）
 | `test-cover.js` | 封面輪播和桌布浮層的 20 項測試（真實時鐘） |
 | `test-airplane.py` | 飛航模式：Chrome 只能透過一個可開關的代理上網，先讓網站存好，再把網路全部切斷（含 Google 字型）、清掉瀏覽器暫存，逐頁檢查 |
 | `perf.js` | 量畫面出現時間、下載量、背景存了多少 |
+| `time-art.py` | 不是測試：把 Codex 畫的白天版、夜景裁回 1280×924、對齊原圖，算夜景的天空範圍和地平線（做法見 HANDOFF「白天／黃昏／晚上」）。需要 Pillow、numpy、scipy |
 
 注意：無頭 Chrome 的「模擬時鐘」有時不會跑 CSS 動畫和 requestAnimationFrame，看到動畫相關的測試偶爾失敗時，先重跑一次；要看真正的動畫時序，用 `cdp.py`（真實時鐘）。
