@@ -194,19 +194,6 @@
       art.classList.remove("has-night");
     }
     g.off = cleanup;
-    // 除錯模式（網址加 debug=1）：在插畫左下角即時顯示傾斜收到什麼、畫面移動多少，拿手機截圖就知道卡在哪
-    var dbg = null;
-    if (opts.debug) {
-      dbg = document.createElement("pre");
-      dbg.className = "night-debug";
-      art.appendChild(dbg);
-      var dbgT = setInterval(function () {
-        if (g.dead || !dbg.isConnected) { clearInterval(dbgT); return; }
-        var f = function (v) { return v == null ? "-" : (+v).toFixed(1); };
-        dbg.textContent = TILT.debug() + "  night px " + f(px) + "  lim " + f(lim) + "  fade " + f(fade) +
-          "\nglass " + (art.classList.contains("has-glass") ? 1 : 0) + "  W " + W + "  dpr " + dpr + "  sc " + sc.toFixed(3);
-      }, 200);
-    }
     window.__night = function () { return { w: W, h: H, fade: fade, px: px, py: py, meteors: mets.length, nextMeteor: nextMet }; };
     window.__nightMeteor = function () { meteor(W * .6, skyH * .25); }; // 測試用
     window.__nightTilt = function (gamma, beta) { window.__tilt(gamma, beta); }; // 測試用：假裝手機傾斜

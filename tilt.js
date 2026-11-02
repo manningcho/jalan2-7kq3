@@ -210,13 +210,7 @@
   }
   function rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")"; }
 
-  function debug() {
-    var f = function (v) { return v == null ? "-" : (+v).toFixed(1); };
-    return "v8 evs " + evs + "  touch " + (touch ? 1 : 0) + " ask " + (needAsk ? 1 : 0) + " saved " + (remembered || "-") + " perm " + perm +
-      "\ngamma " + f(lastG) + "  beta " + f(lastB) + "  g0 " + f(g0) + "  b0 " + f(b0) + "  on " + on.toFixed(2) +
-      "\nx " + x.toFixed(2) + "  y " + y.toFixed(2) + "  frame " + (ema * 1000).toFixed(0) + "ms  lite " + (lite ? 1 : 0);
-  }
-
-  window.TILT = { frame: frame, lite: function () { return lite; }, state: state, busy: busy, fit: fit, offset: offset, prompt: prompt, asking: asking, scene: scene, debug: debug };
+  window.TILT = { frame: frame, lite: function () { return lite; }, state: state, busy: busy, fit: fit, offset: offset, prompt: prompt, asking: asking, scene: scene };
+  window.__tiltState = function () { return { evs: evs, perm: perm, lite: lite, x: x, y: y, on: on }; }; // 測試用
   window.__tilt = function (gamma, beta) { onOri({ gamma: gamma, beta: beta }); }; // 測試用：假裝手機傾斜
 })();
