@@ -92,6 +92,21 @@ button { font: inherit; color: inherit; }
 .prefs-h { margin: 0; font-size: 13px; font-weight: 700; color: var(--muted); }
 .seg + .prefs-h, .prefs-note + .prefs-h { margin-top: 6px; }
 .prefs-note { margin: 0; max-width: 260px; font-size: 12px; line-height: 1.5; color: var(--muted); }
+/* 插畫跟著當地時間：下載的小彈窗（跟封面彩蛋一樣浮起來，不加暗色底：iPhone 狀態列會跟不上） */
+.time-dlg { position: fixed; inset: 0; z-index: 46; display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 0; transition: opacity .25s ease; }
+.time-dlg.is-on { opacity: 1; }
+.time-card { width: min(280px, 80vw); padding: 18px 18px 16px; border-radius: 22px; background: var(--paper); border: 1px solid var(--line); box-shadow: 0 2px 6px rgba(10, 12, 20, .12), 0 22px 60px rgba(10, 12, 20, .34); transform: scale(.92) translateY(8px); transition: transform .4s cubic-bezier(.3, 1.5, .5, 1); }
+.time-dlg.is-on .time-card { transform: none; }
+.time-h { margin: 0; font-size: 16px; font-weight: 700; color: var(--ink); }
+.time-p { margin: 6px 0 0; font-size: 13px; line-height: 1.55; color: var(--muted); }
+.time-num { font-family: var(--f-mono); font-size: 12px; text-align: right; }
+.time-btns { display: flex; gap: 8px; margin-top: 14px; }
+.time-btns button { flex: 1; padding: 10px 0; border: 0; border-radius: 999px; font: 700 14px/1 var(--f-body); cursor: pointer; }
+.time-go { background: var(--ink); color: var(--paper); }
+.time-no { background: var(--line); color: var(--ink); }
+.time-clear { margin-left: 4px; padding: 0; border: 0; background: none; color: var(--blue); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.time-bar { display: block; height: 8px; margin-top: 14px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.time-bar i { display: block; height: 100%; border-radius: inherit; background: var(--blue); transition: width .2s ease; }
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; border-radius: 999px; background: var(--paper); }
 .seg button { border: 0; background: transparent; min-height: 40px; padding: 0 6px; border-radius: 999px; font-size: 15px; font-weight: 700; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
