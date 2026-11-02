@@ -130,37 +130,89 @@
   // 晚上的提示（點天空看流星）要讓位給按鈕：還需要按鈕時回傳 true
   function asking() { return !!(needAsk && !granted && remembered !== "1" && remembered !== "0"); }
 
-  // ---------- 白天：移動 SVG 插畫本身 ----------
+  // ---------- 白天：插畫畫到畫布上移動 ----------
+  // 原本直接移動 SVG 裡的插畫，iPhone 每移一點就要重畫整張向量圖，下雨時搖起來會卡（2026/11/02 使用者 iPhone 16 Pro Max）。
+  // 改成跟晚上一樣用畫布：開始收到傾斜才蓋一張畫布在 SVG 上，照同樣的位置畫插畫＋上緣漸層；
+  // 慢慢推近的動畫（a-kb）照跑：每一格讀它現在放大多少，一起畫進去
   var day = null;
-  function scene(art) {
-    if (day) day.dead = true;
+  function scene(art, opts) {
+    if (day) { day.dead = true; if (day.off) day.off(); }
     if (!motionOK || !touch) return; // 電腦不動（2026/11/02 使用者：滑鼠帶動很怪）
-    var g = art && art.querySelector("svg.art g.a-tilt"), svg = art && art.querySelector("svg.art");
-    if (!g || !svg) return;
-    var me = day = { dead: false }, shown = "";
+    var svg = art && art.querySelector("svg.art"), im = svg && svg.querySelector("image.a-kb");
+    if (!svg || !im) return;
+    opts = opts || {};
+    var me = day = { dead: false }, cv = null, ctx = null, pic = null, clip = opts.frame ? new Path2D(opts.frame) : null, shown = "";
+    var src = im.getAttribute("href"), img = new Image();
+    img.onload = function () { pic = img; };
+    img.src = src;
+    function off() {
+      if (cv && cv.parentNode) cv.remove();
+      im.style.visibility = "";
+    }
+    me.off = off;
     function step(now) {
-      if (me.dead || !g.isConnected) return;
+      if (me.dead) return;
+      if (!svg.isConnected) { off(); return; }
       requestAnimationFrame(step);
       if (document.hidden) return;
-      // 夜景蓋在上面時不用動（看不到）；省電
-      if (art.classList.contains("has-night")) { if (shown) { g.removeAttribute("transform"); shown = ""; } return; }
+      // 夜景蓋在上面時不用畫（看不到）；省電
+      if (art.classList.contains("has-night")) { if (cv) { off(); cv = null; shown = ""; } return; }
       var st = state(now);
-      if (!st.on) return;
+      if (!st.on || !pic) return;
       var cssW = svg.clientWidth, cssH = svg.clientHeight, dpr = Math.min(window.devicePixelRatio || 1, 2);
       if (!cssW || !cssH) return;
-      var o = offset(cssW * dpr, cssH * dpr, dpr, st.on, st);
-      // 螢幕 px 換成插畫的座標（viewBox 360×260，xMidYMax slice）
-      var k = Math.max(cssW / 360, cssH / 260), vh = cssH / k, cx = 180, cy = 260 - vh / 2;
-      var ux = o.mx / dpr / k, uy = o.my / dpr / k;
-      var tr = "translate(" + (ux + cx).toFixed(2) + " " + (uy + cy).toFixed(2) + ") scale(" + o.zs.toFixed(4) + ") translate(" + (-cx) + " " + (-cy).toFixed(2) + ")";
-      if (tr !== shown) { g.setAttribute("transform", tr); shown = tr; }
+      var W = Math.round(cssW * dpr), H = Math.round(cssH * dpr);
+      if (!cv) {
+        cv = document.createElement("canvas");
+        cv.className = "tilt-scene";
+        cv.setAttribute("aria-hidden", "true");
+        svg.parentNode.insertBefore(cv, svg.nextSibling);
+        ctx = cv.getContext("2d");
+      }
+      if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; shown = ""; }
+      var o = offset(W, H, dpr, st.on, st);
+      // 推近動畫現在的樣子（有霧時是停的）
+      var cs = getComputedStyle(im), m = cs.transform, kb = [1, 0, 0, 1, 0, 0], org = [180, 130];
+      if (m && m !== "none") kb = m.replace(/^matrix\(|\)$/g, "").split(",").map(Number);
+      var og = (cs.transformOrigin || "").split(" ").map(parseFloat);
+      if (og.length >= 2 && isFinite(og[0]) && isFinite(og[1])) org = og;
+      var key = o.mx.toFixed(2) + " " + o.my.toFixed(2) + " " + o.zs.toFixed(4) + " " + kb.join(",") + " " + W;
+      if (key === shown) return;
+      shown = key;
+      // 插畫座標（viewBox 360×260，xMidYMax slice）換成畫布 px
+      var k = Math.max(cssW / 360, cssH / 260) * dpr, x0 = (W - 360 * k) / 2, y0 = H - 260 * k;
+      var cx = (W / 2 - x0) / k, cy = (H / 2 - y0) / k; // 放大的中心＝畫布正中間（霧也是以這裡為中心）
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      ctx.save();
+      ctx.setTransform(k, 0, 0, k, x0, y0);
+      if (clip) ctx.clip(clip);
+      ctx.save();
+      // 傾斜：以中心放大、移動（螢幕 px 換成插畫座標）
+      ctx.translate(cx + o.mx / k, cy + o.my / k); ctx.scale(o.zs, o.zs); ctx.translate(-cx, -cy);
+      // 推近動畫：transform-origin 為中心的 matrix
+      ctx.translate(org[0], org[1]); ctx.transform(kb[0], kb[1], kb[2], kb[3], kb[4], kb[5]); ctx.translate(-org[0], -org[1]);
+      // 插畫本身是 xMidYMid slice 填滿 360×260
+      var ir = pic.width / pic.height, bw = 360, bh = 260;
+      if (ir > 360 / 260) bw = 260 * ir; else bh = 360 / ir;
+      ctx.drawImage(pic, (360 - bw) / 2, (260 - bh) / 2, bw, bh);
+      ctx.restore();
+      // 上緣漸層成大字的顏色（不動，跟著大字）
+      if (opts.top) {
+        var gr = ctx.createLinearGradient(0, 0, 0, 110);
+        gr.addColorStop(0, opts.top); gr.addColorStop(.35, rgba(opts.top, .55)); gr.addColorStop(1, rgba(opts.top, 0));
+        ctx.fillStyle = gr; ctx.fillRect(0, 0, 360, 110);
+      }
+      ctx.restore();
+      if (im.style.visibility !== "hidden") im.style.visibility = "hidden"; // 底下那張不用再畫
     }
     requestAnimationFrame(step);
   }
+  function rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")"; }
 
   function debug() {
     var f = function (v) { return v == null ? "-" : (+v).toFixed(1); };
-    return "v7 evs " + evs + "  touch " + (touch ? 1 : 0) + " ask " + (needAsk ? 1 : 0) + " saved " + (remembered || "-") + " perm " + perm +
+    return "v8 evs " + evs + "  touch " + (touch ? 1 : 0) + " ask " + (needAsk ? 1 : 0) + " saved " + (remembered || "-") + " perm " + perm +
       "\ngamma " + f(lastG) + "  beta " + f(lastB) + "  g0 " + f(g0) + "  b0 " + f(b0) + "  on " + on.toFixed(2) +
       "\nx " + x.toFixed(2) + "  y " + y.toFixed(2) + "  frame " + (ema * 1000).toFixed(0) + "ms  lite " + (lite ? 1 : 0);
   }

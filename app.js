@@ -1138,7 +1138,7 @@
     if (!window.TILT) return;
     var art = d && app.querySelector(".hero-art");
     if (!art) return;
-    TILT.scene(art);
+    TILT.scene(art, { top: ART.topColor(d.art), frame: ART.FRAME });
     TILT.prompt(art, u("tiltDay")); // 晚上 night.js 會換成「傾斜手機看星星」
   }
   function setNight(d) {
