@@ -4,7 +4,7 @@
 //   img/sky-stars-dim.jpg     一般的星星（黑底，用「濾色」疊，黑色會消失）
 //   img/sky-stars-bright.jpg  拆出來的 60 顆亮星，每顆各自閃爍
 //   img/sky-meteor.jpg        流星
-// 程式只負責：夜景淡入、星星閃爍、傾斜手機星星微微移動、點天空有流星、偶爾自己劃過一顆
+// 程式只負責：夜景淡入、星星閃爍、傾斜手機整個畫面微微移動（星星比地面動得少）、點天空有流星、偶爾自己劃過一顆
 (function () {
   // 亮星在星空圖上的位置（1360×620）
   var BRIGHT = [[621, 180], [28, 474], [36, 244], [1314, 377], [312, 494], [360, 178], [1257, 150], [606, 265], [1091, 246], [356, 131], [550, 68], [183, 608],
@@ -12,7 +12,8 @@
     [1204, 346], [853, 163], [233, 418], [845, 232], [385, 19], [1048, 43], [1049, 187], [1311, 558], [151, 404], [141, 113], [147, 341], [24, 48], [612, 323],
     [1151, 606], [1206, 424], [1340, 173], [441, 507], [439, 142], [1094, 65], [388, 458], [200, 317], [1028, 345], [1238, 463], [1169, 268], [1062, 309],
     [53, 296], [488, 67], [901, 365], [1292, 321], [993, 314], [340, 58], [930, 204], [32, 359], [927, 417], [83, 520]];
-  var ORIGIN = 40, DRIFT = 36; // 插畫左上角對到星空圖的 (40, 40)；傾斜時最多移動 36（星空圖的 px），四邊都有留空間
+  var ORIGIN = 40, DRIFT = 36; // 插畫左上角對到星空圖的 (40, 40)；星星最多移動 36（星空圖的 px），四邊都有留空間
+  var STAR = .5; // 傾斜時整個畫面一起動；星星比山遠，移動得比地面少（越遠動越少，像坐車看窗外：路樹一下就過、遠山幾乎不動）
   var MET_HEAD = [41, 293], MET_LEN = 602; // 流星圖（581×335）裡頭的位置、頭到尾的長度；尾巴朝右上
 
   var assets = null, cur = null;
@@ -63,14 +64,16 @@
     art.classList.add("has-night");
     var ctx = cv.getContext("2d"), clip = new Path2D(opts.frame);
 
-    // 夜景，上緣跟白天一樣漸層成夜空頂端色，大字才融得進去
-    var bg = canvas(W, H), bx = bg.getContext("2d");
-    bx.imageSmoothingQuality = "high"; bx.drawImage(img, 0, 0, W, H);
-    var gr = bx.createLinearGradient(0, 0, 0, 110 * s);
+    // 傾斜手機時整張夜景一起移動（像鏡頭在動）：夜景和天空範圍先放大一點，移動時邊緣才不會露出空白。
+    // 下雨時不動也不放大：霧是用原尺寸的夜景做的，擦開後要對得上
+    var DR = 9 * dpr; // 夜景最多移動幾個螢幕 px（左右；上下是 0.6 倍）
+    var sc = Math.max(1 + 2 * (DR + 1) / W, 1 + 1.2 * (DR + 1) / H), BW = Math.round(W * sc), BH = Math.round(H * sc);
+    function pre(src, w, h) { var c = canvas(w, h), x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(src, 0, 0, w, h); return c; }
+    var flat = pre(img, W, H), big = pre(img, BW, BH), mask = pre(sky, W, H), bigMask = pre(sky, BW, BH);
+    // 上緣跟白天一樣漸層成夜空頂端色，大字才融得進去；這層固定不動，跟著大字
+    var grc = canvas(W, Math.ceil(110 * s)), gx = grc.getContext("2d"), gr = gx.createLinearGradient(0, 0, 0, 110 * s);
     gr.addColorStop(0, n.top); gr.addColorStop(.35, rgba(n.top, .55)); gr.addColorStop(1, rgba(n.top, 0));
-    bx.fillStyle = gr; bx.fillRect(0, 0, W, 110 * s);
-    var mask = canvas(W, H), mkx = mask.getContext("2d");
-    mkx.imageSmoothingQuality = "high"; mkx.drawImage(sky, 0, 0, W, H);
+    gx.fillStyle = gr; gx.fillRect(0, 0, W, 110 * s);
     var layer = canvas(W, H), lx = layer.getContext("2d");
     var skyH = Math.min(H, Math.ceil(H * .58)); // 星星只會在上面這段（地平線最低在 50% 左右；再多會超出星空圖範圍）
 
@@ -100,7 +103,10 @@
     // ---------- 畫 ----------
     var fade = 0, px = 0, py = 0, tx = 0, ty = 0;
     function draw(t) {
-      var ox = ORIGIN - px, oy = ORIGIN - py; // 星空圖上，對到插畫左上角的位置
+      var still = art.classList.contains("has-glass"), mx = still ? 0 : px, my = still ? 0 : py;
+      // 星空圖上，對到插畫左上角的位置（星星動得比地面少）
+      var ox = ORIGIN - clamp(STAR * mx / k, -DRIFT, DRIFT), oy = ORIGIN - clamp(STAR * my / k, -DRIFT, DRIFT);
+      var bx0 = (W - BW) / 2 + mx, by0 = (H - BH) / 2 + my;
       lx.globalCompositeOperation = "copy"; lx.globalAlpha = 1;
       lx.drawImage(dimS, ox, oy, W / k, skyH / k, 0, 0, W, skyH);
       lx.globalCompositeOperation = "lighter";
@@ -116,27 +122,28 @@
       lx.globalAlpha = 1;
       for (i = 0; i < mets.length; i++) drawMeteor(mets[i]);
       lx.globalCompositeOperation = "destination-in"; lx.globalAlpha = 1;
-      lx.drawImage(mask, 0, 0);
+      if (still) lx.drawImage(mask, 0, 0); else lx.drawImage(bigMask, bx0, by0); // 天空範圍跟著地面一起動
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, W, H);
       ctx.save();
       ctx.setTransform(s, 0, 0, s, 0, 0); ctx.clip(clip); ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalAlpha = fade;
-      ctx.drawImage(bg, 0, 0);
+      if (still) ctx.drawImage(flat, 0, 0); else ctx.drawImage(big, bx0, by0);
+      ctx.drawImage(grc, 0, 0);
       ctx.globalCompositeOperation = "screen";
       ctx.drawImage(layer, 0, 0);
       ctx.restore();
     }
 
-    // ---------- 傾斜手機／滑鼠：星星微微移動 ----------
+    // ---------- 傾斜手機：整個畫面微微移動 ----------
     var g0 = null, b0 = null, tilting = false;
     function onOri(e) {
       if (e.gamma == null || e.beta == null) return;
       if (g0 == null) { g0 = e.gamma; b0 = e.beta; }
       g0 += (e.gamma - g0) * .004; b0 += (e.beta - b0) * .004; // 換了拿手機的姿勢，慢慢把那個姿勢當成正中間
-      tx = -clamp((e.gamma - g0) / 18, -1, 1) * DRIFT;
-      ty = -clamp((e.beta - b0) / 18, -1, 1) * DRIFT * .6;
+      tx = -clamp((e.gamma - g0) / 18, -1, 1) * DR;
+      ty = -clamp((e.beta - b0) / 18, -1, 1) * DR * .6;
       tilting = true;
     }
     function listenTilt() { window.addEventListener("deviceorientation", onOri); }
