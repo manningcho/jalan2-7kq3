@@ -223,9 +223,10 @@
         var top = photo.top || p[0] || C.skyTop;
         // 先墊一張模糊的小預覽（lq.js），清楚的大圖載完再淡入（app.js 的 fadeIn）
         var lq = (window.LQ || {})[photo.src];
+        // g.a-tilt：傾斜手機時整張插畫跟著微微移動（tilt.js）；慢慢推近的動畫（a-kb）在裡面照跑
         body = (lq ? '<image href="' + lq + '" x="0" y="0" width="360" height="260" preserveAspectRatio="xMidYMid slice" filter="url(#b' + id + ')"/>' : "") +
-          '<image class="a-kb fade" href="' + photo.src + '" x="0" y="0" width="360" height="260" preserveAspectRatio="xMidYMid slice"' +
-          (photo.focus ? ' style="transform-origin:' + photo.focus + '"' : "") + "/>" +
+          '<g class="a-tilt"><image class="a-kb fade" href="' + photo.src + '" x="0" y="0" width="360" height="260" preserveAspectRatio="xMidYMid slice"' +
+          (photo.focus ? ' style="transform-origin:' + photo.focus + '"' : "") + "/></g>" +
           (plain ? '<rect width="360" height="260" fill="url(#g' + id + ')" opacity=".55"/>' : '<rect width="360" height="110" fill="url(#g' + id + ')"/>');
         var grad = '<linearGradient id="g' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + top + '"/><stop offset=".35" stop-color="' + top + '" stop-opacity=".55"/><stop offset="1" stop-color="' + top + '" stop-opacity="0"/></linearGradient>';
         if (plain) grad = '<linearGradient id="g' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset=".3" stop-color="#151a2b" stop-opacity="0"/><stop offset="1" stop-color="#151a2b" stop-opacity=".85"/></linearGradient>';

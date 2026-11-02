@@ -6,7 +6,7 @@
 // 下面兩段由 make-sw.sh 自動產生：新增或換掉 img/ 的圖之後跑一次 ./make-sw.sh（make-lq.sh 會順便跑）。
 
 // <make-sw>
-var VERSION = "292237eaba";
+var VERSION = "6096347942";
 var FONT_CSS = "https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap";
 var ASSETS = [
   "./",
@@ -16,7 +16,9 @@ var ASSETS = [
   "lq.js",
   "art.js",
   "sound.js",
+  "tilt.js",
   "glass.js",
+  "night.js",
   "app.js",
   "img/band-bali.jpg",
   "img/band-food-bali.jpg",
@@ -56,6 +58,10 @@ var ASSETS = [
   "img/p-transport.jpg",
   "img/plane.jpg",
   "img/sea.jpg",
+  "img/sky-meteor.jpg",
+  "img/sky-stars-bright.jpg",
+  "img/sky-stars-dim.jpg",
+  "img/slamet-night.jpg",
   "img/slamet.jpg",
   "img/stupa.jpg",
   "img/tamansari.jpg",
@@ -71,6 +77,7 @@ var ASSETS = [
   "img/melati-4.png",
   "img/melati-5.png",
   "img/melati-6.png",
+  "img/slamet-night-sky.png",
   "snd/birds.m4a",
   "snd/city.m4a",
   "snd/night.m4a",

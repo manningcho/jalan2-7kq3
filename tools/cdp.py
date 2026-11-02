@@ -4,7 +4,7 @@ import base64, json, os, socket, struct, subprocess, sys, tempfile, time, urllib
 url, rate, wait, jsfile = sys.argv[1], float(sys.argv[2]), int(sys.argv[3]), sys.argv[4]
 port = 9333 + os.getpid() % 500
 chrome = subprocess.Popen(["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "--headless=new", "--window-size=" + os.environ.get("WIN", "390,844"),
-  "--force-device-scale-factor=3", "--autoplay-policy=no-user-gesture-required", "--user-data-dir=" + tempfile.mkdtemp(), "--remote-debugging-port=%d" % port, "about:blank"],
+  "--force-device-scale-factor=3", ] + os.environ.get("CHROME_FLAGS", "").split() + ["--autoplay-policy=no-user-gesture-required", "--user-data-dir=" + tempfile.mkdtemp(), "--remote-debugging-port=%d" % port, "about:blank"],
   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 try:
     for _ in range(50):
@@ -48,7 +48,7 @@ try:
     if os.environ.get("NET"):
         down, lat = [float(x) for x in os.environ["NET"].split(",")]
         call("Network.enable"); call("Network.emulateNetworkConditions", {"offline": False, "latency": lat, "downloadThroughput": down * 1024 * 1024 / 8, "uploadThroughput": 750 * 1024 / 8})
-    if os.environ.get("SWIPES"): call("Emulation.setTouchEmulationEnabled", {"enabled": True, "maxTouchPoints": 5})
+    if os.environ.get("SWIPES") or os.environ.get("TOUCH"): call("Emulation.setTouchEmulationEnabled", {"enabled": True, "maxTouchPoints": 5})
     call("Page.navigate", {"url": url})
     time.sleep(wait / 1000.0)
     # SWIPES="選擇器|dx,dy;dx,dy"：在該元素中間用手指滑（12 小步），每滑一次印出 SWIPE_JS 的結果
