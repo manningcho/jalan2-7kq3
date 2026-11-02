@@ -90,7 +90,8 @@ button { font: inherit; color: inherit; }
 }
 .prefs-pop[hidden] { display: none; }
 .prefs-h { margin: 0; font-size: 13px; font-weight: 700; color: var(--muted); }
-.seg + .prefs-h { margin-top: 6px; }
+.seg + .prefs-h, .prefs-note + .prefs-h { margin-top: 6px; }
+.prefs-note { margin: 0; max-width: 260px; font-size: 12px; line-height: 1.5; color: var(--muted); }
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; border-radius: 999px; background: var(--paper); }
 .seg button { border: 0; background: transparent; min-height: 40px; padding: 0 6px; border-radius: 999px; font-size: 15px; font-weight: 700; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }

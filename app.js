@@ -73,6 +73,9 @@
     wxRain: ["雨", "Hujan", "Rain"],
     wxTitle: ["天氣", "Cuaca", "Weather"],
     tiltLabel: ["傾斜手機（插畫跟著晃）", "Miringkan HP (gambar ikut bergerak)", "Tilt your phone (the picture moves)"],
+    tiltDenied: ["手機沒有允許讀取傾斜。iPhone 按過「取消」之後暫時不會再問：把 Safari 從背景完全滑掉再打開，再按一次「開」就會再問。",
+      "HP belum mengizinkan sensor gerak. Setelah menekan \"Batal\", iPhone tidak bertanya lagi untuk sementara: tutup Safari sepenuhnya, buka lagi, lalu tekan \"Nyala\".",
+      "Motion access wasn't allowed. After you tap \"Cancel\", iPhone won't ask again for a while: fully close Safari, reopen it, then tap \"On\" again."],
     tipWx: ["天氣是 12 月平均；出發前 16 天內會自動換成當天預報", "Cuaca rata-rata Desember; 16 hari sebelum berangkat berganti jadi prakiraan", "Weather shows December averages; within 16 days of the trip it switches to the real forecast"],
     tipHome: ["用瀏覽器的「加入主畫面」，就能像 App 一樣一點就打開", "Pilih \"Tambahkan ke Layar Utama\" di browser agar bisa dibuka seperti aplikasi", "Use \"Add to Home Screen\" in your browser to open it like an app"],
     back: ["返回", "Kembali", "Back"],
@@ -305,7 +308,7 @@
       seg("data-theme-pick", [["auto", u("themeAuto")], ["light", u("themeLight")], ["dark", u("themeDark")]], theme, u("themeLabel")) +
       '<p class="prefs-h">' + esc(u("soundLabel")) + "</p>" + seg("data-sound", [["on", u("soundOn")], ["off", u("soundOff")]], soundOn ? "on" : "off", u("soundLabel")) +
       // 傾斜手機：只有手機、平板才有；預設關，當成小彩蛋（tilt.js）
-      (window.TILT && TILT.available() ? '<p class="prefs-h">' + esc(u("tiltLabel")) + "</p>" + seg("data-tilt", [["on", u("soundOn")], ["off", u("soundOff")]], TILT.isOn() ? "on" : "off", u("tiltLabel")) : "") +
+      (window.TILT && TILT.available() ? '<p class="prefs-h">' + esc(u("tiltLabel")) + "</p>" + seg("data-tilt", [["on", u("soundOn")], ["off", u("soundOff")]], TILT.isOn() ? "on" : "off", u("tiltLabel")) + '<p class="prefs-note" data-tilt-note hidden></p>' : "") +
       "</div></div>";
   }
   // ---------- 背景聲音：跟著城市、當地天氣和白天晚上換（錄音都是 CC0，見 sound.js）。預設關；打開過會記住 ----------
@@ -1751,8 +1754,12 @@
       document.querySelectorAll("[data-sound]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.sound === (soundOn ? "on" : "off")); });
     } else if (t.dataset.tilt) {
       // 要在點擊當下問，iPhone 才會跳出「允許取用動作與方向」；被拒絕就停在「關」
-      TILT.set(t.dataset.tilt === "on").then(function (on) {
+      var want = t.dataset.tilt === "on";
+      TILT.set(want).then(function (on) {
         document.querySelectorAll("[data-tilt]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.tilt === (on ? "on" : "off")); });
+        // 想開但被拒絕：iPhone 按過「取消」後一陣子都直接回拒絕、不再跳出詢問，告訴使用者怎麼再開（2026/11/02 使用者回報開關卡在關）
+        var note = document.querySelector("[data-tilt-note]");
+        if (note) { note.hidden = !(want && !on); note.textContent = u("tiltDenied"); }
       });
     } else if (t.dataset.lang) {
       lang = t.dataset.lang;
