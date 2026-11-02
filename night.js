@@ -159,13 +159,15 @@
     // 只有觸控螢幕（手機、平板）才問；新版電腦 Chrome 也有這個詢問功能，但電腦沒有方向感測器，用滑鼠就好
     var touch = window.matchMedia && matchMedia("(pointer: coarse)").matches;
     var chip = null, needAsk = touch && window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === "function";
-    var asked = false;
+    var asked = false, perm = "-";
     try { asked = localStorage.getItem("trip-tilt") === "1"; } catch (e) {}
     function ask() {
+      perm = "asking";
       return DeviceOrientationEvent.requestPermission().then(function (st) {
+        perm = st;
         if (st === "granted") { listenTilt(); try { localStorage.setItem("trip-tilt", "1"); } catch (e) {} }
         return st;
-      });
+      }, function (err) { perm = "err " + (err && err.name || err); throw err; });
     }
     function showChip(text, button, ms) {
       if (chip) chip.remove();
@@ -264,7 +266,7 @@
       var dbgT = setInterval(function () {
         if (g.dead || !dbg.isConnected) { clearInterval(dbgT); return; }
         var f = function (v) { return v == null ? "-" : (+v).toFixed(1); };
-        dbg.textContent = "v4 evs " + evs + "  touch " + (touch ? 1 : 0) + " ask " + (needAsk ? 1 : 0) + " asked " + (asked ? 1 : 0) +
+        dbg.textContent = "v5 evs " + evs + "  touch " + (touch ? 1 : 0) + " ask " + (needAsk ? 1 : 0) + " asked " + (asked ? 1 : 0) + " perm " + perm +
           "\ngamma " + f(lastG) + "  beta " + f(lastB) + "  g0 " + f(g0) + "  b0 " + f(b0) +
           "\ntx " + f(tx) + "  px " + f(px) + "  lim " + f(lim) + "  fade " + f(fade) +
           "\nglass " + (art.classList.contains("has-glass") ? 1 : 0) + "  W " + W + "  dpr " + dpr + "  sc " + sc.toFixed(3);

@@ -1114,6 +1114,7 @@
       GLASS.start(art, src, top, ART.FRAME, { motion: document.documentElement.classList.contains("motion"), hint: u("wipeHint") });
     };
     if (RAIN_FORCE) return go();
+    if (NIGHT_FORCE) return; // 夜空試看網址（?night=1）只看夜空：當地真的在下雨也不起霧，不然地面不動、傾斜按鈕也不出來（2026/11/02 踩過）
     var w = sndWx[d.city];
     if (w && Date.now() - w.at < 3600000) { if (w.rain) go(); return; }
     if (sndNeedWx(d.city)) sndWeather(d.city).then(function () { var w2 = sndWx[d.city]; if (w2 && w2.rain) go(); });
