@@ -103,7 +103,7 @@ try:
       return out; })()""")
     print("airplane mode:"); [print("  " + x) for x in res] if isinstance(res, list) else print(res)
     # 沒網路時：晚上要是夜景、白天要是白天版，圖都要讀得到
-    for day, at, want in [(d, at, want) for d in ("d1216", "d1224", "d1227", "d1229") for at, want in (("20:00", "night"), ("11:00", "day"))]:
+    for day, at, want in [(d, at, want) for d in ("d1216", "d1223", "d1224", "d1225", "d1226", "d1227", "d1228", "d1229", "d1230") for at, want in (("20:00", "night"), ("11:00", "day"))]:
         call("Page.navigate", {"url": base + "index.html?airplane=1&at=%s#%s" % (at, day)}); time.sleep(3)
         print("  offline %s %s:" % (day, at), ev("""(async()=>{ const im=document.querySelector('image.a-kb'), src=im.getAttribute('href');
           const ok=await new Promise(r=>{const i=new Image();i.onload=()=>r(i.naturalWidth>0);i.onerror=()=>r(false);i.src=src;});
