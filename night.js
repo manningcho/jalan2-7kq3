@@ -13,7 +13,7 @@
     [1151, 606], [1206, 424], [1340, 173], [441, 507], [439, 142], [1094, 65], [388, 458], [200, 317], [1028, 345], [1238, 463], [1169, 268], [1062, 309],
     [53, 296], [488, 67], [901, 365], [1292, 321], [993, 314], [340, 58], [930, 204], [32, 359], [927, 417], [83, 520]];
   var ORIGIN = 40, DRIFT = 36; // 插畫左上角對到星空圖的 (40, 40)；星星最多移動 36（星空圖的 px），四邊都有留空間
-  var STAR = .5; // 傾斜時整個畫面一起動；星星比山遠，移動得比地面少（越遠動越少，像坐車看窗外：路樹一下就過、遠山幾乎不動）
+  var STAR = .35; // 傾斜時整個畫面一起動；星星比山遠，移動得比地面少（越遠動越少，像坐車看窗外：路樹一下就過、遠山幾乎不動）
   var MET_HEAD = [41, 293], MET_LEN = 602; // 流星圖（581×335）裡頭的位置、頭到尾的長度；尾巴朝右上
 
   var assets = null, cur = null;
@@ -66,7 +66,7 @@
 
     // 傾斜手機時整張夜景一起移動（像鏡頭在動）：夜景和天空範圍先放大一點，移動時邊緣才不會露出空白。
     // 下雨時不動也不放大：霧是用原尺寸的夜景做的，擦開後要對得上
-    var DR = 9 * dpr; // 夜景最多移動幾個螢幕 px（左右；上下是 0.6 倍）
+    var DR = 16 * dpr; // 夜景最多移動幾個螢幕 px（左右；上下是 0.6 倍）。原本 9，iPhone 上幾乎看不出地面有動（2026/11/02）
     var sc = Math.max(1 + 2 * (DR + 1) / W, 1 + 1.2 * (DR + 1) / H), BW = Math.round(W * sc), BH = Math.round(H * sc);
     function pre(src, w, h) { var c = canvas(w, h), x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(src, 0, 0, w, h); return c; }
     var flat = pre(img, W, H), big = pre(img, BW, BH), mask = pre(sky, W, H), bigMask = pre(sky, BW, BH);
@@ -104,9 +104,13 @@
     var fade = 0, px = 0, py = 0, tx = 0, ty = 0;
     function draw(t) {
       var still = art.classList.contains("has-glass"), mx = still ? 0 : px, my = still ? 0 : py;
+      // 入夜那 2 秒從原尺寸慢慢放大到 sc（像鏡頭推近），能移動的範圍也跟著放大，邊緣才不會露白
+      var zs = 1 + (sc - 1) * fade, zw = W * zs, zh = H * zs;
+      var lim = (zw - W) / 2 - .5, limY = (zh - H) / 2 - .5;
+      mx = clamp(mx, -lim, lim); my = clamp(my, -limY, limY);
+      var bx0 = (W - zw) / 2 + mx, by0 = (H - zh) / 2 + my;
       // 星空圖上，對到插畫左上角的位置（星星動得比地面少）
       var ox = ORIGIN - clamp(STAR * mx / k, -DRIFT, DRIFT), oy = ORIGIN - clamp(STAR * my / k, -DRIFT, DRIFT);
-      var bx0 = (W - BW) / 2 + mx, by0 = (H - BH) / 2 + my;
       lx.globalCompositeOperation = "copy"; lx.globalAlpha = 1;
       lx.drawImage(dimS, ox, oy, W / k, skyH / k, 0, 0, W, skyH);
       lx.globalCompositeOperation = "lighter";
@@ -122,14 +126,14 @@
       lx.globalAlpha = 1;
       for (i = 0; i < mets.length; i++) drawMeteor(mets[i]);
       lx.globalCompositeOperation = "destination-in"; lx.globalAlpha = 1;
-      if (still) lx.drawImage(mask, 0, 0); else lx.drawImage(bigMask, bx0, by0); // 天空範圍跟著地面一起動
+      if (still) lx.drawImage(mask, 0, 0); else lx.drawImage(bigMask, bx0, by0, zw, zh); // 天空範圍跟著地面一起動
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, W, H);
       ctx.save();
       ctx.setTransform(s, 0, 0, s, 0, 0); ctx.clip(clip); ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalAlpha = fade;
-      if (still) ctx.drawImage(flat, 0, 0); else ctx.drawImage(big, bx0, by0);
+      if (still) ctx.drawImage(flat, 0, 0); else ctx.drawImage(big, bx0, by0, zw, zh);
       ctx.drawImage(grc, 0, 0);
       ctx.globalCompositeOperation = "screen";
       ctx.drawImage(layer, 0, 0);
@@ -142,8 +146,8 @@
       if (e.gamma == null || e.beta == null) return;
       if (g0 == null) { g0 = e.gamma; b0 = e.beta; }
       g0 += (e.gamma - g0) * .004; b0 += (e.beta - b0) * .004; // 換了拿手機的姿勢，慢慢把那個姿勢當成正中間
-      tx = -clamp((e.gamma - g0) / 18, -1, 1) * DR;
-      ty = -clamp((e.beta - b0) / 18, -1, 1) * DR * .6;
+      tx = -clamp((e.gamma - g0) / 15, -1, 1) * DR; // 傾斜 15 度就到最大
+      ty = -clamp((e.beta - b0) / 15, -1, 1) * DR * .6;
       tilting = true;
     }
     function listenTilt() { window.addEventListener("deviceorientation", onOri); }
