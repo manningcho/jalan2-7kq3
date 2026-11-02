@@ -1,6 +1,6 @@
 # 把 Codex 畫的白天版、夜景裁回 1280x924、對齊原圖，算夜景的天空範圍（星星只出現在這裡）和地平線高度
 # 用法（在專案資料夾執行，需要 Pillow、numpy、scipy）：
-#   python tools/time-art.py <資料夾> <name>
+#   python tools/time-art.py <資料夾> <name> [星星最低高度，例如 .44]
 # <資料夾> 裡要有 Codex 畫的 <name>-day.png、<name>-night.png（1536x1024，原圖左右各鏡像補 53px 成 3:2 再給 Codex 改畫）。
 # 產出在同一個資料夾：<name>-day.jpg、<name>-night.jpg、<name>-night-sky.png（複製到 img/）、
 # result.json（top 顏色、hz 地平線，填進 data.js）、預覽圖 <name>-night-stars-preview.jpg、<name>-mask-preview.jpg
@@ -72,6 +72,10 @@ mask = nd.gaussian_filter(mask, 3)
 yy = np.linspace(0, 1, H)[:, None]
 fade = np.clip((np.median(horizon) / H - yy) / 0.18, 0, 1) ** .8  # 越靠近地平線星星越稀
 mask = mask * np.clip(.25 + .75 * fade, 0, 1)
+# 第三個參數（可省略）：星星最低到哪裡（0–1，從上往下算）。地平線附近有雲時用，星星在雲層上方就淡掉，
+# 不然雲那一段會一欄有一欄沒有（烏魯瓦圖 cliff 用 .44）
+if len(sys.argv) > 3:
+    mask = mask * np.clip((float(sys.argv[3]) - yy) / 0.05, 0, 1)
 m = Image.fromarray((mask * 255).astype("uint8")).resize((640, 462), Image.LANCZOS)
 rgba = Image.new("RGBA", m.size, (255, 255, 255, 0))
 rgba.putalpha(m)
