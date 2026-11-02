@@ -92,6 +92,13 @@ button { font: inherit; color: inherit; }
 .prefs-h { margin: 0; font-size: 13px; font-weight: 700; color: var(--muted); }
 .seg + .prefs-h, .prefs-note + .prefs-h { margin-top: 6px; }
 .prefs-note { margin: 0; max-width: 260px; font-size: 12px; line-height: 1.5; color: var(--muted); }
+/* 插畫跟著當地時間：下載前先問有多大、下載時有進度 */
+.time-btns { display: flex; gap: 8px; margin-top: 8px; }
+.time-btns button { flex: 1; padding: 7px 0; border: 0; border-radius: 999px; font: 700 13px/1 var(--f-body); cursor: pointer; }
+.time-go { background: var(--ink); color: var(--paper); }
+.time-no { background: var(--paper); color: var(--ink); }
+.time-bar { display: block; height: 6px; margin-top: 8px; border-radius: 999px; background: var(--paper); overflow: hidden; }
+.time-bar i { display: block; height: 100%; border-radius: inherit; background: var(--blue); transition: width .2s ease; }
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; border-radius: 999px; background: var(--paper); }
 .seg button { border: 0; background: transparent; min-height: 40px; padding: 0 6px; border-radius: 999px; font-size: 15px; font-weight: 700; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }

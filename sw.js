@@ -1,12 +1,13 @@
 // 離線用：把整個網站存一份在手機裡，到印尼網路不穩或沒網路也打得開。
 // - 網頁、程式、資料（html / js / css）：先抓網路上的新版，3 秒抓不到就用存的；抓到新版順便更新存的那份。
 // - 插畫：先用存的（馬上顯示），同時在背景檢查新版，下次就是新的。
+// - 白天版、夜景、星空：不預先存，選單打開「跟著當地時間」才下載（存在 trip-time，見 timepack.js）。
 // - Google 字型：安裝時讀網站的文字，算出用到哪些字，把需要的字型片段全部先存好（warmFonts）。
 // - 其他網站（地圖、導航）不經過這裡，照常需要網路。
 // 下面兩段由 make-sw.sh 自動產生：新增或換掉 img/ 的圖之後跑一次 ./make-sw.sh（make-lq.sh 會順便跑）。
 
 // <make-sw>
-var VERSION = "a6135e0dc9";
+var VERSION = "3d38268e9d";
 var FONT_CSS = "https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap";
 var ASSETS = [
   "./",
@@ -19,6 +20,7 @@ var ASSETS = [
   "tilt.js",
   "glass.js",
   "night.js",
+  "timepack.js",
   "app.js",
   "img/band-bali.jpg",
   "img/band-food-bali.jpg",
@@ -58,11 +60,6 @@ var ASSETS = [
   "img/p-transport.jpg",
   "img/plane.jpg",
   "img/sea.jpg",
-  "img/sky-meteor.jpg",
-  "img/sky-stars-bright.jpg",
-  "img/sky-stars-dim.jpg",
-  "img/slamet-day.jpg",
-  "img/slamet-night.jpg",
   "img/slamet.jpg",
   "img/stupa.jpg",
   "img/tamansari.jpg",
@@ -78,7 +75,6 @@ var ASSETS = [
   "img/melati-4.png",
   "img/melati-5.png",
   "img/melati-6.png",
-  "img/slamet-night-sky.png",
   "snd/birds.m4a",
   "snd/city.m4a",
   "snd/night.m4a",
@@ -88,6 +84,9 @@ var ASSETS = [
 // </make-sw>
 
 var SITE = "trip-site-" + VERSION, FONTS = "trip-fonts";
+// 「插畫跟著當地時間」的圖（白天版、夜景、星空）：選單打開時網頁自己下載存進這裡；不跟著版本清掉，下載過一次就一直在
+var TIME = "trip-time";
+function isTimeFile(path) { return /-(day|night)\.jpg$|-night-sky\.png$|\/img\/sky-[^/]*\.jpg$/.test(path); }
 
 self.addEventListener("install", function (e) {
   // 一個一個存：網路不穩時有幾個失敗也沒關係，之後看到再補存
@@ -110,7 +109,8 @@ self.addEventListener("fetch", function (e) {
   if (req.method !== "GET") return;
   var url = new URL(req.url);
   if (url.origin === self.location.origin) {
-    if (req.mode === "navigate" || /\.(html|js|css)$/.test(url.pathname) || /\/$/.test(url.pathname)) e.respondWith(networkFirst(e));
+    if (isTimeFile(url.pathname)) e.respondWith(cacheFirst(req, TIME));
+    else if (req.mode === "navigate" || /\.(html|js|css)$/.test(url.pathname) || /\/$/.test(url.pathname)) e.respondWith(networkFirst(e));
     else e.respondWith(cachedThenRefresh(e));
   } else if (/(^|\.)fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)) {
     e.respondWith(cacheFirst(req, FONTS));

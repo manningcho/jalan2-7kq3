@@ -78,6 +78,13 @@ try:
           if (n>=42 && f===last) { if (++same>=4) return {site:n, fontFiles:f}; } else same=0;
           last=f; await new Promise(r=>setTimeout(r,500)); }
         return 'timeout'; })()"""))
+    # 插畫跟著當地時間：在選單打開、下載白天和晚上的圖（之後沒網路也要看得到）
+    call("Page.navigate", {"url": base + "index.html?at=20:00#d1216"}); time.sleep(2)
+    print("time pack:", ev("""(async()=>{ const w=ms=>new Promise(r=>setTimeout(r,ms));
+        document.querySelector('[data-prefs]').click(); await w(200); document.querySelector("[data-time='on']").click(); await w(200);
+        const ask=document.querySelector('[data-time-note]').innerText.split('\\n')[0]; document.querySelector('[data-time-go]').click();
+        for (let i=0;i<40;i++){ await w(250); if (/好了|Downloaded|Sudah/.test(document.querySelector('[data-time-note]').innerText)) break; }
+        return ask+' -> '+document.querySelector('[data-time-note]').innerText; })()"""))
     call("Network.enable"); call("Network.clearBrowserCache")   # forget the browser's own cache: fonts must come from the worker's copy
     # airplane mode: no internet, no local server
     OFFLINE[0] = True; srv.shutdown(); srv.server_close()
@@ -94,6 +101,13 @@ try:
       Object.keys(by).sort().forEach(k=>{ if (by[k].loaded||by[k].error) out.push(k+': loaded '+by[k].loaded+', FAILED '+by[k].error); });
       return out; })()""")
     print("airplane mode:"); [print("  " + x) for x in res] if isinstance(res, list) else print(res)
+    # 沒網路時：晚上要是夜景、白天要是白天版，圖都要讀得到
+    for at, want in (("20:00", "night"), ("11:00", "day")):
+        call("Page.navigate", {"url": base + "index.html?airplane=1&at=%s#d1216" % at}); time.sleep(3)
+        print("  offline %s:" % at, ev("""(async()=>{ const im=document.querySelector('image.a-kb'), src=im.getAttribute('href');
+          const ok=await new Promise(r=>{const i=new Image();i.onload=()=>r(i.naturalWidth>0);i.onerror=()=>r(false);i.src=src;});
+          const nightOk = document.querySelector('canvas.night-sky') ? 'night canvas' : 'no night canvas';
+          return src+' '+(ok?'loaded':'FAILED')+', '+nightOk; })()"""), "(want %s)" % want)
     if SHOT:
         ev("location.hash='d1220'; new Promise(r=>setTimeout(r,1200))")
         shot = call("Page.captureScreenshot", {"format": "png"}); open(SHOT, "wb").write(base64.b64decode(shot["result"]["data"]))

@@ -72,6 +72,12 @@
     wxAvg: ["12 月平均", "Rata-rata Des", "Dec avg"],
     wxRain: ["雨", "Hujan", "Rain"],
     wxTitle: ["天氣", "Cuaca", "Weather"],
+    timeLabel: ["插畫跟著當地時間換（白天、晚上）", "Gambar ikut waktu setempat", "Pictures follow local time"],
+    timeAsk: ["要下載白天和晚上的插畫，共 {mb}。用手機網路的話會用到流量。", "Perlu mengunduh gambar siang & malam, total {mb}. Pakai data seluler akan memakai kuota.", "This downloads the day & night pictures, {mb} in total. It uses mobile data if you're not on Wi-Fi."],
+    timeGo: ["下載", "Unduh", "Download"], timeCancel: ["先不要", "Nanti saja", "Not now"],
+    timeLoading: ["下載中 {done} / {mb}", "Mengunduh {done} / {mb}", "Downloading {done} / {mb}"],
+    timeDone: ["下載好了（{mb}），沒網路也看得到", "Sudah diunduh ({mb}), bisa dilihat tanpa internet", "Downloaded ({mb}), works offline too"],
+    timeFail: ["下載失敗，可能沒有網路。有網路時再按一次「開」", "Gagal mengunduh, mungkin tidak ada internet. Coba \"Nyala\" lagi nanti", "Download failed, maybe no internet. Tap \"On\" again later"],
     tiltLabel: ["傾斜手機（插畫跟著晃）", "Miringkan HP (gambar ikut bergerak)", "Tilt your phone (the picture moves)"],
     tiltDenied: ["手機沒有允許讀取傾斜。iPhone 按過「取消」之後暫時不會再問：把 Safari 從背景完全滑掉再打開，再按一次「開」就會再問。",
       "HP belum mengizinkan sensor gerak. Setelah menekan \"Batal\", iPhone tidak bertanya lagi untuk sementara: tutup Safari sepenuhnya, buka lagi, lalu tekan \"Nyala\".",
@@ -307,6 +313,9 @@
       '<p class="prefs-h">' + esc(u("themeLabel")) + "</p>" +
       seg("data-theme-pick", [["auto", u("themeAuto")], ["light", u("themeLight")], ["dark", u("themeDark")]], theme, u("themeLabel")) +
       '<p class="prefs-h">' + esc(u("soundLabel")) + "</p>" + seg("data-sound", [["on", u("soundOn")], ["off", u("soundOff")]], soundOn ? "on" : "off", u("soundLabel")) +
+      // 插畫跟著當地時間：預設關（整天黃昏）；打開才下載白天和晚上的圖，先告訴使用者有多大
+      '<p class="prefs-h">' + esc(u("timeLabel")) + "</p>" + seg("data-time", [["on", u("soundOn")], ["off", u("soundOff")]], timeOn ? "on" : "off", u("timeLabel")) +
+      '<div class="prefs-note time-note" data-time-note' + (timeOn ? "" : " hidden") + ">" + (timeOn ? timeStatus() : "") + "</div>" +
       // 傾斜手機：只有手機、平板才有；預設關，當成小彩蛋（tilt.js）
       (window.TILT && TILT.available() ? '<p class="prefs-h">' + esc(u("tiltLabel")) + "</p>" + seg("data-tilt", [["on", u("soundOn")], ["off", u("soundOff")]], TILT.isOn() ? "on" : "off", u("tiltLabel")) + '<p class="prefs-note" data-tilt-note hidden></p>' : "") +
       "</div></div>";
@@ -855,7 +864,7 @@
     if (!isDayRoute(lastRoute)) dayBack = lastRoute || "days";
     return bar("No.#" + pad(i + 1) + " / 18", dayBack) + '<main class="wrap' + (d.wedding ? " is-wedding" : "") + '">' +
       kicker([pad(i + 1) + "/18", dm(d) + " " + wk(d), L(T.cities[d.city]), tzCode(d.city)]) +
-      hero(d.word, d.art, wxHtml(d), timeSlot(d.city)) + // 天氣放在插畫天空的右上角（跟封面的小字一樣），日期那行才排得下一行
+      hero(d.word, d.art, wxHtml(d), timeSlot(d.city, d.art)) + // 天氣放在插畫天空的右上角（跟封面的小字一樣），日期那行才排得下一行
       '<section class="day-head r"><h1 class="dh-title">' + esc(L(d.title)) + "</h1>" +
       '<p class="dh-tz">' + SPARK + esc(tzNote(d.city)) + "</p></section>" +
       // 小花線只當「這一頁到底了」的記號：小花線＋提示輪播放在換日按鈕下面，當整頁的結尾（跟其他頁一樣）
@@ -1114,7 +1123,7 @@
     if (!art || !p) return;
     var go = function () {
       if (!art.isConnected) return; // 已經換頁了
-      var ph = ART.photo(d.art, timeSlot(d.city)), src = nightOn ? nightOn.src : ph.src, top = nightOn ? nightOn.top : ART.topColor(d.art, timeSlot(d.city)); // 晚上下雨：霧後面是夜景；白天下雨：白天版
+      var sl = timeSlot(d.city, d.art), ph = ART.photo(d.art, sl), src = nightOn ? nightOn.src : ph.src, top = nightOn ? nightOn.top : ART.topColor(d.art, sl); // 晚上下雨：霧後面是夜景；白天下雨：白天版
       GLASS.start(art, src, top, ART.FRAME, { motion: document.documentElement.classList.contains("motion") }); // 不出「用手指擦擦玻璃」：當成小彩蛋
     };
     if (RAIN_FORCE) return go();
@@ -1136,16 +1145,108 @@
   // 現在的插畫本來就是黃昏；白天版有 TRIP.photos[art].day 才換，夜景有 .night 才換
   // 試看網址：?time=day／dusk／night；舊的 ?night=1 等於 night、?night=0 等於 dusk
   function sndLocalMin(city) {
+    var at = /[?&]at=(\d+):(\d+)/.exec(location.search); // 測試用：?at=19:00 假裝當地是幾點
+    if (at) return +at[1] * 60 + +at[2];
     try {
       var p = new Date().toLocaleString("en-GB", { timeZone: city === "bali" ? "Asia/Makassar" : city === "tw" ? "Asia/Taipei" : "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).split(":");
       return +p[0] * 60 + +p[1];
     } catch (e) { var n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
   }
-  function timeSlot(city) {
+  // ---------- 插畫跟著當地時間：選單開關（預設關＝整天黃昏），白天版和夜景要另外下載 ----------
+  // 2026/11/02 使用者：圖多了第一次打開會下載很多，到印尼用手機網路不划算；打開開關才下載，先說有多大、下載時有進度
+  // 下載的檔案和大小在 timepack.js（make-sw.sh 產生），存在 Cache「trip-time」（sw.js 從這裡拿，沒網路也看得到）
+  var timeOn = false, timeReady = {};
+  try { timeOn = localStorage.getItem("trip-time-on") === "on"; timeReady = JSON.parse(localStorage.getItem("trip-time-ready") || "{}") || {}; } catch (e) {}
+  function timePack() { return window.TIMEPACK || []; }
+  function timeBytes(onlyMissing) { return timePack().reduce(function (a, f) { return a + (onlyMissing && timeReady[f[0]] === f[1] ? 0 : f[1]); }, 0); }
+  function mb(b) { return (b / 1048576 < .1 ? (b / 1048576).toFixed(2) : (b / 1048576).toFixed(1)) + " MB"; }
+  function fill(s, o) { return s.replace(/\{(\w+)\}/g, function (m, k) { return o[k] != null ? o[k] : m; }); }
+  function saveTime() { try { localStorage.setItem("trip-time-on", timeOn ? "on" : "off"); localStorage.setItem("trip-time-ready", JSON.stringify(timeReady)); } catch (e) {} }
+  function has(p) { var f = timePack().filter(function (x) { return x[0] === p; })[0]; return !f || timeReady[p] === f[1]; } // 不在清單裡的不用下載
+  // 那個時段的圖都下載好了才換；沒下載好（或手機把存的清掉了）就用黃昏
+  function slotReady(art, slot) {
+    var ph = (T.photos || {})[art];
+    if (!ph) return false;
+    if (slot === "day") return !!(ph.day && has(ph.day.src));
+    if (slot === "night") return !!(ph.night && has(ph.night.src) && has(ph.night.sky) && has("img/sky-stars-dim.jpg") && has("img/sky-stars-bright.jpg") && has("img/sky-meteor.jpg"));
+    return true;
+  }
+  // 手機有時會把存的東西清掉：打開時對一次，少了就當沒下載（之後再按「開」會補）
+  if (timeOn && window.caches) caches.open("trip-time").then(function (c) { return c.keys(); }).then(function (keys) {
+    var got = {}; keys.forEach(function (r) { got[new URL(r.url).pathname.replace(/^.*\/img\//, "img/")] = 1; });
+    var lost = Object.keys(timeReady).filter(function (p) { return !got[p]; });
+    if (lost.length) { lost.forEach(function (p) { delete timeReady[p]; }); saveTime(); render(); }
+  }).catch(function () {});
+  // 開著時的說明：都下載好了說有多大；有新的圖還沒下載（網站更新、或手機清掉了）就再問一次
+  function timeAskHtml(need) {
+    return esc(fill(u("timeAsk"), { mb: mb(need) })) +
+      '<span class="time-btns"><button type="button" class="time-go" data-time-go="1">' + esc(u("timeGo")) + '</button><button type="button" class="time-no" data-time-cancel="1">' + esc(u("timeCancel")) + "</button></span>";
+  }
+  function timeStatus() { var need = timeBytes(true); return need ? timeAskHtml(need) : esc(fill(u("timeDone"), { mb: mb(timeBytes()) })); }
+  function timeNote(html, show) { var n = document.querySelector("[data-time-note]"); if (n) { n.innerHTML = html; n.hidden = !show; } return n; }
+  function timeMark(on) { document.querySelectorAll("[data-time]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.time === (on ? "on" : "off")); }); }
+  function timeSwitch(on) {
+    if (!on) { timeOn = false; saveTime(); timeMark(false); timeNote("", false); render(); return; }
+    var need = timeBytes(true);
+    if (!need) { timeOn = true; saveTime(); timeMark(true); render(); return; }
+    // 先問：要下載多少
+    timeMark(timeOn);
+    timeNote(timeAskHtml(need), true);
+  }
+  var timeBusy = false;
+  function timeDownload() {
+    if (timeBusy) return;
+    timeBusy = true;
+    var todo = timePack().filter(function (f) { return timeReady[f[0]] !== f[1]; });
+    var total = todo.reduce(function (a, f) { return a + f[1]; }, 0), done = 0;
+    var show = function () {
+      timeNote(esc(fill(u("timeLoading"), { done: mb(done), mb: mb(total) })) + '<span class="time-bar"><i style="width:' + Math.min(100, done / total * 100).toFixed(1) + '%"></i></span>', true);
+    };
+    show();
+    var cacheP = window.caches ? caches.open("trip-time") : Promise.resolve(null);
+    // 一個一個下載，邊下載邊更新進度
+    var one = function (i) {
+      if (i >= todo.length) return Promise.resolve();
+      var f = todo[i], start = done;
+      return fetch(f[0], { cache: "no-store" }).then(function (res) {
+        if (!res.ok) throw new Error(res.status);
+        var type = res.headers.get("Content-Type") || "";
+        var finish = function (blob) {
+          done = start + f[1]; show();
+          return cacheP.then(function (c) { return c && c.put(f[0], new Response(blob, { headers: { "Content-Type": type } })); })
+            .then(function () { timeReady[f[0]] = f[1]; saveTime(); });
+        };
+        if (!res.body || !res.body.getReader) return res.blob().then(finish);
+        var rd = res.body.getReader(), parts = [];
+        var pump = function () {
+          return rd.read().then(function (r) {
+            if (r.done) return finish(new Blob(parts, { type: type }));
+            parts.push(r.value); done = Math.min(start + f[1], done + r.value.length); show();
+            return pump();
+          });
+        };
+        return pump();
+      }).then(function () { return one(i + 1); });
+    };
+    one(0).then(function () {
+      timeBusy = false; timeOn = true; saveTime(); timeMark(true);
+      render(); // 換成現在時段的圖（選單保持打開）
+      timeNote(esc(fill(u("timeDone"), { mb: mb(timeBytes()) })), true);
+    }, function () {
+      timeBusy = false; timeMark(timeOn);
+      timeNote(esc(u("timeFail")), true);
+    });
+  }
+  function timeSlot(city, art) {
     var f = /[?&]time=(day|dusk|night)/.exec(location.search);
     if (f) return f[1];
     if (NIGHT_FORCE) return "night";
     if (/[?&]night=0/.test(location.search)) return "dusk";
+    if (!timeOn) return "dusk"; // 選單裡沒打開：整天黃昏（原本的插畫）
+    var s = rawSlot(city);
+    return art && !slotReady(art, s) ? "dusk" : s;
+  }
+  function rawSlot(city) {
     var w = sndWx[city], fresh = w && Date.now() - w.at < 3600000;
     var sr = fresh && w.sr != null ? w.sr : 330, ss = fresh && w.ss != null ? w.ss : 1070, t = sndLocalMin(city);
     if (t >= ss - 90 && t < ss + 30) return "dusk";
@@ -1153,19 +1254,19 @@
     if (t >= ss + 30 || t < sr - 30) return "night";
     return "day";
   }
-  function isNight(city) { return timeSlot(city) === "night"; }
+  function isNight(city, art) { return timeSlot(city, art) === "night"; }
   function setTilt(d) {
     if (!window.TILT) return;
     var art = d && app.querySelector(".hero-art");
     if (!art) return;
-    TILT.scene(art, { top: ART.topColor(d.art, timeSlot(d.city)), frame: ART.FRAME });
+    TILT.scene(art, { top: ART.topColor(d.art, timeSlot(d.city, d.art)), frame: ART.FRAME });
   }
   function setNight(d) {
     nightOn = null;
     if (!window.NIGHT) return;
     NIGHT.stop();
     var art = d && app.querySelector(".hero-art"), p = d && (T.photos || {})[d.art];
-    if (!art || !p || !p.night || !isNight(d.city)) return;
+    if (!art || !p || !p.night || !isNight(d.city, d.art)) return;
     nightOn = p.night;
     NIGHT.start(art, p.night, { frame: ART.FRAME });
   }
@@ -1770,6 +1871,12 @@
       try { localStorage.setItem("trip-sound", soundOn ? "on" : "off"); } catch (err) {}
       if (soundOn) startSound(); else stopSound();
       document.querySelectorAll("[data-sound]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.sound === (soundOn ? "on" : "off")); });
+    } else if (t.dataset.time) {
+      timeSwitch(t.dataset.time === "on");
+    } else if (t.dataset.timeGo) {
+      timeDownload();
+    } else if (t.dataset.timeCancel) {
+      var tn = document.querySelector("[data-time-note]"); if (tn) tn.hidden = true;
     } else if (t.dataset.tilt) {
       // 要在點擊當下問，iPhone 才會跳出「允許取用動作與方向」；被拒絕就停在「關」
       var want = t.dataset.tilt === "on", dbg = /[?&]debug=1/.test(location.search);
