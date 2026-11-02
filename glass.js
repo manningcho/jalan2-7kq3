@@ -82,6 +82,8 @@
     cv.setAttribute("aria-hidden", "true");
     art.insertBefore(cv, svg.nextSibling);
     art.classList.add("has-glass");
+    // 晚上下雨：手指是在擦玻璃，點不出流星，星星的提示就拿掉，免得兩個提示疊在一起
+    Array.prototype.forEach.call(art.querySelectorAll(".night-chip"), function (c) { c.remove(); });
     var ctx = cv.getContext("2d"), clip = new Path2D(frame);
 
     // 清楚的插畫（含上緣漸層，跟畫面上的一樣）：拿來做霧和雨滴裡的倒影

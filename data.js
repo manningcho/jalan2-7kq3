@@ -56,7 +56,11 @@ window.TRIP = {
     cover5: { src: "img/cover-5.jpg", what: "Bali", by: "AI (OpenAI Codex)", top: "#c59e9e" },
     cover6: { src: "img/cover-6.jpg", what: "Kaohsiung and Indonesia", by: "AI (OpenAI Codex)", top: "#e5aa97" },
     tamansari: { src: "img/tamansari.jpg", what: "Taman Sari", by: "AI (OpenAI Codex)", top: "#5c84c0" },
-    slamet: { src: "img/slamet.jpg", what: "Gunung Slamet", by: "AI (OpenAI Codex)", top: "#5b7fbe" },
+    slamet: { src: "img/slamet.jpg", what: "Gunung Slamet", by: "AI (OpenAI Codex)", top: "#5b7fbe",
+      // 晚上的版本（night.js）：同構圖的夜景、天空範圍（星星只出現在這裡）、夜空頂端色、每 1/64 寬的地平線高度（點天空才有流星）
+      night: { src: "img/slamet-night.jpg", sky: "img/slamet-night-sky.png", top: "#1e326f",
+        hz: [.403, .394, .39, .411, .411, .426, .459, .498, .498, .494, .491, .491, .485, .483, .485, .483, .485, .483, .476, .472, .47, .461, .452, .446, .442, .435, .429, .424, .416, .409, .403, .396,
+          .39, .379, .37, .361, .351, .346, .344, .342, .342, .342, .346, .346, .344, .353, .364, .37, .377, .385, .394, .4, .409, .416, .42, .426, .433, .437, .444, .448, .452, .457, .463, .468] } },
     city: { src: "img/city.jpg", what: "Monas, Jakarta", by: "AI (OpenAI Codex)", top: "#587aba" },
     gate: { src: "img/gate.jpg", what: "Candi bentar", by: "AI (OpenAI Codex)", top: "#5677b5" },
     terrace: { src: "img/terrace.jpg", what: "Tegalalang", by: "AI (OpenAI Codex)", top: "#537ac0" },

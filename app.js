@@ -73,6 +73,8 @@
     wxRain: ["雨", "Hujan", "Rain"],
     wxTitle: ["天氣", "Cuaca", "Weather"],
     wipeHint: ["用手指擦擦玻璃", "Usap kacanya", "Wipe the glass"],
+    starHint: ["點天空看流星", "Ketuk langit, ada bintang jatuh", "Tap the sky for a shooting star"],
+    tiltHint: ["傾斜手機看星星", "Miringkan HP, lihat bintangnya", "Tilt your phone to see the stars"],
     tipWx: ["天氣是 12 月平均；出發前 16 天內會自動換成當天預報", "Cuaca rata-rata Desember; 16 hari sebelum berangkat berganti jadi prakiraan", "Weather shows December averages; within 16 days of the trip it switches to the real forecast"],
     tipHome: ["用瀏覽器的「加入主畫面」，就能像 App 一樣一點就打開", "Pilih \"Tambahkan ke Layar Utama\" di browser agar bisa dibuka seperti aplikasi", "Use \"Add to Home Screen\" in your browser to open it like an app"],
     back: ["返回", "Kembali", "Back"],
@@ -329,8 +331,8 @@
     var city = sndCity();
     if (!city) return "waves";
     var w = sndWx[city], fresh = w && Date.now() - w.at < 3600000;
-    var night = fresh ? !w.day : (function (h) { return h >= 18 || h < 6; })(sndLocalHour(city));
-    if (fresh && w.rain) return "rain";
+    var night = NIGHT_FORCE || (fresh ? !w.day : (function (h) { return h >= 18 || h < 6; })(sndLocalHour(city)));
+    if ((fresh && w.rain) || RAIN_FORCE) return "rain"; // 試看網址 ?rain=1、?night=1 時聲音也跟著
     if (night && city !== "bali") return "night";
     return SND_BASE[city] || "waves";
   }
@@ -1108,12 +1110,34 @@
     if (!art || !p) return;
     var go = function () {
       if (!art.isConnected) return; // 已經換頁了
-      GLASS.start(art, p.src, ART.topColor(d.art), ART.FRAME, { motion: document.documentElement.classList.contains("motion"), hint: u("wipeHint") });
+      var src = nightOn ? nightOn.src : p.src, top = nightOn ? nightOn.top : ART.topColor(d.art); // 晚上下雨：霧後面是夜景
+      GLASS.start(art, src, top, ART.FRAME, { motion: document.documentElement.classList.contains("motion"), hint: u("wipeHint") });
     };
     if (RAIN_FORCE) return go();
     var w = sndWx[d.city];
     if (w && Date.now() - w.at < 3600000) { if (w.rain) go(); return; }
     if (sndNeedWx(d.city)) sndWeather(d.city).then(function () { var w2 = sndWx[d.city]; if (w2 && w2.rain) go(); });
+  }
+  // ---------- 晚上：每日頁插畫換成同一個地方的夜景、天空有星星（night.js） ----------
+  // 有 TRIP.photos[art].night 的插畫才會換。白天晚上：背景聲音查到的天氣（15 分鐘內）有 is_day 就用它，
+  // 沒有就看當地時間，18–6 點算晚上。網址加 ?night=1 不管時間都是晚上（試看用）
+  var NIGHT_FORCE = /[?&]night=1/.test(location.search), nightOn = null;
+  if (NIGHT_FORCE && !location.hash && history.replaceState) history.replaceState(null, "", location.pathname + location.search + "#d1216");
+  function isNight(city) {
+    if (NIGHT_FORCE) return true;
+    var w = sndWx[city];
+    if (w && Date.now() - w.at < 3600000) return !w.day;
+    var h = sndLocalHour(city);
+    return h >= 18 || h < 6;
+  }
+  function setNight(d) {
+    nightOn = null;
+    if (!window.NIGHT) return;
+    NIGHT.stop();
+    var art = d && app.querySelector(".hero-art"), p = d && (T.photos || {})[d.art];
+    if (!art || !p || !p.night || !isNight(d.city)) return;
+    nightOn = p.night;
+    NIGHT.start(art, p.night, { frame: ART.FRAME, starHint: u("starHint"), tiltHint: u("tiltHint") });
   }
   // 圖片載完才淡入；已經在快取裡的就直接顯示，不重播
   function fadeIn(root) {
@@ -1665,6 +1689,7 @@
     fadeIn(app);
     placeSays();
     setPetals(!!(d && d.wedding)); // 只有 12/19、12/20 飄花瓣
+    setNight(d); // 那個城市現在是晚上：插畫換成夜景、天空有星星（要在玻璃之前，下雨時霧是用夜景做的）
     setGlass(d); // 那個城市現在在下雨：插畫起霧、有雨滴
     if (d) wxRefresh(d);
     syncDial(h);
