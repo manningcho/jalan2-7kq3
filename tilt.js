@@ -106,11 +106,18 @@
     if (!needAsk) return Promise.resolve(done(true));
     // iPhone 按過「取消」後，有時不是回「拒絕」而是直接出錯或一直不回應：都當成沒開，最多等 3 秒（2026/11/02 使用者回報開關卡死、說明沒出現）
     var p;
-    try { p = ask(); } catch (e) { p = Promise.reject(e); }
+    steps.push("set");
+    try { p = ask(); steps.push("asked"); } catch (e) { steps.push("throw:" + (e && e.name)); p = Promise.reject(e); }
+    p.then(function (st) { steps.push("got:" + st); }, function (e) { steps.push("err:" + (e && (e.name + " " + e.message))); });
     var late = new Promise(function (ok) { setTimeout(function () { ok("timeout"); }, 3000); });
     return Promise.race([p, late]).then(function (st) { return done(st === "granted"); }, function () { return done(false); });
   }
   function isOn() { return enabled; }
+  // 檢查用（網址加 debug=1 時選單裡會顯示）：iPhone 回了什麼、卡在哪一步
+  var steps = [];
+  function why() {
+    return "t4 touch" + (touch ? 1 : 0) + " ask" + (needAsk ? 1 : 0) + " on" + (enabled ? 1 : 0) + " perm=" + perm + " evs" + evs + " | " + steps.slice(-6).join(" > ");
+  }
   function available() { return touch && motionOK; }
 
   // ---------- 白天：插畫畫到畫布上移動 ----------
@@ -194,7 +201,7 @@
   }
   function rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")"; }
 
-  window.TILT = { frame: frame, lite: function () { return lite; }, state: state, busy: busy, fit: fit, offset: offset, set: set, isOn: isOn, available: available, scene: scene };
+  window.TILT = { frame: frame, lite: function () { return lite; }, state: state, busy: busy, fit: fit, offset: offset, set: set, isOn: isOn, why: why, available: available, scene: scene };
   window.__tiltState = function () { return { evs: evs, perm: perm, lite: lite, x: x, y: y, on: on }; }; // 測試用
   window.__tilt = function (gamma, beta) { onOri({ gamma: gamma, beta: beta }); }; // 測試用：假裝手機傾斜
 })();

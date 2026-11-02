@@ -1754,12 +1754,15 @@
       document.querySelectorAll("[data-sound]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.sound === (soundOn ? "on" : "off")); });
     } else if (t.dataset.tilt) {
       // 要在點擊當下問，iPhone 才會跳出「允許取用動作與方向」；被拒絕就停在「關」
-      var want = t.dataset.tilt === "on";
+      var want = t.dataset.tilt === "on", dbg = /[?&]debug=1/.test(location.search);
+      var showWhy = function () { var n = document.querySelector("[data-tilt-note]"); if (n && dbg) { n.hidden = false; n.textContent = TILT.why(); } };
+      if (dbg) { showWhy(); setTimeout(showWhy, 1000); setTimeout(showWhy, 4000); }
       TILT.set(want).then(function (on) {
         document.querySelectorAll("[data-tilt]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.tilt === (on ? "on" : "off")); });
         // 想開但被拒絕：iPhone 按過「取消」後一陣子都直接回拒絕、不再跳出詢問，告訴使用者怎麼再開（2026/11/02 使用者回報開關卡在關）
         var note = document.querySelector("[data-tilt-note]");
         if (note) { note.hidden = !(want && !on); note.textContent = u("tiltDenied"); }
+        if (dbg) setTimeout(function () { var n = document.querySelector("[data-tilt-note]"); if (n) { n.hidden = false; n.textContent = u("tiltDenied") + " [" + TILT.why() + "]"; } }, 50);
       });
     } else if (t.dataset.lang) {
       lang = t.dataset.lang;
