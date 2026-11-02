@@ -149,7 +149,7 @@
     function listenTilt() { window.addEventListener("deviceorientation", onOri); }
     // 電腦不用滑鼠帶動星星：只有天空在動、地面不動，像鏡頭在移動卻只動了一半，很怪（2026/11/02 使用者建議拿掉）
 
-    // iPhone 要先點一下允許，才拿得到手機的方向；允許過就記住，之後第一次碰畫面時悄悄再要一次
+    // iPhone 要先點一下允許，才拿得到手機的方向；允許過就記住（trip-tilt）
     // 只有觸控螢幕（手機、平板）才問；新版電腦 Chrome 也有這個詢問功能，但電腦沒有方向感測器，用滑鼠就好
     var touch = window.matchMedia && matchMedia("(pointer: coarse)").matches;
     var chip = null, needAsk = touch && window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === "function";
@@ -173,19 +173,32 @@
       if (ms) setTimeout(function () { if (chip) chip.classList.add("is-gone"); }, ms);
       return chip;
     }
-    var onFirst = null;
-    if (needAsk && asked) {
-      onFirst = function () { document.removeEventListener("pointerdown", onFirst, true); onFirst = null; ask().catch(function () {}); };
-      document.addEventListener("pointerdown", onFirst, true);
-      if (opts.starHint) showChip(opts.starHint, false, 7000);
-    } else if (needAsk) {
-      if (opts.tiltHint) showChip(opts.tiltHint + " ✦", true, 0).addEventListener("click", function () {
+    // 「傾斜手機看星星」按鈕：點了才問
+    function askChip() {
+      if (!opts.tiltHint) return;
+      showChip(opts.tiltHint + " ✦", true, 0).addEventListener("click", function () {
         var c = chip;
         ask().then(function (st) {
           if (c) c.classList.add("is-gone");
           if (st === "granted") meteor(W * rnd(.35, .7), skyH * rnd(.15, .35)); // 允許之後先送一顆流星
         }).catch(function () { if (c) c.classList.add("is-gone"); });
       });
+    }
+    // 允許過：先開始聽（有時候不用再問就收得到），再在第一次「點一下」時悄悄要一次；被拒絕就把按鈕叫出來。
+    // 要用 touchend／click：iPhone 只把完整的點擊當作同意，手指剛碰到（pointerdown）不算
+    // （2026/11/02 踩過：原本用 pointerdown，重開網頁後傾斜完全不動）
+    var onFirst = null, FIRST = ["touchend", "click"];
+    function offFirst() { FIRST.forEach(function (ev) { document.removeEventListener(ev, onFirst, true); }); onFirst = null; }
+    if (needAsk && asked) {
+      listenTilt();
+      onFirst = function () {
+        offFirst();
+        ask().then(function (st) { if (st !== "granted") askChip(); }).catch(function () { askChip(); });
+      };
+      FIRST.forEach(function (ev) { document.addEventListener(ev, onFirst, true); });
+      if (opts.starHint) showChip(opts.starHint, false, 7000);
+    } else if (needAsk) {
+      askChip();
     } else {
       listenTilt();
       if (opts.starHint) showChip(opts.starHint, false, 7000);
@@ -230,7 +243,7 @@
       if (io) io.disconnect();
       window.removeEventListener("resize", onResize);
       window.removeEventListener("deviceorientation", onOri);
-      if (onFirst) document.removeEventListener("pointerdown", onFirst, true);
+      if (onFirst) offFirst();
       if (cv.parentNode) cv.remove();
       if (chip && chip.parentNode) chip.remove();
       art.classList.remove("has-night");
