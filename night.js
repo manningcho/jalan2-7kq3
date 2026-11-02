@@ -65,11 +65,11 @@
     var ctx = cv.getContext("2d"), clip = new Path2D(opts.frame);
 
     // 傾斜手機時整張夜景一起移動（像鏡頭在動）：夜景和天空範圍先放大一點，移動時邊緣才不會露出空白。
-    // 下雨時不動也不放大：霧是用原尺寸的夜景做的，擦開後要對得上
-    var DR = 16 * dpr; // 夜景最多移動幾個螢幕 px（左右；上下是 0.6 倍）。原本 9，iPhone 上幾乎看不出地面有動（2026/11/02）
-    var sc = Math.max(1 + 2 * (DR + 1) / W, 1 + 1.2 * (DR + 1) / H), BW = Math.round(W * sc), BH = Math.round(H * sc);
+    // 下雨時也一起動：glass.js 的霧照同樣的數字移動（2026/11/02 使用者想要：霧跟著景色、雨滴留在玻璃上）
+    // 移多少、放大多少都照 tilt.js（白天、下雨的霧用同一套，才對得上）
+    var sc = TILT.fit(W, H, dpr).sc, BW = Math.round(W * sc), BH = Math.round(H * sc);
     function pre(src, w, h) { var c = canvas(w, h), x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(src, 0, 0, w, h); return c; }
-    var flat = pre(img, W, H), big = pre(img, BW, BH), mask = pre(sky, W, H), bigMask = pre(sky, BW, BH);
+    var big = pre(img, BW, BH), bigMask = pre(sky, BW, BH);
     // 上緣跟白天一樣漸層成夜空頂端色，大字才融得進去；這層固定不動，跟著大字
     var grc = canvas(W, Math.ceil(110 * s)), gx = grc.getContext("2d"), gr = gx.createLinearGradient(0, 0, 0, 110 * s);
     gr.addColorStop(0, n.top); gr.addColorStop(.35, rgba(n.top, .55)); gr.addColorStop(1, rgba(n.top, 0));
@@ -101,13 +101,11 @@
     }
 
     // ---------- 畫 ----------
-    var fade = 0, px = 0, py = 0, tx = 0, ty = 0;
-    function draw(t) {
-      var still = art.classList.contains("has-glass"), mx = still ? 0 : px, my = still ? 0 : py;
-      // 入夜那 2 秒從原尺寸慢慢放大到 sc（像鏡頭推近），能移動的範圍也跟著放大，邊緣才不會露白
-      var zs = 1 + (sc - 1) * fade, zw = W * zs, zh = H * zs;
-      lim = (zw - W) / 2 - .5; var limY = (zh - H) / 2 - .5;
-      mx = clamp(mx, -lim, lim); my = clamp(my, -limY, limY);
+    var fade = 0, px = 0, py = 0, lim = 0;
+    function draw(t, st) {
+      // 入夜那 2 秒（還有開始收到傾斜的時候）從原尺寸慢慢放大到 sc（像鏡頭推近），邊緣才不會露白
+      var o = TILT.offset(W, H, dpr, fade * st.on, st), zs = o.zs, zw = W * zs, zh = H * zs, mx = o.mx, my = o.my;
+      px = mx; py = my; lim = o.lim;
       var bx0 = (W - zw) / 2 + mx, by0 = (H - zh) / 2 + my;
       // 星空圖上，對到插畫左上角的位置（星星動得比地面少）
       var ox = ORIGIN - clamp(STAR * mx / k, -DRIFT, DRIFT), oy = ORIGIN - clamp(STAR * my / k, -DRIFT, DRIFT);
@@ -126,94 +124,30 @@
       lx.globalAlpha = 1;
       for (i = 0; i < mets.length; i++) drawMeteor(mets[i]);
       lx.globalCompositeOperation = "destination-in"; lx.globalAlpha = 1;
-      if (still) lx.drawImage(mask, 0, 0); else lx.drawImage(bigMask, bx0, by0, zw, zh); // 天空範圍跟著地面一起動
+      lx.drawImage(bigMask, bx0, by0, zw, zh); // 天空範圍跟著地面一起動
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, W, H);
       ctx.save();
       ctx.setTransform(s, 0, 0, s, 0, 0); ctx.clip(clip); ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalAlpha = fade;
-      if (still) ctx.drawImage(flat, 0, 0); else ctx.drawImage(big, bx0, by0, zw, zh);
+      ctx.drawImage(big, bx0, by0, zw, zh);
       ctx.drawImage(grc, 0, 0);
       ctx.globalCompositeOperation = "screen";
       ctx.drawImage(layer, 0, 0);
       ctx.restore();
     }
 
-    // ---------- 傾斜手機：整個畫面微微移動 ----------
-    var g0 = null, b0 = null, oriT = 0, tilting = false;
-    var evs = 0, lastG = null, lastB = null, lim = 0;
-    function onOri(e) {
-      evs++; lastG = e.gamma; lastB = e.beta;
-      if (e.gamma == null || e.beta == null) return;
-      var now = performance.now();
-      if (g0 == null) { g0 = e.gamma; b0 = e.beta; oriT = now; }
-      // 換了拿手機的姿勢，慢慢把那個姿勢當成正中間：照時間算、約 15 秒才回正
-      // （2026/11/02 原本每個事件拉 0.4%，iPhone 一秒 60 次，斜著停 4 秒就滑回中間，截圖時看起來像沒動）
-      var k = 1 - Math.exp(-Math.min(now - oriT, 200) / 15000); oriT = now;
-      g0 += (e.gamma - g0) * k; b0 += (e.beta - b0) * k;
-      tx = -clamp((e.gamma - g0) / 15, -1, 1) * DR; // 傾斜 15 度就到最大
-      ty = -clamp((e.beta - b0) / 15, -1, 1) * DR * .6;
-      tilting = true;
-    }
-    function listenTilt() { window.addEventListener("deviceorientation", onOri); }
-    // 電腦不用滑鼠帶動星星：只有天空在動、地面不動，像鏡頭在移動卻只動了一半，很怪（2026/11/02 使用者建議拿掉）
-
-    // iPhone 要先點一下允許，才拿得到手機的方向；允許過就記住（trip-tilt）
-    // 只有觸控螢幕（手機、平板）才問；新版電腦 Chrome 也有這個詢問功能，但電腦沒有方向感測器，用滑鼠就好
-    var touch = window.matchMedia && matchMedia("(pointer: coarse)").matches;
-    var chip = null, needAsk = touch && window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === "function";
-    var asked = false, perm = "-";
-    try { asked = localStorage.getItem("trip-tilt") === "1"; } catch (e) {}
-    function ask() {
-      perm = "asking";
-      return DeviceOrientationEvent.requestPermission().then(function (st) {
-        perm = st;
-        if (st === "granted") { listenTilt(); try { localStorage.setItem("trip-tilt", "1"); } catch (e) {} }
-        return st;
-      }, function (err) { perm = "err " + (err && err.name || err); throw err; });
-    }
-    function showChip(text, button, ms) {
-      if (chip) chip.remove();
-      if (art.classList.contains("has-glass")) return document.createElement("span"); // 下雨的玻璃已經在了：不出提示
-      chip = document.createElement(button ? "button" : "span");
-      if (button) chip.type = "button";
-      chip.className = "night-chip" + (button ? " is-btn" : "");
-      chip.textContent = text;
+    // 傾斜手機的按鈕和權限在 tilt.js；這裡只決定字：還要按鈕的話先出按鈕，不然出「點天空看流星」
+    var chip = null;
+    if (TILT.asking()) TILT.prompt(art, opts.tiltHint, function () { meteor(W * rnd(.35, .7), skyH * rnd(.15, .35)); }); // 允許之後先送一顆流星
+    else if (opts.starHint && !art.classList.contains("has-glass")) {
+      chip = document.createElement("span");
+      chip.className = "tilt-chip";
+      chip.textContent = opts.starHint;
       art.appendChild(chip);
-      setTimeout(function () { if (chip) chip.classList.add("is-in"); }, 1600);
-      if (ms) setTimeout(function () { if (chip) chip.classList.add("is-gone"); }, ms);
-      return chip;
-    }
-    // 「傾斜手機看星星」按鈕：點了才問
-    function askChip() {
-      if (!opts.tiltHint) return;
-      showChip(opts.tiltHint + " ✦", true, 0).addEventListener("click", function () {
-        var c = chip;
-        ask().then(function (st) {
-          if (c) c.classList.add("is-gone");
-          if (st === "granted") meteor(W * rnd(.35, .7), skyH * rnd(.15, .35)); // 允許之後先送一顆流星
-        }).catch(function () { if (c) c.classList.add("is-gone"); });
-      });
-    }
-    // 允許過：先開始聽（有時候不用再問就收得到），再在第一次「點一下」時悄悄要一次；被拒絕就把按鈕叫出來。
-    // 要用 touchend／click：iPhone 只把完整的點擊當作同意，手指剛碰到（pointerdown）不算
-    // （2026/11/02 踩過：原本用 pointerdown，重開網頁後傾斜完全不動）
-    var onFirst = null, FIRST = ["touchend", "click"];
-    function offFirst() { FIRST.forEach(function (ev) { document.removeEventListener(ev, onFirst, true); }); onFirst = null; }
-    if (needAsk && asked) {
-      listenTilt();
-      onFirst = function () {
-        offFirst();
-        ask().then(function (st) { if (st !== "granted") askChip(); }).catch(function () { askChip(); });
-      };
-      FIRST.forEach(function (ev) { document.addEventListener(ev, onFirst, true); });
-      if (opts.starHint) showChip(opts.starHint, false, 7000);
-    } else if (needAsk) {
-      askChip();
-    } else {
-      listenTilt();
-      if (opts.starHint) showChip(opts.starHint, false, 7000);
+      setTimeout(function () { chip.classList.add("is-in"); }, 1600);
+      setTimeout(function () { chip.classList.add("is-gone"); }, 7000);
     }
 
     // 點天空：從那裡劃過一顆流星（地平線以下、山上不會）
@@ -234,16 +168,17 @@
       var dt = prev ? Math.min(.05, (now - prev) / 1000) : 0;
       prev = now;
       if (document.hidden || !seen) return;
-      if (fade < 1) fade = Math.min(1, fade + dt / 2); // 跟大字一起，2 秒慢慢入夜
-      px += (tx - px) * Math.min(1, dt * 4); py += (ty - py) * Math.min(1, dt * 4);
+      if (fade < 1) g.fade = fade = Math.min(1, fade + dt / 2); // 跟大字一起，2 秒慢慢入夜
       nextMet -= dt;
       if (nextMet <= 0) { meteor(W * rnd(.2, .85), skyH * rnd(.08, .4)); nextMet = rnd(20, 45); }
       for (var i = mets.length - 1; i >= 0; i--) { mets[i].t += dt; if (mets[i].t > mets[i].dur) mets.splice(i, 1); }
       // 星星閃爍不用每格都畫：沒有流星、沒在移動時，一秒畫 30 次就夠（省電）
-      var moving = mets.length || fade < 1 || Math.abs(tx - px) > .05 || Math.abs(ty - py) > .05;
-      if (!moving && now - last < 33) return;
+      if (!art.classList.contains("has-glass")) TILT.frame(dt); // 下雨時玻璃那邊回報就好
+      var st = TILT.state(now);
+      var moving = mets.length || fade < 1 || TILT.busy();
+      if (!moving && now - last < (TILT.lite() ? 100 : 33)) return; // 跑不動的手機一秒閃 10 次就好
       last = now;
-      draw(now / 1000);
+      draw(now / 1000, st);
     }
     raf = requestAnimationFrame(step);
 
@@ -254,8 +189,6 @@
       raf = 0;
       if (io) io.disconnect();
       window.removeEventListener("resize", onResize);
-      window.removeEventListener("deviceorientation", onOri);
-      if (onFirst) offFirst();
       if (cv.parentNode) cv.remove();
       if (chip && chip.parentNode) chip.remove();
       art.classList.remove("has-night");
@@ -270,16 +203,16 @@
       var dbgT = setInterval(function () {
         if (g.dead || !dbg.isConnected) { clearInterval(dbgT); return; }
         var f = function (v) { return v == null ? "-" : (+v).toFixed(1); };
-        dbg.textContent = "v6 evs " + evs + "  touch " + (touch ? 1 : 0) + " ask " + (needAsk ? 1 : 0) + " asked " + (asked ? 1 : 0) + " perm " + perm +
-          "\ngamma " + f(lastG) + "  beta " + f(lastB) + "  g0 " + f(g0) + "  b0 " + f(b0) +
-          "\ntx " + f(tx) + "  px " + f(px) + "  lim " + f(lim) + "  fade " + f(fade) +
+        dbg.textContent = TILT.debug() + "  night px " + f(px) + "  lim " + f(lim) + "  fade " + f(fade) +
           "\nglass " + (art.classList.contains("has-glass") ? 1 : 0) + "  W " + W + "  dpr " + dpr + "  sc " + sc.toFixed(3);
       }, 200);
     }
     window.__night = function () { return { w: W, h: H, fade: fade, px: px, py: py, meteors: mets.length, nextMeteor: nextMet }; };
     window.__nightMeteor = function () { meteor(W * .6, skyH * .25); }; // 測試用
-    window.__nightTilt = function (gamma, beta) { onOri({ gamma: gamma, beta: beta }); }; // 測試用：假裝手機傾斜
+    window.__nightTilt = function (gamma, beta) { window.__tilt(gamma, beta); }; // 測試用：假裝手機傾斜
   }
 
-  window.NIGHT = { start: start, stop: stop };
+  // 下雨的霧要跟夜景放大一樣多：入夜到幾成了
+  function fadeNow() { return cur && cur.fade != null ? cur.fade : 1; }
+  window.NIGHT = { start: start, stop: stop, fade: fadeNow };
 })();

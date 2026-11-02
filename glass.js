@@ -83,52 +83,52 @@
     art.insertBefore(cv, svg.nextSibling);
     art.classList.add("has-glass");
     // 晚上下雨：手指是在擦玻璃，點不出流星，星星的提示就拿掉，免得兩個提示疊在一起
-    Array.prototype.forEach.call(art.querySelectorAll(".night-chip"), function (c) { c.remove(); });
+    Array.prototype.forEach.call(art.querySelectorAll("span.tilt-chip"), function (c) { c.remove(); }); // 「傾斜手機」按鈕留著：下雨也能傾斜
     var ctx = cv.getContext("2d"), clip = new Path2D(frame);
 
-    // 清楚的插畫（含上緣漸層，跟畫面上的一樣）：拿來做霧和雨滴裡的倒影
+    // 清楚的插畫（含上緣漸層，跟畫面上的一樣）：拿來做雨滴裡的倒影
     var base = canvas(W, H), bx = base.getContext("2d");
     bx.drawImage(illu, 0, 0, W, H);
-    var gr = bx.createLinearGradient(0, 0, 0, 110 * s);
+    // 上緣漸層和大字固定在畫面上（不會跟著傾斜移動），另外放一張透明的
+    var fixed = canvas(W, H), fxc = fixed.getContext("2d");
+    var gr = fxc.createLinearGradient(0, 0, 0, 110 * s);
     gr.addColorStop(0, top); gr.addColorStop(.35, rgba(top, .55)); gr.addColorStop(1, rgba(top, 0));
-    bx.fillStyle = gr; bx.fillRect(0, 0, W, 110 * s);
-    if (hw) paintWord(bx, hw, art.getBoundingClientRect(), dpr);
+    fxc.fillStyle = gr; fxc.fillRect(0, 0, W, 110 * s);
+    if (hw) paintWord(fxc, hw, art.getBoundingClientRect(), dpr);
+    bx.drawImage(fixed, 0, 0);
 
-    // 霧：插畫模糊、蓋一層淡淡的白，再疊上霧珠的質感
+    // 霧：插畫模糊、蓋一層淡淡的白，再疊上霧珠的質感。
+    // 傾斜手機時，霧裡模糊的景色跟後面的景色一起移動；白霧、霧珠、雨滴、擦過的痕跡在玻璃上，留在原地
+    // （2026/11/02 使用者想要的樣子）。所以景色（會動）和大字、漸層（不動）分開模糊
     // 模糊的做法：先縮到固定寬度，再縮一半一次、放大回來（2026/11/02 使用者選「模糊減半」：
     // 模糊越大，夕陽的粉黃越會暈進山裡，擦開後山是藍的，看起來很突兀）。
     // 一次縮很小再一口氣放大，山的邊緣會變成一階一階的鋸齒（2026/11/02 使用者發現）
-    var fog = canvas(W, H), fx = fog.getContext("2d");
-    // 先縮到固定的 360 寬（跟插畫的 viewBox 一樣），霧的濃淡才不會因為螢幕寬窄而不同
-    var lv = [], src = canvas(360, 260), cw = 360, ch = 260, k, s0 = src.getContext("2d");
-    s0.imageSmoothingQuality = "high"; s0.drawImage(base, 0, 0, cw, ch);
-    lv.push(src);
-    for (k = 0; k < 1; k++) {
-      cw = Math.max(4, Math.round(cw / 2)); ch = Math.max(4, Math.round(ch / 2));
-      var dn = canvas(cw, ch), dnx = dn.getContext("2d");
-      dnx.imageSmoothingQuality = "high"; dnx.drawImage(src, 0, 0, cw, ch);
-      lv.push(dn); src = dn;
+    // 霧本來就是糊的，用一半的解析度畫就看不出差別，手機的工作量只剩 1/4（2026/11/02 效能檢測後改）
+    var LW = Math.max(2, Math.round(W / 2)), LH = Math.max(2, Math.round(H / 2)), L = LW / W;
+    function blurred(from) {
+      // 先縮到固定的 360 寬（跟插畫的 viewBox 一樣），霧的濃淡才不會因為螢幕寬窄而不同
+      var a = canvas(360, 260), ax = a.getContext("2d"), b = canvas(180, 130), bxx = b.getContext("2d");
+      ax.imageSmoothingQuality = "high"; ax.drawImage(from, 0, 0, 360, 260);
+      bxx.imageSmoothingQuality = "high"; bxx.drawImage(a, 0, 0, 180, 130);
+      ax.globalCompositeOperation = "copy"; ax.drawImage(b, 0, 0, 360, 260);
+      var out = canvas(LW, LH), ox = out.getContext("2d");
+      ox.imageSmoothingQuality = "high"; ox.drawImage(a, 0, 0, LW, LH);
+      return out;
     }
-    for (k = lv.length - 2; k >= 0; k--) {
-      var upx = lv[k].getContext("2d");
-      upx.imageSmoothingQuality = "high"; upx.globalCompositeOperation = "copy"; upx.drawImage(src, 0, 0, lv[k].width, lv[k].height);
-      src = lv[k];
-    }
-    fx.imageSmoothingQuality = "high"; fx.drawImage(src, 0, 0, W, H);
+    var fogPic = blurred(illu);
+    // 不會動的那張（糊糊的大字和漸層＋白霧）先疊好，每次只要蓋一次
     // 白霧上淡下濃：最上面那條是大字伸進來的地方，天空要跟字同色，字才融得進去
-    var hz = fx.createLinearGradient(0, 0, 0, H);
+    var sheet = blurred(fixed), shx = sheet.getContext("2d"), hz = shx.createLinearGradient(0, 0, 0, LH);
     hz.addColorStop(0, "rgba(226,232,244,0)"); hz.addColorStop(.3, "rgba(226,232,244,.05)"); hz.addColorStop(.65, "rgba(226,232,244,.21)"); hz.addColorStop(1, "rgba(226,232,244,.26)");
-    fx.fillStyle = hz; fx.fillRect(0, 0, W, H);
-    var T = Math.round(240 * dpr), tile = canvas(T, T);
+    shx.fillStyle = hz; shx.fillRect(0, 0, LW, LH);
+    var T = Math.round(240 * dpr * L), tile = canvas(T, T), k;
     tile.getContext("2d").drawImage(fogTex, 0, 0, T, T);
-    // 霧珠質感一樣上面淡一點：先鋪滿，再用上淡下濃的漸層裁透明度，最後疊上去
-    var tx = canvas(W, H), tc = tx.getContext("2d");
-    tc.fillStyle = tc.createPattern(tile, "repeat"); tc.fillRect(0, 0, W, H);
-    var tg = tc.createLinearGradient(0, 0, 0, H);
+    // 霧珠質感一樣上面淡一點：先鋪滿，再用上淡下濃的漸層裁透明度
+    var tx = canvas(LW, LH), tc = tx.getContext("2d");
+    tc.fillStyle = tc.createPattern(tile, "repeat"); tc.fillRect(0, 0, LW, LH);
+    var tg = tc.createLinearGradient(0, 0, 0, LH);
     tg.addColorStop(0, "rgba(0,0,0,.2)"); tg.addColorStop(.45, "rgba(0,0,0,.45)"); tg.addColorStop(1, "rgba(0,0,0,.5)");
-    tc.globalCompositeOperation = "destination-in"; tc.fillStyle = tg; tc.fillRect(0, 0, W, H);
-    fx.globalCompositeOperation = "overlay"; fx.drawImage(tx, 0, 0);
-    fx.globalCompositeOperation = "source-over";
+    tc.globalCompositeOperation = "destination-in"; tc.fillStyle = tg; tc.fillRect(0, 0, LW, LH);
 
     // 哪裡有霧：用程式自己的小數記，每格 2 CSS px，1＝有霧、0＝擦乾淨；每次畫之前轉成遮罩、放大蓋上去。
     // 不直接在畫布上慢慢補：畫布透明度只有 256 級，每次補的量太小會被捨去，霧就回不來（2026/11/02）
@@ -136,7 +136,7 @@
     var fogv = new Float32Array(GW * GH), murky = false, mkDirty = true;
     for (k = 0; k < fogv.length; k++) fogv[k] = 1;
     var mk = canvas(GW, GH), mkx = mk.getContext("2d"), mkImg = mkx.createImageData(GW, GH);
-    var layer = canvas(W, H), lx = layer.getContext("2d");
+    var layer = canvas(LW, LH), lx = layer.getContext("2d");
     var BR = 20 * dpr; // 手指擦的半徑
     // 在 (x, y) 半徑 r 的圓裡把霧帶走：中間帶走 hard，往外柔柔地變少
     function clearAt(x, y, r, hard) {
@@ -190,22 +190,33 @@
     for (var i = 0; i < N; i++) { var dd = makeDrop(rnd(0, W), rnd(0, H), size()); dd.pop = 1; drops.push(dd); }
 
     // ---------- 畫 ----------
-    var fade = 0;
-    function draw() {
+    var fade = 0, at0 = "", mv = { mx: 0, my: 0, zs: 1 };
+    function draw(now) {
+      // 跟後面的景色移一樣多（晚上的夜景入夜時是慢慢放大的，霧也跟著）
+      var st = window.TILT ? TILT.state(now) : { x: 0, y: 0, on: 0 };
+      var zoom = st.on * (art.classList.contains("has-night") && window.NIGHT ? NIGHT.fade() : 1);
+      if (window.TILT) mv = TILT.offset(W, H, dpr, zoom, st);
+      var key = mv.zs.toFixed(4) + " " + mv.mx.toFixed(1) + " " + mv.my.toFixed(1);
+      if (key !== at0) { at0 = key; mkDirty = true; }
+      if (!mkDirty && !dirty) return; // 什麼都沒變：不重畫（省電，低階手機也跑得動）
+      dirty = false;
       if (mkDirty) {
         var md = mkImg.data;
         for (var q = 0, n = fogv.length; q < n; q++) md[q * 4 + 3] = fogv[q] * 255;
         mkx.putImageData(mkImg, 0, 0);
         mkDirty = false;
+        var zw = LW * mv.zs, zh = LH * mv.zs;
+        lx.globalCompositeOperation = "copy"; lx.drawImage(fogPic, (LW - zw) / 2 + mv.mx * L, (LH - zh) / 2 + mv.my * L, zw, zh);
+        lx.globalCompositeOperation = "source-over"; lx.drawImage(sheet, 0, 0);
+        lx.globalCompositeOperation = "overlay"; lx.drawImage(tx, 0, 0);
+        lx.globalCompositeOperation = "destination-in"; lx.imageSmoothingQuality = "high"; lx.drawImage(mk, 0, 0, LW, LH);
       }
-      lx.globalCompositeOperation = "copy"; lx.drawImage(fog, 0, 0);
-      lx.globalCompositeOperation = "destination-in"; lx.imageSmoothingQuality = "high"; lx.drawImage(mk, 0, 0, W, H);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, W, H);
       ctx.save();
       ctx.setTransform(s, 0, 0, s, 0, 0); ctx.clip(clip); ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalAlpha = fade * .86; // 霧不要全蓋死，底下的插畫隱約透得出來
-      ctx.drawImage(layer, 0, 0);
+      ctx.imageSmoothingQuality = "high"; ctx.drawImage(layer, 0, 0, W, H);
       for (var i = 0; i < drops.length; i++) {
         var d = drops[i], p = d.pop < 1 ? d.pop : 1;
         ctx.globalAlpha = fade * Math.min(1, p * 1.5);
@@ -258,7 +269,7 @@
       io = new IntersectionObserver(function (es) { seen = es[0].isIntersecting; });
       io.observe(cv);
     }
-    var prev = 0, nextSlide = 1.5, nextSpawn = .6, dirty = true, raf = 0, REFOG = 18;
+    var prev = 0, nextSlide = 1.5, nextSpawn = .6, dirty = true, raf = 0, REFOG = 18, refogT = 0;
     function slideOne() {
       // 挑一顆比較大的開始往下滑；沒有的話在上半部生一顆新的水滴形
       var big = drops.filter(function (d) { return !d.v && d.w > 9 * dpr && d.y < H * .7; });
@@ -274,17 +285,22 @@
       var dt = prev ? Math.min(.05, (now - prev) / 1000) : 0;
       prev = now;
       if (document.hidden || !seen) return;
+      var lite = window.TILT && TILT.lite();
+      if (window.TILT) TILT.frame(dt);
       if (fade < 1) { fade = Math.min(1, fade + dt / 1.6); dirty = true; } // 霧慢慢起來
+      if (drops.some(function (d) { return d.pop < 1 || d.v != null; })) dirty = true; // 有雨滴正在出現或往下滑
       // 擦開的地方慢慢回霧：全清到全霧大約 18 秒；手指還在擦、剛放開 1.2 秒內先不回
-      if (murky && !last && now - touchAt > 1200) {
-        var inc = dt / REFOG, any = false;
+      refogT += dt;
+      if (murky && !last && now - touchAt > 1200 && refogT >= .08) { // 一秒補 12 次就夠：霧回得很慢，看不出差別
+        var inc = refogT / REFOG, any = false;
+        refogT = 0;
         for (var q = 0, n = fogv.length; q < n; q++) {
           var v = fogv[q];
           if (v < 1) { v += inc; fogv[q] = v > 1 ? 1 : v; any = true; }
         }
         murky = any; mkDirty = true;
       }
-      if (opts.motion) {
+      if (opts.motion && !lite) { // 手機跑不動時雨滴不滑、不再多（tilt.js 降級）
         nextSlide -= dt; nextSpawn -= dt;
         if (nextSlide <= 0) { slideOne(); nextSlide = rnd(3.5, 8); }
         if (nextSpawn <= 0 && drops.length < N * 1.4) { // 新的雨打到玻璃上
@@ -319,7 +335,7 @@
         }
         if (d.y - d.h > H) drops.splice(i, 1);
       }
-      draw();
+      draw(now);
     }
     raf = requestAnimationFrame(step);
 

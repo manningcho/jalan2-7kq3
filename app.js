@@ -75,6 +75,7 @@
     wipeHint: ["用手指擦擦玻璃", "Usap kacanya", "Wipe the glass"],
     starHint: ["點天空看流星", "Ketuk langit, ada bintang jatuh", "Tap the sky for a shooting star"],
     tiltHint: ["傾斜手機看星星", "Miringkan HP, lihat bintangnya", "Tilt your phone to see the stars"],
+    tiltDay: ["傾斜手機看看", "Coba miringkan HP-mu", "Tilt your phone"],
     tipWx: ["天氣是 12 月平均；出發前 16 天內會自動換成當天預報", "Cuaca rata-rata Desember; 16 hari sebelum berangkat berganti jadi prakiraan", "Weather shows December averages; within 16 days of the trip it switches to the real forecast"],
     tipHome: ["用瀏覽器的「加入主畫面」，就能像 App 一樣一點就打開", "Pilih \"Tambahkan ke Layar Utama\" di browser agar bisa dibuka seperti aplikasi", "Use \"Add to Home Screen\" in your browser to open it like an app"],
     back: ["返回", "Kembali", "Back"],
@@ -1114,6 +1115,7 @@
       GLASS.start(art, src, top, ART.FRAME, { motion: document.documentElement.classList.contains("motion"), hint: u("wipeHint") });
     };
     if (RAIN_FORCE) return go();
+    if (/[?&]rain=0/.test(location.search)) return; // 試看網址 ?rain=0：當地下雨也不起霧
     if (NIGHT_FORCE) return; // 夜空試看網址（?night=1）只看夜空：當地真的在下雨也不起霧，不然地面不動、傾斜按鈕也不出來（2026/11/02 踩過）
     var w = sndWx[d.city];
     if (w && Date.now() - w.at < 3600000) { if (w.rain) go(); return; }
@@ -1123,13 +1125,21 @@
   // 有 TRIP.photos[art].night 的插畫才會換。白天晚上：背景聲音查到的天氣（15 分鐘內）有 is_day 就用它，
   // 沒有就看當地時間，18–6 點算晚上。網址加 ?night=1 不管時間都是晚上（試看用）
   var NIGHT_FORCE = /[?&]night=1/.test(location.search), nightOn = null;
-  if (NIGHT_FORCE && !location.hash && history.replaceState) history.replaceState(null, "", location.pathname + location.search + "#d1216");
+  if ((NIGHT_FORCE || /[?&](night|rain)=0/.test(location.search)) && !location.hash && history.replaceState) history.replaceState(null, "", location.pathname + location.search + "#d1216");
   function isNight(city) {
     if (NIGHT_FORCE) return true;
+    if (/[?&]night=0/.test(location.search)) return false; // 試看網址 ?night=0：一直是白天
     var w = sndWx[city];
     if (w && Date.now() - w.at < 3600000) return !w.day;
     var h = sndLocalHour(city);
     return h >= 18 || h < 6;
+  }
+  function setTilt(d) {
+    if (!window.TILT) return;
+    var art = d && app.querySelector(".hero-art");
+    if (!art) return;
+    TILT.scene(art);
+    TILT.prompt(art, u("tiltDay")); // 晚上 night.js 會換成「傾斜手機看星星」
   }
   function setNight(d) {
     nightOn = null;
@@ -1690,6 +1700,7 @@
     fadeIn(app);
     placeSays();
     setPetals(!!(d && d.wedding)); // 只有 12/19、12/20 飄花瓣
+    setTilt(d); // 傾斜手機時插畫跟著微微移動（白天、晚上、下雨都是）
     setNight(d); // 那個城市現在是晚上：插畫換成夜景、天空有星星（要在玻璃之前，下雨時霧是用夜景做的）
     setGlass(d); // 那個城市現在在下雨：插畫起霧、有雨滴
     if (d) wxRefresh(d);
