@@ -290,8 +290,9 @@
       if (fade < 1) { fade = Math.min(1, fade + dt / 1.6); dirty = true; } // 霧慢慢起來
       if (drops.some(function (d) { return d.pop < 1 || d.v != null; })) dirty = true; // 有雨滴正在出現或往下滑
       // 擦開的地方慢慢回霧：全清到全霧大約 18 秒；手指還在擦、剛放開 1.2 秒內先不回
-      refogT += dt;
-      if (murky && !last && now - touchAt > 1200 && refogT >= .08) { // 一秒補 12 次就夠：霧回得很慢，看不出差別
+      // 只在「可以回霧」的時候累計時間（2026/11/02 踩過：從一打開就累計，第一次擦完一口氣補回去，霧突然變白）
+      if (murky && !last && now - touchAt > 1200) refogT += dt; else refogT = 0;
+      if (refogT >= .08) { // 一秒補 12 次就夠：霧回得很慢，看不出差別
         var inc = refogT / REFOG, any = false;
         refogT = 0;
         for (var q = 0, n = fogv.length; q < n; q++) {
