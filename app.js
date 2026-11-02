@@ -73,11 +73,16 @@
     wxRain: ["雨", "Hujan", "Rain"],
     wxTitle: ["天氣", "Cuaca", "Weather"],
     timeLabel: ["插畫跟著當地時間換（白天、晚上）", "Gambar ikut waktu setempat", "Pictures follow local time"],
-    timeAsk: ["要下載白天和晚上的插畫，共 {mb}。用手機網路的話會用到流量。", "Perlu mengunduh gambar siang & malam, total {mb}. Pakai data seluler akan memakai kuota.", "This downloads the day & night pictures, {mb} in total. It uses mobile data if you're not on Wi-Fi."],
+    dlTitle: ["下載白天和晚上的插畫", "Unduh gambar siang & malam", "Download day & night pictures"],
+    timeAsk: ["共 {mb}。用手機網路的話會用到流量。", "Total {mb}. Akan memakai kuota jika pakai data seluler.", "{mb} in total. Uses mobile data if you're not on Wi-Fi."],
     timeGo: ["下載", "Unduh", "Download"], timeCancel: ["先不要", "Nanti saja", "Not now"],
-    timeLoading: ["下載中 {done} / {mb}", "Mengunduh {done} / {mb}", "Downloading {done} / {mb}"],
-    timeDone: ["下載好了（{mb}），沒網路也看得到", "Sudah diunduh ({mb}), bisa dilihat tanpa internet", "Downloaded ({mb}), works offline too"],
-    timeFail: ["下載失敗，可能沒有網路。有網路時再按一次「開」", "Gagal mengunduh, mungkin tidak ada internet. Coba \"Nyala\" lagi nanti", "Download failed, maybe no internet. Tap \"On\" again later"],
+    timeLoading: ["{done} / {mb}", "{done} / {mb}", "{done} / {mb}"],
+    timeDoneTitle: ["下載好了", "Selesai", "Done"],
+    timeDone: ["已下載 {mb}，沒網路也看得到", "Sudah diunduh {mb}, bisa tanpa internet", "Downloaded {mb}, works offline"],
+    timeMissing: ["有 {mb} 新的插畫還沒下載，按「開」下載", "Ada {mb} gambar baru, tekan \"Nyala\" untuk unduh", "{mb} of new pictures not downloaded yet, tap \"On\""],
+    timeFailTitle: ["下載失敗", "Gagal mengunduh", "Download failed"],
+    timeFail: ["可能沒有網路。有網路時再按一次「開」。", "Mungkin tidak ada internet. Coba \"Nyala\" lagi nanti.", "Maybe no internet. Tap \"On\" again later."],
+    timeOk: ["好", "Oke", "OK"],
     tiltLabel: ["傾斜手機（插畫跟著晃）", "Miringkan HP (gambar ikut bergerak)", "Tilt your phone (the picture moves)"],
     tiltDenied: ["手機沒有允許讀取傾斜。iPhone 按過「取消」之後暫時不會再問：把 Safari 從背景完全滑掉再打開，再按一次「開」就會再問。",
       "HP belum mengizinkan sensor gerak. Setelah menekan \"Batal\", iPhone tidak bertanya lagi untuk sementara: tutup Safari sepenuhnya, buka lagi, lalu tekan \"Nyala\".",
@@ -1177,21 +1182,38 @@
     var lost = Object.keys(timeReady).filter(function (p) { return !got[p]; });
     if (lost.length) { lost.forEach(function (p) { delete timeReady[p]; }); saveTime(); render(); }
   }).catch(function () {});
-  // 開著時的說明：都下載好了說有多大；有新的圖還沒下載（網站更新、或手機清掉了）就再問一次
-  function timeAskHtml(need) {
-    return esc(fill(u("timeAsk"), { mb: mb(need) })) +
-      '<span class="time-btns"><button type="button" class="time-go" data-time-go="1">' + esc(u("timeGo")) + '</button><button type="button" class="time-no" data-time-cancel="1">' + esc(u("timeCancel")) + "</button></span>";
-  }
-  function timeStatus() { var need = timeBytes(true); return need ? timeAskHtml(need) : esc(fill(u("timeDone"), { mb: mb(timeBytes()) })); }
+  // 選單裡開關下面的小字：都下載好了說有多大；有新的圖還沒下載（網站更新、或手機清掉了）就提醒
+  function timeStatus() { var need = timeBytes(true); return esc(need ? fill(u("timeMissing"), { mb: mb(need) }) : fill(u("timeDone"), { mb: mb(timeBytes()) })); }
   function timeNote(html, show) { var n = document.querySelector("[data-time-note]"); if (n) { n.innerHTML = html; n.hidden = !show; } return n; }
   function timeMark(on) { document.querySelectorAll("[data-time]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.time === (on ? "on" : "off")); }); }
+  // 下載的小彈窗（畫面中間）：先問大小 → 進度條 → 好了自己關（2026/11/02 使用者：擠在漢堡裡很怪）
+  var timeDlg = null;
+  function timeDialog(html) {
+    if (!timeDlg) {
+      timeDlg = document.createElement("div");
+      timeDlg.className = "time-dlg";
+      timeDlg.setAttribute("role", "dialog");
+      timeDlg.setAttribute("aria-modal", "true");
+      timeDlg.innerHTML = '<div class="time-card"></div>';
+      document.body.appendChild(timeDlg);
+      requestAnimationFrame(function () { requestAnimationFrame(function () { if (timeDlg) timeDlg.classList.add("is-on"); }); });
+    }
+    timeDlg.querySelector(".time-card").innerHTML = html;
+  }
+  function timeClose() {
+    var d = timeDlg; timeDlg = null;
+    if (!d) return;
+    d.classList.remove("is-on");
+    setTimeout(function () { d.remove(); }, 300);
+  }
   function timeSwitch(on) {
     if (!on) { timeOn = false; saveTime(); timeMark(false); timeNote("", false); render(); return; }
     var need = timeBytes(true);
     if (!need) { timeOn = true; saveTime(); timeMark(true); render(); return; }
-    // 先問：要下載多少
     timeMark(timeOn);
-    timeNote(timeAskHtml(need), true);
+    setPrefsOpen(false); // 收起選單，只留彈窗
+    timeDialog('<p class="time-h">' + esc(u("dlTitle")) + '</p><p class="time-p">' + esc(fill(u("timeAsk"), { mb: mb(need) })) + "</p>" +
+      '<span class="time-btns"><button type="button" class="time-no" data-time-cancel="1">' + esc(u("timeCancel")) + '</button><button type="button" class="time-go" data-time-go="1">' + esc(u("timeGo")) + "</button></span>");
   }
   var timeBusy = false;
   function timeDownload() {
@@ -1199,8 +1221,12 @@
     timeBusy = true;
     var todo = timePack().filter(function (f) { return timeReady[f[0]] !== f[1]; });
     var total = todo.reduce(function (a, f) { return a + f[1]; }, 0), done = 0;
+    timeDialog('<p class="time-h">' + esc(u("dlTitle")) + '</p><span class="time-bar"><i style="width:0%"></i></span><p class="time-p time-num"></p>');
     var show = function () {
-      timeNote(esc(fill(u("timeLoading"), { done: mb(done), mb: mb(total) })) + '<span class="time-bar"><i style="width:' + Math.min(100, done / total * 100).toFixed(1) + '%"></i></span>', true);
+      if (!timeDlg) return;
+      var bar = timeDlg.querySelector(".time-bar i"), num = timeDlg.querySelector(".time-num");
+      if (bar) bar.style.width = Math.min(100, done / total * 100).toFixed(1) + "%";
+      if (num) num.textContent = fill(u("timeLoading"), { done: mb(done), mb: mb(total) });
     };
     show();
     var cacheP = window.caches ? caches.open("trip-time") : Promise.resolve(null);
@@ -1230,11 +1256,13 @@
     };
     one(0).then(function () {
       timeBusy = false; timeOn = true; saveTime(); timeMark(true);
-      render(); // 換成現在時段的圖（選單保持打開）
-      timeNote(esc(fill(u("timeDone"), { mb: mb(timeBytes()) })), true);
+      render(); // 先換成現在時段的圖（彈窗在網頁最外層，不會被重畫掉）
+      // 不自己關：讓使用者按「好」（2026/11/02 使用者）
+      timeDialog('<p class="time-h">' + esc(u("timeDoneTitle")) + ' ✦</p><p class="time-p">' + esc(fill(u("timeDone"), { mb: mb(timeBytes()) })) + "</p>" +
+        '<span class="time-btns"><button type="button" class="time-go" data-time-cancel="1">' + esc(u("timeOk")) + "</button></span>");
     }, function () {
       timeBusy = false; timeMark(timeOn);
-      timeNote(esc(u("timeFail")), true);
+      timeDialog('<p class="time-h">' + esc(u("timeFailTitle")) + '</p><p class="time-p">' + esc(u("timeFail")) + '</p><span class="time-btns"><button type="button" class="time-go" data-time-cancel="1">' + esc(u("timeOk")) + "</button></span>");
     });
   }
   function timeSlot(city, art) {
@@ -1876,7 +1904,7 @@
     } else if (t.dataset.timeGo) {
       timeDownload();
     } else if (t.dataset.timeCancel) {
-      var tn = document.querySelector("[data-time-note]"); if (tn) tn.hidden = true;
+      timeClose();
     } else if (t.dataset.tilt) {
       // 要在點擊當下問，iPhone 才會跳出「允許取用動作與方向」；被拒絕就停在「關」
       var want = t.dataset.tilt === "on", dbg = /[?&]debug=1/.test(location.search);

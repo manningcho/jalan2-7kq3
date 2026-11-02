@@ -82,9 +82,10 @@ try:
     call("Page.navigate", {"url": base + "index.html?at=20:00#d1216"}); time.sleep(2)
     print("time pack:", ev("""(async()=>{ const w=ms=>new Promise(r=>setTimeout(r,ms));
         document.querySelector('[data-prefs]').click(); await w(200); document.querySelector("[data-time='on']").click(); await w(200);
-        const ask=document.querySelector('[data-time-note]').innerText.split('\\n')[0]; document.querySelector('[data-time-go]').click();
-        for (let i=0;i<40;i++){ await w(250); if (/好了|Downloaded|Sudah/.test(document.querySelector('[data-time-note]').innerText)) break; }
-        return ask+' -> '+document.querySelector('[data-time-note]').innerText; })()"""))
+        const dlg=()=>document.querySelector('.time-dlg'); const ask=dlg().innerText.replace(/\\s+/g,' '); document.querySelector('[data-time-go]').click();
+        for (let i=0;i<40;i++){ await w(250); if (/好了/.test(dlg().innerText)) break; }
+        const done=dlg().innerText.replace(/\\s+/g,' '); document.querySelector('[data-time-cancel]').click();
+        return ask+' -> '+done; })()"""))
     call("Network.enable"); call("Network.clearBrowserCache")   # forget the browser's own cache: fonts must come from the worker's copy
     # airplane mode: no internet, no local server
     OFFLINE[0] = True; srv.shutdown(); srv.server_close()
