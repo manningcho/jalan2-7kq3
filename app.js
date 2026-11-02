@@ -285,9 +285,9 @@
   function pageHead(w, art) {
     return (T.photos || {})[art] ? hero(w, art) : '<section class="tword r">' + word(w) + "</section>";
   }
-  function hero(w, art, overlay) {
-    return '<section class="hero r">' + word(w, ART.topColor(art)) +
-      '<div class="hero-art">' + ART.svg(art, w) + (overlay ? '<div class="hero-over">' + overlay + "</div>" : "") + "</div></section>";
+  function hero(w, art, overlay, slot) { // slot：時段（每日頁才有，白天有白天版就換）
+    return '<section class="hero r">' + word(w, ART.topColor(art, slot)) +
+      '<div class="hero-art">' + ART.svg(art, w, false, slot) + (overlay ? '<div class="hero-over">' + overlay + "</div>" : "") + "</div></section>";
   }
 
   // ---------- 外框 ----------
@@ -334,7 +334,7 @@
     var city = sndCity();
     if (!city) return "waves";
     var w = sndWx[city], fresh = w && Date.now() - w.at < 3600000;
-    var night = NIGHT_FORCE || (fresh ? !w.day : (function (h) { return h >= 18 || h < 6; })(sndLocalHour(city)));
+    var night = NIGHT_FORCE || /[?&]time=night/.test(location.search) || (fresh ? !w.day : (function (h) { return h >= 18 || h < 6; })(sndLocalHour(city)));
     if ((fresh && w.rain) || RAIN_FORCE) return "rain"; // 試看網址 ?rain=1、?night=1 時聲音也跟著
     if (night && city !== "bali") return "night";
     return SND_BASE[city] || "waves";
@@ -346,10 +346,11 @@
   function sndWeather(city) { // 查那個城市現在的天氣；查完（或失敗）都會再選一次聲音
     var ll = T.wx[city];
     sndAsk[city] = Date.now();
-    return fetch("https://api.open-meteo.com/v1/forecast?latitude=" + ll[0] + "&longitude=" + ll[1] + "&current=weather_code,is_day,precipitation&timezone=auto")
+    return fetch("https://api.open-meteo.com/v1/forecast?latitude=" + ll[0] + "&longitude=" + ll[1] + "&current=weather_code,is_day,precipitation&daily=sunrise,sunset&forecast_days=1&timezone=auto")
       .then(function (r) { return r.json(); }).then(function (j) {
-        var c = j.current || {};
-        sndWx[city] = { at: Date.now(), day: c.is_day === 1, rain: c.precipitation > 0 || (c.weather_code >= 51 && c.weather_code <= 99 && c.weather_code !== 71 && c.weather_code !== 73 && c.weather_code !== 75) };
+        var c = j.current || {}, dl = j.daily || {};
+        var hm = function (s) { var m = /T(\d+):(\d+)/.exec(s || ""); return m ? +m[1] * 60 + +m[2] : null; }; // 當地時間 "2026-12-16T05:31" → 331 分
+        sndWx[city] = { at: Date.now(), day: c.is_day === 1, sr: hm(dl.sunrise && dl.sunrise[0]), ss: hm(dl.sunset && dl.sunset[0]), rain: c.precipitation > 0 || (c.weather_code >= 51 && c.weather_code <= 99 && c.weather_code !== 71 && c.weather_code !== 73 && c.weather_code !== 75) };
       }).catch(function () {});
   }
   function sndApply() { // 要查天氣就先查（最多等 2 秒），查到再選，免得先播錯的那段又馬上換掉
@@ -854,7 +855,7 @@
     if (!isDayRoute(lastRoute)) dayBack = lastRoute || "days";
     return bar("No.#" + pad(i + 1) + " / 18", dayBack) + '<main class="wrap' + (d.wedding ? " is-wedding" : "") + '">' +
       kicker([pad(i + 1) + "/18", dm(d) + " " + wk(d), L(T.cities[d.city]), tzCode(d.city)]) +
-      hero(d.word, d.art, wxHtml(d)) + // 天氣放在插畫天空的右上角（跟封面的小字一樣），日期那行才排得下一行
+      hero(d.word, d.art, wxHtml(d), timeSlot(d.city)) + // 天氣放在插畫天空的右上角（跟封面的小字一樣），日期那行才排得下一行
       '<section class="day-head r"><h1 class="dh-title">' + esc(L(d.title)) + "</h1>" +
       '<p class="dh-tz">' + SPARK + esc(tzNote(d.city)) + "</p></section>" +
       // 小花線只當「這一頁到底了」的記號：小花線＋提示輪播放在換日按鈕下面，當整頁的結尾（跟其他頁一樣）
@@ -1113,7 +1114,7 @@
     if (!art || !p) return;
     var go = function () {
       if (!art.isConnected) return; // 已經換頁了
-      var src = nightOn ? nightOn.src : p.src, top = nightOn ? nightOn.top : ART.topColor(d.art); // 晚上下雨：霧後面是夜景
+      var ph = ART.photo(d.art, timeSlot(d.city)), src = nightOn ? nightOn.src : ph.src, top = nightOn ? nightOn.top : ART.topColor(d.art, timeSlot(d.city)); // 晚上下雨：霧後面是夜景；白天下雨：白天版
       GLASS.start(art, src, top, ART.FRAME, { motion: document.documentElement.classList.contains("motion") }); // 不出「用手指擦擦玻璃」：當成小彩蛋
     };
     if (RAIN_FORCE) return go();
@@ -1127,20 +1128,37 @@
   // 有 TRIP.photos[art].night 的插畫才會換。白天晚上：背景聲音查到的天氣（15 分鐘內）有 is_day 就用它，
   // 沒有就看當地時間，18–6 點算晚上。網址加 ?night=1 不管時間都是晚上（試看用）
   var NIGHT_FORCE = /[?&]night=1/.test(location.search), nightOn = null;
-  if ((NIGHT_FORCE || /[?&](night|rain)=0/.test(location.search)) && !location.hash && history.replaceState) history.replaceState(null, "", location.pathname + location.search + "#d1216");
-  function isNight(city) {
-    if (NIGHT_FORCE) return true;
-    if (/[?&]night=0/.test(location.search)) return false; // 試看網址 ?night=0：一直是白天
-    var w = sndWx[city];
-    if (w && Date.now() - w.at < 3600000) return !w.day;
-    var h = sndLocalHour(city);
-    return h >= 18 || h < 6;
+  if ((NIGHT_FORCE || /[?&](night|rain)=0|[?&]time=/.test(location.search)) && !location.hash && history.replaceState) history.replaceState(null, "", location.pathname + location.search + "#d1216");
+  // ---------- 時段：白天／黃昏／晚上（2026/11/02 使用者：地區插畫可以有白天、黃昏、晚上） ----------
+  // 用當地的日出日落切（天氣一起查，沒查到就用 5:30／17:50，印尼在赤道附近一年差不多）：
+  //   黃昏＝日落前 1.5 小時到日落後半小時，日出前半小時到日出後 1 小時也用黃昏那張（粉色的清晨）
+  //   晚上＝其他天黑的時間；白天＝其他時間
+  // 現在的插畫本來就是黃昏；白天版有 TRIP.photos[art].day 才換，夜景有 .night 才換
+  // 試看網址：?time=day／dusk／night；舊的 ?night=1 等於 night、?night=0 等於 dusk
+  function sndLocalMin(city) {
+    try {
+      var p = new Date().toLocaleString("en-GB", { timeZone: city === "bali" ? "Asia/Makassar" : city === "tw" ? "Asia/Taipei" : "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).split(":");
+      return +p[0] * 60 + +p[1];
+    } catch (e) { var n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
   }
+  function timeSlot(city) {
+    var f = /[?&]time=(day|dusk|night)/.exec(location.search);
+    if (f) return f[1];
+    if (NIGHT_FORCE) return "night";
+    if (/[?&]night=0/.test(location.search)) return "dusk";
+    var w = sndWx[city], fresh = w && Date.now() - w.at < 3600000;
+    var sr = fresh && w.sr != null ? w.sr : 330, ss = fresh && w.ss != null ? w.ss : 1070, t = sndLocalMin(city);
+    if (t >= ss - 90 && t < ss + 30) return "dusk";
+    if (t >= sr - 30 && t < sr + 60) return "dusk";
+    if (t >= ss + 30 || t < sr - 30) return "night";
+    return "day";
+  }
+  function isNight(city) { return timeSlot(city) === "night"; }
   function setTilt(d) {
     if (!window.TILT) return;
     var art = d && app.querySelector(".hero-art");
     if (!art) return;
-    TILT.scene(art, { top: ART.topColor(d.art), frame: ART.FRAME });
+    TILT.scene(art, { top: ART.topColor(d.art, timeSlot(d.city)), frame: ART.FRAME });
   }
   function setNight(d) {
     nightOn = null;

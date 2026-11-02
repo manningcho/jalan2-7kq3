@@ -212,10 +212,12 @@
         '<g clip-path="url(#c' + id + ')"><rect width="360" height="260" fill="' + C.skyTop + '"/>' + body + "</g></svg>";
     },
     // 大字的顏色：有插畫就用插畫自己的天空色，字和天空才接得起來
-    topColor: function (name) { var ph = (window.TRIP && TRIP.photos || {})[name]; return (ph && ph.top) || (PAL[name] || [C.skyTop])[0]; },
-    svg: function (name, label, plain) {
+    // slot：時段（"day" 白天版，有 TRIP.photos[name].day 才換；沒有就用原本的黃昏版）
+    photo: function (name, slot) { var ph = (window.TRIP && TRIP.photos || {})[name]; return ph && slot && ph[slot] && ph[slot].src && slot !== "night" ? Object.assign({}, ph, ph[slot]) : ph; },
+    topColor: function (name, slot) { var ph = ART.photo(name, slot); return (ph && ph.top) || (PAL[name] || [C.skyTop])[0]; },
+    svg: function (name, label, plain, slot) {
       var id = "a" + (++uid);
-      var photo = (window.TRIP && TRIP.photos || {})[name];
+      var photo = ART.photo(name, slot);
       var p = PAL[name] || [];
       var body;
       if (photo) {
