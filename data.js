@@ -57,6 +57,8 @@ window.TRIP = {
     cover6: { src: "img/cover-6.jpg", what: "Kaohsiung and Indonesia", by: "AI (OpenAI Codex)", top: "#e5aa97" },
     tamansari: { src: "img/tamansari.jpg", what: "Taman Sari", by: "AI (OpenAI Codex)", top: "#5c84c0" },
     slamet: { src: "img/slamet.jpg", what: "Gunung Slamet", by: "AI (OpenAI Codex)", top: "#5b7fbe",
+      // 白天的版本（app.js timeSlot）：同構圖的大白天，Codex 用黃昏那張改畫（2026/11/02 使用者選中午那版：大白天不會有霧）
+      day: { src: "img/slamet-day.jpg", top: "#779fd3" },
       // 晚上的版本（night.js）：同構圖的夜景、天空範圍（星星只出現在這裡）、夜空頂端色、每 1/64 寬的地平線高度（點天空才有流星）
       night: { src: "img/slamet-night.jpg", sky: "img/slamet-night-sky.png", top: "#1e326f",
         hz: [.403, .394, .39, .411, .411, .426, .459, .498, .498, .494, .491, .491, .485, .483, .485, .483, .485, .483, .476, .472, .47, .461, .452, .446, .442, .435, .429, .424, .416, .409, .403, .396,
