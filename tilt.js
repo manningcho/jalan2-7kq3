@@ -104,7 +104,11 @@
     };
     if (!on || !touch || !motionOK) return Promise.resolve(done(false));
     if (!needAsk) return Promise.resolve(done(true));
-    return ask().then(function (st) { return done(st === "granted"); }, function () { return done(false); });
+    // iPhone 按過「取消」後，有時不是回「拒絕」而是直接出錯或一直不回應：都當成沒開，最多等 3 秒（2026/11/02 使用者回報開關卡死、說明沒出現）
+    var p;
+    try { p = ask(); } catch (e) { p = Promise.reject(e); }
+    var late = new Promise(function (ok) { setTimeout(function () { ok("timeout"); }, 3000); });
+    return Promise.race([p, late]).then(function (st) { return done(st === "granted"); }, function () { return done(false); });
   }
   function isOn() { return enabled; }
   function available() { return touch && motionOK; }
