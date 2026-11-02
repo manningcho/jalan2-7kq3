@@ -141,13 +141,17 @@
     }
 
     // ---------- 傾斜手機：整個畫面微微移動 ----------
-    var g0 = null, b0 = null, tilting = false;
+    var g0 = null, b0 = null, oriT = 0, tilting = false;
     var evs = 0, lastG = null, lastB = null, lim = 0;
     function onOri(e) {
       evs++; lastG = e.gamma; lastB = e.beta;
       if (e.gamma == null || e.beta == null) return;
-      if (g0 == null) { g0 = e.gamma; b0 = e.beta; }
-      g0 += (e.gamma - g0) * .004; b0 += (e.beta - b0) * .004; // 換了拿手機的姿勢，慢慢把那個姿勢當成正中間
+      var now = performance.now();
+      if (g0 == null) { g0 = e.gamma; b0 = e.beta; oriT = now; }
+      // 換了拿手機的姿勢，慢慢把那個姿勢當成正中間：照時間算、約 15 秒才回正
+      // （2026/11/02 原本每個事件拉 0.4%，iPhone 一秒 60 次，斜著停 4 秒就滑回中間，截圖時看起來像沒動）
+      var k = 1 - Math.exp(-Math.min(now - oriT, 200) / 15000); oriT = now;
+      g0 += (e.gamma - g0) * k; b0 += (e.beta - b0) * k;
       tx = -clamp((e.gamma - g0) / 15, -1, 1) * DR; // 傾斜 15 度就到最大
       ty = -clamp((e.beta - b0) / 15, -1, 1) * DR * .6;
       tilting = true;
@@ -266,7 +270,7 @@
       var dbgT = setInterval(function () {
         if (g.dead || !dbg.isConnected) { clearInterval(dbgT); return; }
         var f = function (v) { return v == null ? "-" : (+v).toFixed(1); };
-        dbg.textContent = "v5 evs " + evs + "  touch " + (touch ? 1 : 0) + " ask " + (needAsk ? 1 : 0) + " asked " + (asked ? 1 : 0) + " perm " + perm +
+        dbg.textContent = "v6 evs " + evs + "  touch " + (touch ? 1 : 0) + " ask " + (needAsk ? 1 : 0) + " asked " + (asked ? 1 : 0) + " perm " + perm +
           "\ngamma " + f(lastG) + "  beta " + f(lastB) + "  g0 " + f(g0) + "  b0 " + f(b0) +
           "\ntx " + f(tx) + "  px " + f(px) + "  lim " + f(lim) + "  fade " + f(fade) +
           "\nglass " + (art.classList.contains("has-glass") ? 1 : 0) + "  W " + W + "  dpr " + dpr + "  sc " + sc.toFixed(3);
