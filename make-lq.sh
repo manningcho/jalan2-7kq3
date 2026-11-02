@@ -8,7 +8,7 @@ tmp=$(mktemp -d)
   echo "window.LQ = {"
   first=1
   for f in img/*.jpg; do
-    case $(basename $f) in m-*) continue;; esac   # 選單小圖不需要
+    case $(basename $f) in m-*|glass-*) continue;; esac   # 選單小圖、雨天玻璃的素材不需要
     sips -Z 32 "$f" -s format jpeg -s formatOptions 45 --out "$tmp/p.jpg" >/dev/null
     b=$(base64 -i "$tmp/p.jpg" | tr -d '\n')
     [[ $first == 1 ]] || echo ","

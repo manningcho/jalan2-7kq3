@@ -190,6 +190,7 @@
   };
 
   window.ART = {
+    FRAME: FRAME, // 缺角圖框的路徑（glass.js 下雨的玻璃也照這個形狀裁）
     // 封面輪播：同一個缺角圖框裡放好幾張圖，左右排開（每張寬 360），由 app.js 移動 .cv-slide
     slides: function (names, label) {
       var id = "a" + (++uid), defs = '<clipPath id="c' + id + '"><path d="' + FRAME + '"/></clipPath>', body = "";
