@@ -104,6 +104,7 @@ button { font: inherit; color: inherit; }
 .time-btns button { flex: 1; padding: 10px 0; border: 0; border-radius: 999px; font: 700 14px/1 var(--f-body); cursor: pointer; }
 .time-go { background: var(--ink); color: var(--paper); }
 .time-no { background: var(--line); color: var(--ink); }
+.time-clear { margin-left: 4px; padding: 0; border: 0; background: none; color: var(--blue); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 .time-bar { display: block; height: 8px; margin-top: 14px; border-radius: 999px; background: var(--line); overflow: hidden; }
 .time-bar i { display: block; height: 100%; border-radius: inherit; background: var(--blue); transition: width .2s ease; }
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; border-radius: 999px; background: var(--paper); }

@@ -83,6 +83,7 @@
     timeFailTitle: ["下載失敗", "Gagal mengunduh", "Download failed"],
     timeFail: ["可能沒有網路。有網路時再按一次「開」。", "Mungkin tidak ada internet. Coba \"Nyala\" lagi nanti.", "Maybe no internet. Tap \"On\" again later."],
     timeOk: ["好", "Oke", "OK"],
+    timeClear: ["刪除", "Hapus", "Delete"],
     tiltLabel: ["傾斜手機（插畫跟著晃）", "Miringkan HP (gambar ikut bergerak)", "Tilt your phone (the picture moves)"],
     tiltDenied: ["手機沒有允許讀取傾斜。iPhone 按過「取消」之後暫時不會再問：把 Safari 從背景完全滑掉再打開，再按一次「開」就會再問。",
       "HP belum mengizinkan sensor gerak. Setelah menekan \"Batal\", iPhone tidak bertanya lagi untuk sementara: tutup Safari sepenuhnya, buka lagi, lalu tekan \"Nyala\".",
@@ -320,7 +321,7 @@
       '<p class="prefs-h">' + esc(u("soundLabel")) + "</p>" + seg("data-sound", [["on", u("soundOn")], ["off", u("soundOff")]], soundOn ? "on" : "off", u("soundLabel")) +
       // 插畫跟著當地時間：預設關（整天黃昏）；打開才下載白天和晚上的圖，先告訴使用者有多大
       '<p class="prefs-h">' + esc(u("timeLabel")) + "</p>" + seg("data-time", [["on", u("soundOn")], ["off", u("soundOff")]], timeOn ? "on" : "off", u("timeLabel")) +
-      '<div class="prefs-note time-note" data-time-note' + (timeOn ? "" : " hidden") + ">" + (timeOn ? timeStatus() : "") + "</div>" +
+      '<div class="prefs-note time-note" data-time-note' + (timeShown() ? "" : " hidden") + ">" + (timeShown() ? timeStatus() : "") + "</div>" +
       // 傾斜手機：只有手機、平板才有；預設關，當成小彩蛋（tilt.js）
       (window.TILT && TILT.available() ? '<p class="prefs-h">' + esc(u("tiltLabel")) + "</p>" + seg("data-tilt", [["on", u("soundOn")], ["off", u("soundOff")]], TILT.isOn() ? "on" : "off", u("tiltLabel")) + '<p class="prefs-note" data-tilt-note hidden></p>' : "") +
       "</div></div>";
@@ -1183,7 +1184,18 @@
     if (lost.length) { lost.forEach(function (p) { delete timeReady[p]; }); saveTime(); render(); }
   }).catch(function () {});
   // 選單裡開關下面的小字：都下載好了說有多大；有新的圖還沒下載（網站更新、或手機清掉了）就提醒
-  function timeStatus() { var need = timeBytes(true); return esc(need ? fill(u("timeMissing"), { mb: mb(need) }) : fill(u("timeDone"), { mb: mb(timeBytes()) })); }
+  // 開著、或關著但手機裡還有下載過的圖（要能刪掉）時，開關下面才有那行小字
+  function timeShown() { return timeOn || timeBytes() - timeBytes(true) > 0; }
+  function timeStatus() {
+    var need = timeBytes(true), have = timeBytes() - need;
+    return esc(need ? fill(u("timeMissing"), { mb: mb(need) }) : fill(u("timeDone"), { mb: mb(timeBytes()) })) +
+      (have > 0 ? ' <button type="button" class="time-clear" data-time-clear="1">' + esc(u("timeClear")) + "</button>" : ""); // 想清出空間（或重新下載）時用
+  }
+  // 刪掉下載的圖、開關回到關（整天黃昏）
+  function timeClearAll() {
+    timeOn = false; timeReady = {}; saveTime(); timeMark(false); timeNote("", false);
+    (window.caches ? caches.delete("trip-time") : Promise.resolve()).catch(function () {}).then(function () { render(); });
+  }
   function timeNote(html, show) { var n = document.querySelector("[data-time-note]"); if (n) { n.innerHTML = html; n.hidden = !show; } return n; }
   function timeMark(on) { document.querySelectorAll("[data-time]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.time === (on ? "on" : "off")); }); }
   // 下載的小彈窗（畫面中間）：先問大小 → 進度條 → 好了自己關（2026/11/02 使用者：擠在漢堡裡很怪）
@@ -1207,7 +1219,7 @@
     setTimeout(function () { d.remove(); }, 300);
   }
   function timeSwitch(on) {
-    if (!on) { timeOn = false; saveTime(); timeMark(false); timeNote("", false); render(); return; }
+    if (!on) { timeOn = false; saveTime(); timeMark(false); timeNote(timeShown() ? timeStatus() : "", timeShown()); render(); return; }
     var need = timeBytes(true);
     if (!need) { timeOn = true; saveTime(); timeMark(true); render(); return; }
     timeMark(timeOn);
@@ -1903,6 +1915,8 @@
       timeSwitch(t.dataset.time === "on");
     } else if (t.dataset.timeGo) {
       timeDownload();
+    } else if (t.dataset.timeClear) {
+      timeClearAll();
     } else if (t.dataset.timeCancel) {
       timeClose();
     } else if (t.dataset.tilt) {
