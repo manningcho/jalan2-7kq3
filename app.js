@@ -1137,7 +1137,7 @@
     var art = d && app.querySelector(".hero-art"), p = d && (T.photos || {})[d.art];
     if (!art || !p || !p.night || !isNight(d.city)) return;
     nightOn = p.night;
-    NIGHT.start(art, p.night, { frame: ART.FRAME, starHint: u("starHint"), tiltHint: u("tiltHint") });
+    NIGHT.start(art, p.night, { frame: ART.FRAME, starHint: u("starHint"), tiltHint: u("tiltHint"), debug: /[?&]debug=1/.test(location.search) });
   }
   // 圖片載完才淡入；已經在快取裡的就直接顯示，不重播
   function fadeIn(root) {

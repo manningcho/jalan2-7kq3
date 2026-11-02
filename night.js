@@ -106,7 +106,7 @@
       var still = art.classList.contains("has-glass"), mx = still ? 0 : px, my = still ? 0 : py;
       // 入夜那 2 秒從原尺寸慢慢放大到 sc（像鏡頭推近），能移動的範圍也跟著放大，邊緣才不會露白
       var zs = 1 + (sc - 1) * fade, zw = W * zs, zh = H * zs;
-      var lim = (zw - W) / 2 - .5, limY = (zh - H) / 2 - .5;
+      lim = (zw - W) / 2 - .5; var limY = (zh - H) / 2 - .5;
       mx = clamp(mx, -lim, lim); my = clamp(my, -limY, limY);
       var bx0 = (W - zw) / 2 + mx, by0 = (H - zh) / 2 + my;
       // 星空圖上，對到插畫左上角的位置（星星動得比地面少）
@@ -142,7 +142,9 @@
 
     // ---------- 傾斜手機：整個畫面微微移動 ----------
     var g0 = null, b0 = null, tilting = false;
+    var evs = 0, lastG = null, lastB = null, lim = 0;
     function onOri(e) {
+      evs++; lastG = e.gamma; lastB = e.beta;
       if (e.gamma == null || e.beta == null) return;
       if (g0 == null) { g0 = e.gamma; b0 = e.beta; }
       g0 += (e.gamma - g0) * .004; b0 += (e.beta - b0) * .004; // 換了拿手機的姿勢，慢慢把那個姿勢當成正中間
@@ -253,6 +255,21 @@
       art.classList.remove("has-night");
     }
     g.off = cleanup;
+    // 除錯模式（網址加 debug=1）：在插畫左下角即時顯示傾斜收到什麼、畫面移動多少，拿手機截圖就知道卡在哪
+    var dbg = null;
+    if (opts.debug) {
+      dbg = document.createElement("pre");
+      dbg.className = "night-debug";
+      art.appendChild(dbg);
+      var dbgT = setInterval(function () {
+        if (g.dead || !dbg.isConnected) { clearInterval(dbgT); return; }
+        var f = function (v) { return v == null ? "-" : (+v).toFixed(1); };
+        dbg.textContent = "v4 evs " + evs + "  touch " + (touch ? 1 : 0) + " ask " + (needAsk ? 1 : 0) + " asked " + (asked ? 1 : 0) +
+          "\ngamma " + f(lastG) + "  beta " + f(lastB) + "  g0 " + f(g0) + "  b0 " + f(b0) +
+          "\ntx " + f(tx) + "  px " + f(px) + "  lim " + f(lim) + "  fade " + f(fade) +
+          "\nglass " + (art.classList.contains("has-glass") ? 1 : 0) + "  W " + W + "  dpr " + dpr + "  sc " + sc.toFixed(3);
+      }, 200);
+    }
     window.__night = function () { return { w: W, h: H, fade: fade, px: px, py: py, meteors: mets.length, nextMeteor: nextMet }; };
     window.__nightMeteor = function () { meteor(W * .6, skyH * .25); }; // 測試用
     window.__nightTilt = function (gamma, beta) { onOri({ gamma: gamma, beta: beta }); }; // 測試用：假裝手機傾斜
