@@ -4,7 +4,7 @@
 //   img/sky-stars-dim.jpg     一般的星星（黑底，用「濾色」疊，黑色會消失）
 //   img/sky-stars-bright.jpg  拆出來的 60 顆亮星，每顆各自閃爍
 //   img/sky-meteor.jpg        流星
-// 程式只負責：夜景淡入、星星閃爍、傾斜手機（電腦是滑鼠）星星微微移動、點天空有流星、偶爾自己劃過一顆
+// 程式只負責：夜景淡入、星星閃爍、傾斜手機星星微微移動、點天空有流星、偶爾自己劃過一顆
 (function () {
   // 亮星在星空圖上的位置（1360×620）
   var BRIGHT = [[621, 180], [28, 474], [36, 244], [1314, 377], [312, 494], [360, 178], [1257, 150], [606, 265], [1091, 246], [356, 131], [550, 68], [183, 608],
@@ -140,15 +140,7 @@
       tilting = true;
     }
     function listenTilt() { window.addEventListener("deviceorientation", onOri); }
-    function onMouse(e) {
-      if (tilting) return;
-      var r = art.getBoundingClientRect();
-      tx = -clamp((e.clientX - r.left) / r.width * 2 - 1, -1, 1) * DRIFT;
-      ty = -clamp((e.clientY - r.top) / r.height * 2 - 1, -1, 1) * DRIFT * .6;
-    }
-    function onLeave() { if (!tilting) { tx = 0; ty = 0; } }
-    art.addEventListener("mousemove", onMouse);
-    art.addEventListener("mouseleave", onLeave);
+    // 電腦不用滑鼠帶動星星：只有天空在動、地面不動，像鏡頭在移動卻只動了一半，很怪（2026/11/02 使用者建議拿掉）
 
     // iPhone 要先點一下允許，才拿得到手機的方向；允許過就記住，之後第一次碰畫面時悄悄再要一次
     // 只有觸控螢幕（手機、平板）才問；新版電腦 Chrome 也有這個詢問功能，但電腦沒有方向感測器，用滑鼠就好
@@ -232,8 +224,6 @@
       window.removeEventListener("resize", onResize);
       window.removeEventListener("deviceorientation", onOri);
       if (onFirst) document.removeEventListener("pointerdown", onFirst, true);
-      art.removeEventListener("mousemove", onMouse);
-      art.removeEventListener("mouseleave", onLeave);
       if (cv.parentNode) cv.remove();
       if (chip && chip.parentNode) chip.remove();
       art.classList.remove("has-night");
