@@ -72,10 +72,7 @@
     wxAvg: ["12 月平均", "Rata-rata Des", "Dec avg"],
     wxRain: ["雨", "Hujan", "Rain"],
     wxTitle: ["天氣", "Cuaca", "Weather"],
-    wipeHint: ["用手指擦擦玻璃", "Usap kacanya", "Wipe the glass"],
-    starHint: ["點天空看流星", "Ketuk langit, ada bintang jatuh", "Tap the sky for a shooting star"],
-    tiltHint: ["傾斜手機看星星", "Miringkan HP, lihat bintangnya", "Tilt your phone to see the stars"],
-    tiltDay: ["傾斜手機看看", "Coba miringkan HP-mu", "Tilt your phone"],
+    tiltLabel: ["傾斜手機（插畫跟著晃）", "Miringkan HP (gambar ikut bergerak)", "Tilt your phone (the picture moves)"],
     tipWx: ["天氣是 12 月平均；出發前 16 天內會自動換成當天預報", "Cuaca rata-rata Desember; 16 hari sebelum berangkat berganti jadi prakiraan", "Weather shows December averages; within 16 days of the trip it switches to the real forecast"],
     tipHome: ["用瀏覽器的「加入主畫面」，就能像 App 一樣一點就打開", "Pilih \"Tambahkan ke Layar Utama\" di browser agar bisa dibuka seperti aplikasi", "Use \"Add to Home Screen\" in your browser to open it like an app"],
     back: ["返回", "Kembali", "Back"],
@@ -307,6 +304,8 @@
       '<p class="prefs-h">' + esc(u("themeLabel")) + "</p>" +
       seg("data-theme-pick", [["auto", u("themeAuto")], ["light", u("themeLight")], ["dark", u("themeDark")]], theme, u("themeLabel")) +
       '<p class="prefs-h">' + esc(u("soundLabel")) + "</p>" + seg("data-sound", [["on", u("soundOn")], ["off", u("soundOff")]], soundOn ? "on" : "off", u("soundLabel")) +
+      // 傾斜手機：只有手機、平板才有；預設關，當成小彩蛋（tilt.js）
+      (window.TILT && TILT.available() ? '<p class="prefs-h">' + esc(u("tiltLabel")) + "</p>" + seg("data-tilt", [["on", u("soundOn")], ["off", u("soundOff")]], TILT.isOn() ? "on" : "off", u("tiltLabel")) : "") +
       "</div></div>";
   }
   // ---------- 背景聲音：跟著城市、當地天氣和白天晚上換（錄音都是 CC0，見 sound.js）。預設關；打開過會記住 ----------
@@ -1112,7 +1111,7 @@
     var go = function () {
       if (!art.isConnected) return; // 已經換頁了
       var src = nightOn ? nightOn.src : p.src, top = nightOn ? nightOn.top : ART.topColor(d.art); // 晚上下雨：霧後面是夜景
-      GLASS.start(art, src, top, ART.FRAME, { motion: document.documentElement.classList.contains("motion"), hint: u("wipeHint") });
+      GLASS.start(art, src, top, ART.FRAME, { motion: document.documentElement.classList.contains("motion") }); // 不出「用手指擦擦玻璃」：當成小彩蛋
     };
     if (RAIN_FORCE) return go();
     if (/[?&]rain=0/.test(location.search)) return; // 試看網址 ?rain=0：當地下雨也不起霧
@@ -1139,7 +1138,6 @@
     var art = d && app.querySelector(".hero-art");
     if (!art) return;
     TILT.scene(art, { top: ART.topColor(d.art), frame: ART.FRAME });
-    TILT.prompt(art, u("tiltDay")); // 晚上 night.js 會換成「傾斜手機看星星」
   }
   function setNight(d) {
     nightOn = null;
@@ -1148,7 +1146,7 @@
     var art = d && app.querySelector(".hero-art"), p = d && (T.photos || {})[d.art];
     if (!art || !p || !p.night || !isNight(d.city)) return;
     nightOn = p.night;
-    NIGHT.start(art, p.night, { frame: ART.FRAME, starHint: u("starHint"), tiltHint: u("tiltHint") });
+    NIGHT.start(art, p.night, { frame: ART.FRAME });
   }
   // 圖片載完才淡入；已經在快取裡的就直接顯示，不重播
   function fadeIn(root) {
@@ -1751,6 +1749,11 @@
       try { localStorage.setItem("trip-sound", soundOn ? "on" : "off"); } catch (err) {}
       if (soundOn) startSound(); else stopSound();
       document.querySelectorAll("[data-sound]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.sound === (soundOn ? "on" : "off")); });
+    } else if (t.dataset.tilt) {
+      // 要在點擊當下問，iPhone 才會跳出「允許取用動作與方向」；被拒絕就停在「關」
+      TILT.set(t.dataset.tilt === "on").then(function (on) {
+        document.querySelectorAll("[data-tilt]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.tilt === (on ? "on" : "off")); });
+      });
     } else if (t.dataset.lang) {
       lang = t.dataset.lang;
       try { localStorage.setItem("trip-lang", lang); } catch (err) {}

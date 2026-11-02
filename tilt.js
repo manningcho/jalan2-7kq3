@@ -2,7 +2,7 @@
 //   白天：移動 SVG 插畫本身（art.js 包在 g.a-tilt 裡）
 //   晚上：night.js 的夜景畫布照這裡的數字移動，星星動得比地面少
 //   下雨：glass.js 的霧跟著景色一起移動；雨滴、霧珠、擦過的痕跡在玻璃上，留在原地
-// 這裡負責：拿手機方向（iPhone 要先點一下允許）、算出現在要移多少、慢慢回正、「傾斜手機」按鈕
+// 這裡負責：拿手機方向（iPhone 要先點一下允許）、算出現在要移多少、慢慢回正、漢堡選單的「傾斜手機」開關（預設關）
 (function () {
   var MAXDEG = 15;      // 傾斜 15 度就移到最多
   var RECENTER = 15000; // 換了拿手機的姿勢，約 15 秒慢慢把那個姿勢當成正中間
@@ -18,6 +18,7 @@
   function onOri(e) {
     evs++; lastG = e.gamma; lastB = e.beta;
     if (lite) { tgx = tgy = 0; return; } // 手機跑不動：慢慢回到正中間後就不再移動
+    if (!enabled) return; // 選單裡是關的
     if (e.gamma == null || e.beta == null) return; // 電腦有時候會送一次空的
     var now = performance.now();
     if (g0 == null) { g0 = e.gamma; b0 = e.beta; oriT = now; }
@@ -50,10 +51,11 @@
     if (dt) {
       x += (tgx - x) * Math.min(1, dt * 4); y += (tgy - y) * Math.min(1, dt * 4);
       if (got && on < 1) on = Math.min(1, on + dt / 1.2);
+      else if (!got && on > 0) on = Math.max(0, on - dt / 1.2); // 關掉之後慢慢縮回原尺寸
     }
     return { x: x, y: y, on: on };
   }
-  function busy() { return got && (on < 1 || Math.abs(tgx - x) > .002 || Math.abs(tgy - y) > .002); }
+  function busy() { return (!got && on > 0) || got && (on < 1 || Math.abs(tgx - x) > .002 || Math.abs(tgy - y) > .002); }
   // 一張 W×H（螢幕 px）的畫面要先放大幾倍，移動時四邊才不會露白
   function fit(W, H, dpr) {
     var dr = DR * dpr;
@@ -67,68 +69,45 @@
     return { zs: zs, mx: clamp(st.x * f.dr, -lim, lim), my: clamp(st.y * f.dr, -limY, limY), lim: lim, sc: f.sc };
   }
 
-  // ---------- 權限：iPhone 要點一下允許；允許過就記住（trip-tilt） ----------
-  // 只有觸控螢幕（手機、平板）才問；新版電腦 Chrome 也有這個詢問功能，但電腦沒有方向感測器
+  // ---------- 開關：漢堡選單裡「傾斜手機」，預設關（trip-tilt-on） ----------
+  // 2026/11/02 使用者：插畫上的提示按鈕很怪，當成小彩蛋放在選單裡，發現的人再打開玩
+  // 只有觸控螢幕（手機、平板）才有這個開關；新版電腦 Chrome 也有詢問功能，但電腦沒有方向感測器
   var touch = !!(window.matchMedia && matchMedia("(pointer: coarse)").matches);
   var needAsk = touch && motionOK && window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === "function";
-  var remembered = null; // "1" 允許過、"0" 按了按鈕但被拒絕（之後不再出按鈕，免得每頁都跳）
-  try { remembered = localStorage.getItem("trip-tilt"); } catch (e) {}
-  var granted = false;
+  var enabled = false;
+  try { enabled = localStorage.getItem("trip-tilt-on") === "on"; } catch (e) {}
+  if (!touch || !motionOK) enabled = false;
   function ask() {
     perm = "asking";
-    return DeviceOrientationEvent.requestPermission().then(function (st) {
-      perm = st;
-      if (st === "granted") { granted = true; listen(); }
-      return st;
-    }, function (err) { perm = "err " + (err && err.name || err); throw err; });
+    return DeviceOrientationEvent.requestPermission().then(function (st) { perm = st; return st; },
+      function (err) { perm = "err " + (err && err.name || err); throw err; });
   }
-  function save(v) { remembered = v; try { localStorage.setItem("trip-tilt", v); } catch (e) {} }
-
-  // 允許過：先開始聽（有時候不用再問就收得到），再在第一次「點一下」時悄悄要一次；被拒絕就把按鈕叫出來。
+  function unlisten() { if (listening) { window.removeEventListener("deviceorientation", onOri); listening = false; } }
+  // 打開過：先開始聽（有時候不用再問就收得到），再在第一次「點一下」時悄悄要一次（iPhone 每次開網頁都要重新允許）。
   // 要用 touchend／click：iPhone 只把完整的點擊當作同意，手指剛碰到（pointerdown）不算
   // （2026/11/02 踩過：原本用 pointerdown，重開網頁後傾斜完全不動）
   var FIRST = ["touchend", "click"], firstOn = false;
-  function onFirst() {
-    FIRST.forEach(function (ev) { document.removeEventListener(ev, onFirst, true); });
-    firstOn = false;
-    ask().then(function (st) { if (st !== "granted") { save("0"); offerChip(); } }).catch(function () { offerChip(); });
-  }
-  if (!needAsk) listen();
-  else if (remembered === "1") {
+  function offFirst() { if (firstOn) { FIRST.forEach(function (ev) { document.removeEventListener(ev, onFirst, true); }); firstOn = false; } }
+  function onFirst() { offFirst(); if (enabled) ask().then(function () {}, function () {}); }
+  if (enabled) {
     listen();
-    firstOn = true;
-    FIRST.forEach(function (ev) { document.addEventListener(ev, onFirst, true); });
+    if (needAsk) { firstOn = true; FIRST.forEach(function (ev) { document.addEventListener(ev, onFirst, true); }); }
   }
-
-  // 「傾斜手機看看」按鈕：放在插畫裡，點了才問
-  var chip = null, chipArt = null, chipText = "", onGranted = null;
-  function offerChip() {
-    if (!chipArt || !chipArt.isConnected || !chipText || granted || remembered === "0") return;
-    if (chip) chip.remove();
-    var c = chip = document.createElement("button");
-    c.type = "button";
-    c.className = "tilt-chip";
-    c.textContent = chipText + " ✦";
-    chipArt.appendChild(c);
-    setTimeout(function () { c.classList.add("is-in"); }, 1600);
-    c.addEventListener("click", function (e) {
-      e.stopPropagation();
-      if (firstOn) { FIRST.forEach(function (ev) { document.removeEventListener(ev, onFirst, true); }); firstOn = false; }
-      ask().then(function (st) {
-        c.classList.add("is-gone");
-        if (st === "granted") { save("1"); if (onGranted) onGranted(); }
-        else save("0");
-      }).catch(function () { c.classList.add("is-gone"); });
-    });
+  // 選單按「開」「關」時叫（一定要在點擊當下叫，iPhone 才會跳出允許視窗）；回傳 Promise，結果是最後開了沒有
+  function set(on) {
+    offFirst();
+    var done = function (v) {
+      enabled = v;
+      try { localStorage.setItem("trip-tilt-on", v ? "on" : "off"); } catch (e) {}
+      if (v) listen(); else { unlisten(); tgx = tgy = 0; g0 = b0 = null; got = false; } // 關掉：慢慢回到正中間、縮回原尺寸
+      return v;
+    };
+    if (!on || !touch || !motionOK) return Promise.resolve(done(false));
+    if (!needAsk) return Promise.resolve(done(true));
+    return ask().then(function (st) { return done(st === "granted"); }, function () { return done(false); });
   }
-  // 每換一頁叫一次：text 是按鈕上的字（晚上「傾斜手機看星星」），granted 是允許之後要做的事（晚上送一顆流星）
-  function prompt(art, text, cb) {
-    if (chip) { chip.remove(); chip = null; }
-    chipArt = art; chipText = text; onGranted = cb || null;
-    if (needAsk && remembered !== "1") offerChip();
-  }
-  // 晚上的提示（點天空看流星）要讓位給按鈕：還需要按鈕時回傳 true
-  function asking() { return !!(needAsk && !granted && remembered !== "1" && remembered !== "0"); }
+  function isOn() { return enabled; }
+  function available() { return touch && motionOK; }
 
   // ---------- 白天：插畫畫到畫布上移動 ----------
   // 原本直接移動 SVG 裡的插畫，iPhone 每移一點就要重畫整張向量圖，下雨時搖起來會卡（2026/11/02 使用者 iPhone 16 Pro Max）。
@@ -158,6 +137,7 @@
       // 夜景蓋在上面時不用畫（看不到）；省電
       if (art.classList.contains("has-night")) { if (cv) { off(); cv = null; shown = ""; } return; }
       var st = state(now);
+      if (!st.on && cv) { off(); cv = null; shown = ""; return; } // 關掉傾斜、縮回原尺寸了：拿掉畫布，換回原本的插畫（推近動畫照跑）
       if (!st.on || !pic) return;
       var cssW = svg.clientWidth, cssH = svg.clientHeight, dpr = Math.min(window.devicePixelRatio || 1, 2);
       if (!cssW || !cssH) return;
@@ -210,7 +190,7 @@
   }
   function rgba(hex, a) { var n = parseInt(hex.slice(1), 16); return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")"; }
 
-  window.TILT = { frame: frame, lite: function () { return lite; }, state: state, busy: busy, fit: fit, offset: offset, prompt: prompt, asking: asking, scene: scene };
+  window.TILT = { frame: frame, lite: function () { return lite; }, state: state, busy: busy, fit: fit, offset: offset, set: set, isOn: isOn, available: available, scene: scene };
   window.__tiltState = function () { return { evs: evs, perm: perm, lite: lite, x: x, y: y, on: on }; }; // 測試用
   window.__tilt = function (gamma, beta) { onOri({ gamma: gamma, beta: beta }); }; // 測試用：假裝手機傾斜
 })();

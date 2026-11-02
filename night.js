@@ -35,7 +35,7 @@
     cur = null;
   }
 
-  // art：.hero-art；n：TRIP.photos[art].night；opts：frame（缺角圖框路徑）、tiltHint、starHint
+  // art：.hero-art；n：TRIP.photos[art].night；opts：frame（缺角圖框路徑）
   function start(art, n, opts) {
     stop();
     var g = { dead: false };
@@ -138,17 +138,8 @@
       ctx.restore();
     }
 
-    // 傾斜手機的按鈕和權限在 tilt.js；這裡只決定字：還要按鈕的話先出按鈕，不然出「點天空看流星」
+    // 不出提示：點天空有流星、傾斜手機，都當成小彩蛋（2026/11/02 使用者）
     var chip = null;
-    if (TILT.asking()) TILT.prompt(art, opts.tiltHint, function () { meteor(W * rnd(.35, .7), skyH * rnd(.15, .35)); }); // 允許之後先送一顆流星
-    else if (opts.starHint && !art.classList.contains("has-glass")) {
-      chip = document.createElement("span");
-      chip.className = "tilt-chip";
-      chip.textContent = opts.starHint;
-      art.appendChild(chip);
-      setTimeout(function () { chip.classList.add("is-in"); }, 1600);
-      setTimeout(function () { chip.classList.add("is-gone"); }, 7000);
-    }
 
     // 點天空：從那裡劃過一顆流星（地平線以下、山上不會）
     cv.addEventListener("click", function (e) {

@@ -254,7 +254,7 @@
     cv.addEventListener("pointercancel", up); // 手指改成上下捲動頁面時，瀏覽器會取消
     cv.addEventListener("pointerleave", up);
 
-    if (opts.hint) {
+    if (opts.hint) { // app.js 不再傳提示：手指擦玻璃當成小彩蛋（2026/11/02 使用者：插畫上兩個提示很怪）
       hint = document.createElement("span");
       hint.className = "glass-hint";
       hint.textContent = opts.hint;
