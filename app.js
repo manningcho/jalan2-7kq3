@@ -1129,7 +1129,11 @@
     if (!art || !p) return;
     var go = function () {
       if (!art.isConnected) return; // 已經換頁了
-      var sl = timeSlot(d.city, d.art), ph = ART.photo(d.art, sl), src = nightOn ? nightOn.src : ph.src, top = nightOn ? nightOn.top : ART.topColor(d.art, sl); // 晚上下雨：霧後面是夜景；白天下雨：白天版
+      // 霧要用插畫現在顯示的那張做（晚上下雨：夜景），不要重新算時段：霧是等天氣查回來才起的，
+      // 中間時段可能變了，霧是白天、擦開後卻是黃昏（2026/11/03 使用者抓到）
+      var im = art.querySelector("image.a-kb"), shown = im && im.getAttribute("href"), dayPh = ART.photo(d.art, "day");
+      var isDay = !!(shown && dayPh && dayPh.src !== p.src && shown === dayPh.src);
+      var src = nightOn ? nightOn.src : (shown || p.src), top = nightOn ? nightOn.top : ART.topColor(d.art, isDay ? "day" : null);
       GLASS.start(art, src, top, ART.FRAME, { motion: document.documentElement.classList.contains("motion") }); // 不出「用手指擦擦玻璃」：當成小彩蛋
     };
     if (RAIN_FORCE) return go();
