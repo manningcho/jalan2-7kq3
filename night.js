@@ -130,22 +130,22 @@
       }
     }
     // 把燈光圖的一小塊疊到夜景上（燈火跟地面一起動：位置照夜景現在的位置和放大）
-    function lampBlit(L, op, a, bx0, by0, z, ox) {
+    function lampBlit(dc, L, op, a, bx0, by0, z, ox) {
       var sx = Math.max(0, L.x - L.h), sy = Math.max(0, L.y - L.h), ex = Math.min(BW, L.x + L.h), ey = Math.min(BH, L.y + L.h);
       if (ex <= sx || ey <= sy || a <= .01) return;
-      ctx.globalCompositeOperation = op; ctx.globalAlpha = Math.min(1, a);
-      ctx.drawImage(bigL, sx, sy, ex - sx, ey - sy, bx0 + (sx + ox) * z, by0 + sy * z, (ex - sx) * z, (ey - sy) * z);
+      dc.globalCompositeOperation = op; dc.globalAlpha = Math.min(1, a);
+      dc.drawImage(bigL, sx, sy, ex - sx, ey - sy, bx0 + (sx + ox) * z, by0 + sy * z, (ex - sx) * z, (ey - sy) * z);
     }
-    function drawLamps(t, bx0, by0, z) {
+    function drawLamps(dc, t, bx0, by0, z) { // dc 一定是不透明的（夜景已經鋪滿），加亮減暗才不會改到透明度
       for (var i = 0; i < lamps.length; i++) {
         var L = lamps[i], m = lampMod(L, t);
         if (L.t === "water") { // 倒影：原位置減暗一些，再加亮到旁邊一點點，看起來在水裡晃
-          lampBlit(L, "difference", fade * .55, bx0, by0, z, 0);
-          lampBlit(L, "lighter", fade * (.55 + m), bx0, by0, z, L.amp * Math.sin(t * L.fs * TAU + L.p3));
-        } else if (m > .01) lampBlit(L, "lighter", fade * m, bx0, by0, z, 0);
-        else if (m < -.01) lampBlit(L, "difference", fade * -m, bx0, by0, z, 0);
+          lampBlit(dc, L, "difference", .55, bx0, by0, z, 0);
+          lampBlit(dc, L, "lighter", .55 + m, bx0, by0, z, L.amp * Math.sin(t * L.fs * TAU + L.p3));
+        } else if (m > .01) lampBlit(dc, L, "lighter", m, bx0, by0, z, 0);
+        else if (m < -.01) lampBlit(dc, L, "difference", -m, bx0, by0, z, 0);
       }
-      ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = fade;
+      dc.globalCompositeOperation = "source-over"; dc.globalAlpha = 1;
     }
     // 上緣跟白天一樣漸層成夜空頂端色，大字才融得進去；這層固定不動，跟著大字
     var grc = canvas(W, Math.ceil(110 * s)), gx = grc.getContext("2d"), gr = gx.createLinearGradient(0, 0, 0, 110 * s);
@@ -178,7 +178,7 @@
     }
 
     // ---------- 畫 ----------
-    var fade = 0, px = 0, py = 0, lim = 0;
+    var fade = 0, px = 0, py = 0, lim = 0, comp = null;
     function draw(t, st) {
       // 入夜那 2 秒（還有開始收到傾斜的時候）從原尺寸慢慢放大到 sc（像鏡頭推近），邊緣才不會露白
       var o = TILT.offset(W, H, dpr, fade * st.on, st), zs = o.zs, zw = W * zs, zh = H * zs, mx = o.mx, my = o.my;
@@ -203,16 +203,26 @@
       lx.globalCompositeOperation = "destination-in"; lx.globalAlpha = 1;
       lx.drawImage(bigMask, bx0, by0, zw, zh); // 天空範圍跟著地面一起動
 
+      // 入夜那 2 秒：夜景、燈火、星星先在另一張畫布組好（不透明），再整張一起淡入。
+      // 一層一層各自用 fade 疊的話，燈火的加亮／減暗會讓那一小塊比旁邊更不透明，多遮住底下的黃昏圖，
+      // 漸變時看得到一塊塊方塊（2026/11/03 使用者在雅加達紀念塔、大樓頂的紅燈抓到）
+      var fading = fade < 1;
+      if (fading && !comp) comp = canvas(W, H);
+      else if (!fading) comp = null; // 入夜以後就用不到了，放掉記憶體
+      var dc = fading ? comp.getContext("2d") : ctx;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, W, H);
       ctx.save();
       ctx.setTransform(s, 0, 0, s, 0, 0); ctx.clip(clip); ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.globalAlpha = fade;
-      ctx.drawImage(big, bx0, by0, zw, zh);
-      if (lamps.length) drawLamps(t, bx0, by0, zw / BW);
-      ctx.drawImage(grc, 0, 0);
-      ctx.globalCompositeOperation = "screen";
-      ctx.drawImage(layer, 0, 0);
+      if (fading) dc.clearRect(0, 0, W, H);
+      dc.globalCompositeOperation = "source-over"; dc.globalAlpha = 1;
+      dc.drawImage(big, bx0, by0, zw, zh);
+      if (lamps.length) drawLamps(dc, t, bx0, by0, zw / BW);
+      dc.drawImage(grc, 0, 0);
+      dc.globalCompositeOperation = "screen";
+      dc.drawImage(layer, 0, 0);
+      dc.globalCompositeOperation = "source-over";
+      if (fading) { ctx.globalAlpha = fade; ctx.drawImage(comp, 0, 0); }
       ctx.restore();
     }
 
