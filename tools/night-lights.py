@@ -13,6 +13,7 @@ from scipy import ndimage as nd
 ap = argparse.ArgumentParser()
 ap.add_argument("name"); ap.add_argument("out")
 ap.add_argument("--min", type=float, default=25)  # 比背景亮多少才算燈（0–255）
+ap.add_argument("--box", action="append", default=[], type=lambda v: [float(x) for x in v.split(",")])  # x0,y0,x1,y1（0–1）：這個範圍裡比周圍亮很多的小點都算燈（遠處的小燈只有 1–2px，顏色被周圍的藍洗掉，看顏色抓不到）
 ap.add_argument("--extra", action="append", default=[], type=lambda v: [float(x) for x in v.split(",")])  # 漏掉的燈：x,y（0–1），附近 12px 內夠亮的點也算
 A = ap.parse_args()
 n = A.name
@@ -33,6 +34,9 @@ red = ((hue < 15) | (hue > 300)) & (sat > .28) & (val > .6) & (a[..., 0] - a[...
 white = (sat < .2) & (val > .93) & (lum > A.min * 3)  # 很亮的白點（機尾的燈）
 mask = (lum > A.min) & (warm | red | white)
 yy_, xx_ = np.mgrid[0:H, 0:W]
+for bx0, by0, bx1, by1 in A.box:
+    inb = (xx_ >= bx0 * W) & (xx_ <= bx1 * W) & (yy_ >= by0 * H) & (yy_ <= by1 * H)
+    mask |= inb & (lum > 55) & (val > .62)
 for ex_x, ex_y in A.extra:  # 顏色太淡沒被找到、但確定是燈的（例如回家那張中間漁船的燈籠）
     near = (xx_ - ex_x * W) ** 2 + (yy_ - ex_y * H) ** 2 < 12 ** 2
     mask |= near & (lum > A.min) & (val > .8)

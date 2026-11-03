@@ -51,7 +51,9 @@ window.TRIP = {
     stupa: { src: "img/stupa.jpg", what: "Borobudur", by: "AI (OpenAI Codex)", top: "#587bbb",
       // 白天、晚上的版本（2026/11/03）：同構圖，Codex 用黃昏那張改畫，做法同 slamet
       day: { src: "img/stupa-day.jpg", top: "#7ba5d6" },
-      night: { src: "img/stupa-night.jpg", sky: "img/stupa-night-sky.png", top: "#21306a",
+      night: { src: "img/stupa-night.jpg", sky: "img/stupa-night-sky.png",
+        // 燈火（tools/night-lights.py 從夜景拆出來）：[x, y, 半徑, 種類]，種類見 night.js 的 LIGHT
+        lights: "img/stupa-night-lights.jpg", lamps: [[0.9056, 0.5779, 0.0074, "far"], [0.8958, 0.578, 0.0044, "far"], [0.0871, 0.579, 0.0043, "far"], [0.0996, 0.5828, 0.0044, "far"], [0.1279, 0.583, 0.0147, "far"], [0.2135, 0.5865, 0.0111, "far"], [0.4223, 0.5873, 0.0114, "far"], [0.0752, 0.5977, 0.0049, "far"], [0.0878, 0.5979, 0.0115, "far"], [0.3235, 0.6088, 0.0212, "far"]], top: "#21306a",
         hz: [.524, .528, .526, .528, .53, .535, .532, .526, .524, .526, .526, .522, .515, .513, .506, .498, .498, .489, .485, .481, .474, .476, .47, .461, .448, .435, .433, .444, .455, .465, .472, .472,
           .478, .485, .491, .489, .487, .483, .478, .476, .481, .481, .481, .45, .455, .487, .491, .496, .498, .496, .494, .489, .487, .491, .494, .496, .498, .502, .504, .506, .502, .496, .491, .494] } },
     cover1: { src: "img/cover-1.jpg", what: "Sizihwan, Kaohsiung", by: "AI (OpenAI Codex)", top: "#af9eab" },
@@ -63,14 +65,18 @@ window.TRIP = {
     tamansari: { src: "img/tamansari.jpg", what: "Taman Sari", by: "AI (OpenAI Codex)", top: "#5c84c0",
       // 白天、晚上的版本（2026/11/03）：同構圖，Codex 用黃昏那張改畫，做法同 slamet
       day: { src: "img/tamansari-day.jpg", top: "#7da6da" },
-      night: { src: "img/tamansari-night.jpg", sky: "img/tamansari-night-sky.png", top: "#233269",
+      night: { src: "img/tamansari-night.jpg", sky: "img/tamansari-night-sky.png",
+        // 燈火（tools/night-lights.py 從夜景拆出來）：[x, y, 半徑, 種類]，種類見 night.js 的 LIGHT
+        lights: "img/tamansari-night-lights.jpg", lamps: [[0.7084, 0.4393, 0.0168, "flame"], [0.1122, 0.6376, 0.0118, "flame"], [0.4176, 0.6668, 0.0062, "flame"], [0.6923, 0.6714, 0.0107, "flame"], [0.6919, 0.8164, 0.0193, "water"], [0.4179, 0.8708, 0.0123, "water"], [0.687, 0.9207, 0.0065, "water"], [0.1118, 0.9364, 0.012, "water"], [0.1123, 0.9545, 0.0058, "water"], [0.1122, 0.9663, 0.0052, "water"], [0.1108, 0.9743, 0.0048, "water"], [0.1125, 0.9848, 0.0039, "water"]], top: "#233269",
         hz: [.407, .42, .403, .366, .359, .331, .34, .329, .348, .357, .431, .463, .444, .439, .448, .444, .442, .446, .465, .465, .472, .502, .496, .504, .524, .485, .481, .468, .47, .489, .528, .528,
           .541, .552, .554, .571, .569, .569, .554, .554, .556, .461, .381, .37, .344, .329, .34, .353, .377, .457, .502, .526, .519, .522, .532, .528, .519, .483, .452, .442, .444, .452, .448, .411] } },
     slamet: { src: "img/slamet.jpg", what: "Gunung Slamet", by: "AI (OpenAI Codex)", top: "#5b7fbe",
       // 白天的版本（app.js timeSlot）：同構圖的大白天，Codex 用黃昏那張改畫（2026/11/02 使用者選中午那版：大白天不會有霧）
       day: { src: "img/slamet-day.jpg", top: "#779fd3" },
       // 晚上的版本（night.js）：同構圖的夜景、天空範圍（星星只出現在這裡）、夜空頂端色、每 1/64 寬的地平線高度（點天空才有流星）
-      night: { src: "img/slamet-night.jpg", sky: "img/slamet-night-sky.png", top: "#1e326f",
+      night: { src: "img/slamet-night.jpg", sky: "img/slamet-night-sky.png",
+        // 燈火（tools/night-lights.py 從夜景拆出來）：[x, y, 半徑, 種類]，種類見 night.js 的 LIGHT
+        lights: "img/slamet-night-lights.jpg", lamps: [[0.7523, 0.677, 0.0047, "far"], [0.4734, 0.7104, 0.0043, "far"], [0.5751, 0.7215, 0.0054, "far"], [0.6361, 0.7225, 0.0044, "far"], [0.6181, 0.7267, 0.0056, "far"], [0.6031, 0.7272, 0.0056, "far"], [0.3391, 0.746, 0.0095, "far"], [0.4271, 0.7592, 0.0081, "far"], [0.4098, 0.7736, 0.0106, "far"], [0.826, 0.7738, 0.0229, "far"], [0.5667, 0.7772, 0.0058, "far"], [0.7122, 0.7777, 0.0099, "far"], [0.5311, 0.7899, 0.0085, "far"], [0.7615, 0.7905, 0.0088, "far"], [0.6717, 0.799, 0.0061, "far"], [0.5786, 0.8041, 0.0083, "far"], [0.9574, 0.8048, 0.0066, "far"], [0.6189, 0.8051, 0.0066, "far"], [0.8688, 0.8125, 0.0102, "far"], [0.7887, 0.822, 0.0238, "far"]], top: "#1e326f",
         hz: [.403, .394, .39, .411, .411, .426, .459, .498, .498, .494, .491, .491, .485, .483, .485, .483, .485, .483, .476, .472, .47, .461, .452, .446, .442, .435, .429, .424, .416, .409, .403, .396,
           .39, .379, .37, .361, .351, .346, .344, .342, .342, .342, .346, .346, .344, .353, .364, .37, .377, .385, .394, .4, .409, .416, .42, .426, .433, .437, .444, .448, .452, .457, .463, .468] } },
     city: { src: "img/city.jpg", what: "Monas, Jakarta", by: "AI (OpenAI Codex)", top: "#587aba",
@@ -92,7 +98,9 @@ window.TRIP = {
     terrace: { src: "img/terrace.jpg", what: "Tegalalang", by: "AI (OpenAI Codex)", top: "#537ac0",
       // 白天、晚上的版本（2026/11/03）：同構圖，Codex 用黃昏那張改畫，做法同 slamet
       day: { src: "img/terrace-day.jpg", top: "#77a4db" },
-      night: { src: "img/terrace-night.jpg", sky: "img/terrace-night-sky.png", top: "#233262",
+      night: { src: "img/terrace-night.jpg", sky: "img/terrace-night-sky.png",
+        // 燈火（tools/night-lights.py 從夜景拆出來）：[x, y, 半徑, 種類]，種類見 night.js 的 LIGHT
+        lights: "img/terrace-night-lights.jpg", lamps: [[0.9361, 0.6154, 0.0166, "flame"]], top: "#233262",
         hz: [.45, .455, .463, .465, .463, .47, .476, .478, .481, .481, .478, .476, .476, .474, .47, .465, .463, .461, .455, .452, .45, .446, .439, .435, .433, .437, .444, .446, .444, .446, .45, .455,
           .452, .448, .444, .442, .442, .446, .448, .448, .442, .437, .431, .429, .42, .413, .407, .405, .409, .418, .422, .424, .426, .433, .433, .418, .4, .398, .413, .42, .422, .411, .394, .387] } },
     sea: { src: "img/sea.jpg", what: "Kelingking, Nusa Penida", by: "AI (OpenAI Codex)", top: "#6081bf",
@@ -104,13 +112,17 @@ window.TRIP = {
     cliff: { src: "img/cliff.jpg", what: "Uluwatu", by: "AI (OpenAI Codex)", top: "#577bb6",
       // 白天、晚上的版本（2026/11/03）：同構圖，Codex 用黃昏那張改畫，做法同 slamet（星星在雲層上方就淡掉：time-art.py --cap .44）
       day: { src: "img/cliff-day.jpg", top: "#7ea6db" },
-      night: { src: "img/cliff-night.jpg", sky: "img/cliff-night-sky.png", top: "#1e2e60",
+      night: { src: "img/cliff-night.jpg", sky: "img/cliff-night-sky.png",
+        // 燈火（tools/night-lights.py 從夜景拆出來）：[x, y, 半徑, 種類]，種類見 night.js 的 LIGHT
+        lights: "img/cliff-night-lights.jpg", lamps: [[0.7052, 0.4585, 0.0049, "far"], [0.7483, 0.4619, 0.0054, "far"]], top: "#1e2e60",
         hz: [.426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426,
           .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .426, .416, .39, .411, .424, .424, .426, .426, .426, .426, .426, .422, .418, .422, .426, .426, .426, .426, .426, .424, .424] } },
     volcano: { src: "img/volcano.jpg", what: "Gunung Batur", by: "AI (OpenAI Codex)", top: "#547abb",
       // 白天、晚上的版本（2026/11/03）：同構圖，Codex 用黃昏那張改畫，做法同 slamet
       day: { src: "img/volcano-day.jpg", top: "#739fd7" },
-      night: { src: "img/volcano-night.jpg", sky: "img/volcano-night-sky.png", top: "#212d66",
+      night: { src: "img/volcano-night.jpg", sky: "img/volcano-night-sky.png",
+        // 燈火（tools/night-lights.py 從夜景拆出來）：[x, y, 半徑, 種類]，種類見 night.js 的 LIGHT
+        lights: "img/volcano-night-lights.jpg", lamps: [[0.3499, 0.6949, 0.0102, "far"], [0.4094, 0.6975, 0.0172, "far"], [0.4345, 0.6994, 0.0061, "far"], [0.3965, 0.7463, 0.0121, "far"], [0.3848, 0.7506, 0.0043, "far"]], top: "#212d66",
         hz: [.587, .584, .58, .578, .58, .58, .582, .584, .589, .593, .595, .593, .589, .591, .591, .589, .582, .58, .578, .574, .574, .571, .567, .565, .569, .569, .565, .561, .561, .558, .554, .55,
           .554, .556, .556, .558, .552, .541, .535, .535, .532, .5, .489, .476, .461, .461, .528, .526, .524, .524, .517, .506, .5, .494, .481, .481, .487, .485, .478, .476, .485, .494, .502, .509] } },
     lake: { src: "img/lake.jpg", what: "Pura Ulun Danu Beratan", by: "AI (OpenAI Codex)", top: "#4e77bc",
