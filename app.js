@@ -1290,9 +1290,22 @@
     var s = rawSlot(city);
     return art && !slotReady(art, s) ? "dusk" : s;
   }
+  // 日出日落（當地幾點幾分，分鐘）：照座標和日期自己算（NOAA 公式，誤差一兩分鐘），不用等天氣查回來。
+  // 原本沒查到天氣時一律當 5:30 日出、17:50 日落，峇里島其實 18:15 才日落：16:35 打開時插畫先畫成黃昏，
+  // 天氣查回來後霧又算成白天，兩張錯開（2026/11/03 使用者抓到）
+  function sunMin(city) {
+    var ll = (T.wx || {})[city];
+    if (!ll) return null;
+    var tz = city === "jkt" || city === "pwt" || city === "yk" ? 7 : 8, now = new Date(Date.now() + tz * 3600000);
+    var n = Math.floor((now - Date.UTC(now.getUTCFullYear(), 0, 1)) / 86400000), g = 2 * Math.PI / 365 * n, r = Math.PI / 180;
+    var eq = 229.18 * (.000075 + .001868 * Math.cos(g) - .032077 * Math.sin(g) - .014615 * Math.cos(2 * g) - .040849 * Math.sin(2 * g));
+    var dec = .006918 - .399912 * Math.cos(g) + .070257 * Math.sin(g) - .006758 * Math.cos(2 * g) + .000907 * Math.sin(2 * g) - .002697 * Math.cos(3 * g) + .00148 * Math.sin(3 * g);
+    var ha = Math.acos(Math.cos(90.833 * r) / (Math.cos(ll[0] * r) * Math.cos(dec)) - Math.tan(ll[0] * r) * Math.tan(dec)) / r;
+    return { sr: Math.round(720 - 4 * (ll[1] + ha) - eq + tz * 60), ss: Math.round(720 - 4 * (ll[1] - ha) - eq + tz * 60) };
+  }
   function rawSlot(city) {
-    var w = sndWx[city], fresh = w && Date.now() - w.at < 3600000;
-    var sr = fresh && w.sr != null ? w.sr : 330, ss = fresh && w.ss != null ? w.ss : 1070, t = sndLocalMin(city);
+    var w = sndWx[city], fresh = w && Date.now() - w.at < 3600000, sun = sunMin(city) || { sr: 330, ss: 1070 };
+    var sr = fresh && w.sr != null ? w.sr : sun.sr, ss = fresh && w.ss != null ? w.ss : sun.ss, t = sndLocalMin(city);
     if (t >= ss - 90 && t < ss + 30) return "dusk";
     if (t >= sr - 30 && t < sr + 60) return "dusk";
     if (t >= ss + 30 || t < sr - 30) return "night";
