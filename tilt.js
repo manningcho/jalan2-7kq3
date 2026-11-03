@@ -42,20 +42,23 @@
   }
 
   // ---------- 現在要移多少（每一格畫面問一次；同一格問好幾次也一樣）----------
-  // x、y：-1～1（乘上 dr 就是 px）；on：開始收到傾斜後 1.2 秒從 0 慢慢變 1（畫面先微微放大，邊緣才不會露白）
-  var x = 0, y = 0, on = 0, lastT = 0;
+  // x、y：-1～1（乘上 dr 就是 px）
+  // on：0～1，插畫放大到幾成（放大了移動時邊緣才不會露白）。開關開著就一直是 1：每一頁插畫一出現就是放大好的，
+  // 換頁、入夜都不會再有放大的過渡（2026/11/03 使用者：每次換到夜景那天都會看到放大，雅加達紀念塔特別明顯）。
+  // 只有在選單裡按「開」「關」的時候，才在 1.2 秒內慢慢放大／縮回（照真實時間算，中間沒有在畫也照樣走完）
+  var x = 0, y = 0, on = 0, lastT = 0, lastOn = 0;
+  function want() { return enabled ? 1 : 0; }
   function state(now) {
     now = now || performance.now();
     var dt = lastT ? Math.min(.05, Math.max(0, now - lastT) / 1000) : 0;
     lastT = now;
-    if (dt) {
-      x += (tgx - x) * Math.min(1, dt * 4); y += (tgy - y) * Math.min(1, dt * 4);
-      if (got && on < 1) on = Math.min(1, on + dt / 1.2);
-      else if (!got && on > 0) on = Math.max(0, on - dt / 1.2); // 關掉之後慢慢縮回原尺寸
-    }
+    if (dt) { x += (tgx - x) * Math.min(1, dt * 4); y += (tgy - y) * Math.min(1, dt * 4); }
+    var gap = lastOn ? Math.max(0, now - lastOn) / 1000 : 0, w = want();
+    lastOn = now;
+    if (on < w) on = Math.min(w, on + gap / 1.2); else if (on > w) on = Math.max(w, on - gap / 1.2);
     return { x: x, y: y, on: on };
   }
-  function busy() { return (!got && on > 0) || got && (on < 1 || Math.abs(tgx - x) > .002 || Math.abs(tgy - y) > .002); }
+  function busy() { return on !== want() || Math.abs(tgx - x) > .002 || Math.abs(tgy - y) > .002; }
   // 一張 W×H（螢幕 px）的畫面要先放大幾倍，移動時四邊才不會露白
   function fit(W, H, dpr) {
     var dr = DR * dpr;
@@ -77,6 +80,7 @@
   var enabled = false;
   try { enabled = localStorage.getItem("trip-tilt-on") === "on"; } catch (e) {}
   if (!touch || !motionOK) enabled = false;
+  on = enabled ? 1 : 0; // 打開網頁時開關已經是開的：一開始就放大好
   function ask() {
     perm = "asking";
     return DeviceOrientationEvent.requestPermission().then(function (st) { perm = st; return st; },
@@ -145,8 +149,9 @@
       if (!svg.isConnected) { off(); return; }
       requestAnimationFrame(step);
       if (document.hidden) return;
-      // 夜景蓋在上面時不用畫（看不到）；省電
-      if (art.classList.contains("has-night")) { if (cv) { off(); cv = null; shown = ""; } return; }
+      // 夜景完全蓋上以後就不用畫（看不到）；省電。入夜那 2 秒還要畫：夜景是從這張放大好的黃昏淡入的，
+      // 這時拿掉的話底下會變回原尺寸的插畫，兩張大小對不起來（2026/11/03）
+      if (art.classList.contains("has-night") && (!window.NIGHT || NIGHT.fade() >= 1)) { if (cv) { off(); cv = null; shown = ""; } return; }
       var st = state(now);
       if (!st.on && cv) { off(); cv = null; shown = ""; return; } // 關掉傾斜、縮回原尺寸了：拿掉畫布，換回原本的插畫（推近動畫照跑）
       if (!st.on || !pic) return;

@@ -98,8 +98,10 @@
     var cv = canvas(W, H);
     cv.className = "night-sky";
     cv.setAttribute("aria-hidden", "true");
-    art.insertBefore(cv, svg.nextSibling);
+    var under = art.querySelector(".tilt-scene") || svg; // 黃昏的傾斜畫布入夜那 2 秒還在，夜景要疊在它上面
+    art.insertBefore(cv, under.nextSibling);
     art.classList.add("has-night");
+    g.fade = 0; // 還沒入夜完：tilt.js 看這個決定黃昏的傾斜畫布要不要繼續畫
     var ctx = cv.getContext("2d"), clip = new Path2D(opts.frame);
 
     // 傾斜手機時整張夜景一起移動（像鏡頭在動）：夜景和天空範圍先放大一點，移動時邊緣才不會露出空白。
@@ -178,11 +180,13 @@
     }
 
     // ---------- 畫 ----------
-    var fade = 0, px = 0, py = 0, lim = 0, comp = null;
+    var fade = 0, px = 0, py = 0, lim = 0, comp = null, lastZs = 1;
     function draw(t, st) {
-      // 入夜那 2 秒（還有開始收到傾斜的時候）從原尺寸慢慢放大到 sc（像鏡頭推近），邊緣才不會露白
-      var o = TILT.offset(W, H, dpr, fade * st.on, st), zs = o.zs, zw = W * zs, zh = H * zs, mx = o.mx, my = o.my;
-      px = mx; py = my; lim = o.lim;
+      // 傾斜開著時，夜景一出現就是放大好的大小（跟黃昏的傾斜畫面一樣大、一樣位置），淡入時兩張完全重疊，不會有放大的過渡。
+      // （2026/11/03 使用者：原本入夜 2 秒內從原尺寸慢慢放大，換到夜景那天每次都看得到放大，雅加達紀念塔特別明顯）
+      // 只有剛打開傾斜時，才跟黃昏一起在 1.2 秒內慢慢放大（st.on 從 0 到 1）
+      var o = TILT.offset(W, H, dpr, st.on, st), zs = o.zs, zw = W * zs, zh = H * zs, mx = o.mx, my = o.my;
+      px = mx; py = my; lim = o.lim; lastZs = zs;
       var bx0 = (W - zw) / 2 + mx, by0 = (H - zh) / 2 + my;
       // 星空圖上，對到插畫左上角的位置（星星動得比地面少）
       var ox = ORIGIN - clamp(STAR * mx / k, -DRIFT, DRIFT), oy = ORIGIN - clamp(STAR * my / k, -DRIFT, DRIFT);
@@ -274,7 +278,7 @@
       art.classList.remove("has-night");
     }
     g.off = cleanup;
-    window.__night = function () { return { w: W, h: H, fade: fade, px: px, py: py, meteors: mets.length, nextMeteor: nextMet }; };
+    window.__night = function () { return { w: W, h: H, fade: fade, px: px, py: py, zs: lastZs, meteors: mets.length, nextMeteor: nextMet }; };
     window.__nightMeteor = function () { meteor(W * .6, skyH * .25); }; // 測試用
     window.__nightLamps = function (t) { // 測試用：有幾盞燈、各種幾盞、熄掉的窗戶、某個時間點每盞的亮暗
       var by = {}; lamps.forEach(function (L) { by[L.t] = (by[L.t] || 0) + 1; });
