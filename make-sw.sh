@@ -4,7 +4,7 @@
 cd "${0:A:h}"
 # 白天版、夜景、星空這些「跟著當地時間」才用得到的圖，不預先存進手機（2026/11/02 使用者：圖多了下載量會很大）。
 # 另外列進 timepack.js（路徑＋大小），選單打開「跟著當地時間」時才下載，下載前先告訴使用者有多大
-timefiles=(img/*-day.jpg(N) img/*-night.jpg(N) img/*-night-sky.png(N) img/sky-*.jpg(N))
+timefiles=(img/*-day.jpg(N) img/*-night.jpg(N) img/*-night-sky.png(N) img/*-night-lights.jpg(N) img/sky-*.jpg(N))
 {
   echo "// 自動產生（make-sw.sh）：「插畫跟著當地時間」要另外下載的圖和大小（bytes）"
   printf 'window.TIMEPACK = ['

@@ -4,7 +4,10 @@
 //   img/sky-stars-dim.jpg     一般的星星（黑底，用「濾色」疊，黑色會消失）
 //   img/sky-stars-bright.jpg  拆出來的 60 顆亮星，每顆各自閃爍
 //   img/sky-meteor.jpg        流星
-// 程式只負責：夜景淡入、星星閃爍、傾斜手機整個畫面微微移動（星星比地面動得少）、點天空有流星、偶爾自己劃過一顆
+// 程式只負責：夜景淡入、星星閃爍、傾斜手機整個畫面微微移動（星星比地面動得少）、點天空有流星、偶爾自己劃過一顆、燈火的亮暗
+//   TRIP.photos[art].night.lights  只有燈光的圖（tools/night-lights.py 從夜景拆出來，黑底、位置對齊）
+//   TRIP.photos[art].night.lamps   每盞燈 [x, y, 半徑, 種類]（0–1 比例），種類見下面 LIGHT
+// 燈火是把「只有燈光的圖」那一小塊加亮（lighter）或減暗（difference：夜景減掉燈光＝燈熄掉）疊上去，光本身都是 Codex 畫的
 (function () {
   // 亮星在星空圖上的位置（1360×620）
   var BRIGHT = [[621, 180], [28, 474], [36, 244], [1314, 377], [312, 494], [360, 178], [1257, 150], [606, 265], [1091, 246], [356, 131], [550, 68], [183, 608],
@@ -43,13 +46,48 @@
     // 大字慢慢變成夜空的顏色（大字伸進插畫的那截才融得進夜空）
     var hw = art.parentNode && art.parentNode.querySelector(".hw");
     if (hw) { hw.style.transition = "color 2s ease"; hw.style.color = n.top; }
-    Promise.all([load(n.src), load(n.sky), getAssets()]).then(function (r) {
+    var lp = n.lights && n.lamps ? load(n.lights).catch(function () { return null; }) : Promise.resolve(null); // 沒下載到也沒關係，只是燈不會動
+    Promise.all([load(n.src), load(n.sky), getAssets(), lp]).then(function (r) {
       if (g.dead || !art.isConnected) return;
-      build(g, art, r[0], r[1], r[2], n, opts || {});
+      build(g, art, r[0], r[1], r[2], n, opts || {}, r[3]);
     }).catch(function () {});
   }
 
-  function build(g, art, img, sky, A, n, opts) {
+  // ---------- 燈火 ----------
+  // 每種燈照它在現實裡的樣子動，幅度都很小（2026/11/03 使用者：燈火也想有點動態；要克制，不像聖誕燈飾）
+  //   flame  油燈、燈籠、火焰：亮度不規則地搖曳
+  //   far    遠處房子的窗：隔著空氣慢慢地閃
+  //   lamp   公園路燈：幾乎不動，只有很慢的一點起伏
+  //   water  湖面倒影：跟著水波晃（左右微微移動、亮暗起伏）
+  //   beacon 紅燈：大部分時間暗暗的，規律地亮一下（飛機翼尖約 1.2 秒、大樓頂約 2 秒）
+  //   strobe 機尾白燈：一次閃兩下
+  //   window 大樓窗戶：平常不動，偶爾有一扇熄掉，過一陣子再亮
+  var TAU = 6.283;
+  function makeLamp(p, BW, BH, plane) {
+    var L = { x: p[0] * BW, y: p[1] * BH, h: p[2] * BW * 1.2 + 1, t: p[3], p1: rnd(0, TAU), p2: rnd(0, TAU), p3: rnd(0, TAU), cur: 0, want: 0, left: 0 };
+    if (L.t === "flame") { L.f1 = rnd(1.3, 2.2); L.f2 = rnd(3.1, 4.7); L.f3 = rnd(6, 9); }
+    else if (L.t === "far") { L.f1 = rnd(.15, .45); L.f2 = rnd(1, 2); }
+    else if (L.t === "lamp") { L.f1 = rnd(.08, .25); }
+    else if (L.t === "water") { L.f1 = rnd(.6, 1.2); L.f2 = rnd(1.7, 2.9); L.fs = rnd(.45, .9); L.amp = BW * .0016; }
+    else if (L.t === "beacon") { L.P = plane ? rnd(1.1, 1.3) : rnd(1.7, 2.4); L.p1 = rnd(0, L.P); }
+    else if (L.t === "strobe") { L.P = 1.25; L.p1 = rnd(0, L.P); }
+    return L;
+  }
+  function pulse(ph, at, w) { var d = (ph - at) / w; return Math.exp(-d * d); }
+  function lampMod(L, t) { // >0 加亮、<0 減暗（-1＝整盞熄掉）
+    switch (L.t) {
+      case "flame": return .2 * Math.sin(t * L.f1 * TAU + L.p1) + .13 * Math.sin(t * L.f2 * TAU + L.p2) + .08 * Math.sin(t * L.f3 * TAU + L.p3);
+      case "far": return .25 * Math.sin(t * L.f1 * TAU + L.p1) + .07 * Math.sin(t * L.f2 * TAU + L.p2);
+      case "lamp": return .12 * Math.sin(t * L.f1 * TAU + L.p1);
+      case "water": return .3 * Math.sin(t * L.f1 * TAU + L.p1) + .2 * Math.sin(t * L.f2 * TAU + L.p2);
+      case "beacon": var ph = ((t + L.p1) % L.P) / L.P; return -.8 + 1.5 * pulse(ph, .06, .045);
+      case "strobe": ph = ((t + L.p1) % L.P) / L.P; return -.85 + 1.6 * (pulse(ph, .03, .018) + pulse(ph, .15, .018));
+      case "window": return L.cur;
+    }
+    return 0;
+  }
+
+  function build(g, art, img, sky, A, n, opts, limg) {
     var svg = art.querySelector("svg.art");
     if (!svg) return;
     var dimS = A[0], brightS = A[1], met = A[2];
@@ -70,6 +108,45 @@
     var sc = TILT.fit(W, H, dpr).sc, BW = Math.round(W * sc), BH = Math.round(H * sc);
     function pre(src, w, h) { var c = canvas(w, h), x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(src, 0, 0, w, h); return c; }
     var big = pre(img, BW, BH), bigMask = pre(sky, BW, BH);
+    var bigL = limg ? pre(limg, BW, BH) : null;
+    var plane = !!(n.lamps && n.lamps.some(function (p) { return p[3] === "strobe"; }));
+    var lamps = bigL ? n.lamps.map(function (p) { return makeLamp(p, BW, BH, plane); }) : [];
+    var wins = lamps.filter(function (L) { return L.t === "window"; }), nextWin = rnd(2, 5);
+    // 窗戶：偶爾挑一扇熄掉 6–16 秒（同時最多 3 扇），開關燈很快（約 0.3 秒）
+    function stepWindows(dt) {
+      if (!wins.length) return;
+      nextWin -= dt;
+      var off = 0, i, L;
+      for (i = 0; i < wins.length; i++) {
+        L = wins[i];
+        if (L.left > 0 && (L.left -= dt) <= 0) L.want = 0;
+        if (L.want) off++;
+        L.cur += (L.want - L.cur) * Math.min(1, dt * 9);
+      }
+      if (nextWin <= 0) {
+        nextWin = rnd(3, 8);
+        L = wins[Math.floor(Math.random() * wins.length)];
+        if (off < 3 && !L.want) { L.want = -.92; L.left = rnd(6, 16); }
+      }
+    }
+    // 把燈光圖的一小塊疊到夜景上（燈火跟地面一起動：位置照夜景現在的位置和放大）
+    function lampBlit(L, op, a, bx0, by0, z, ox) {
+      var sx = Math.max(0, L.x - L.h), sy = Math.max(0, L.y - L.h), ex = Math.min(BW, L.x + L.h), ey = Math.min(BH, L.y + L.h);
+      if (ex <= sx || ey <= sy || a <= .01) return;
+      ctx.globalCompositeOperation = op; ctx.globalAlpha = Math.min(1, a);
+      ctx.drawImage(bigL, sx, sy, ex - sx, ey - sy, bx0 + (sx + ox) * z, by0 + sy * z, (ex - sx) * z, (ey - sy) * z);
+    }
+    function drawLamps(t, bx0, by0, z) {
+      for (var i = 0; i < lamps.length; i++) {
+        var L = lamps[i], m = lampMod(L, t);
+        if (L.t === "water") { // 倒影：原位置減暗一些，再加亮到旁邊一點點，看起來在水裡晃
+          lampBlit(L, "difference", fade * .55, bx0, by0, z, 0);
+          lampBlit(L, "lighter", fade * (.55 + m), bx0, by0, z, L.amp * Math.sin(t * L.fs * TAU + L.p3));
+        } else if (m > .01) lampBlit(L, "lighter", fade * m, bx0, by0, z, 0);
+        else if (m < -.01) lampBlit(L, "difference", fade * -m, bx0, by0, z, 0);
+      }
+      ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = fade;
+    }
     // 上緣跟白天一樣漸層成夜空頂端色，大字才融得進去；這層固定不動，跟著大字
     var grc = canvas(W, Math.ceil(110 * s)), gx = grc.getContext("2d"), gr = gx.createLinearGradient(0, 0, 0, 110 * s);
     gr.addColorStop(0, n.top); gr.addColorStop(.35, rgba(n.top, .55)); gr.addColorStop(1, rgba(n.top, 0));
@@ -132,6 +209,7 @@
       ctx.setTransform(s, 0, 0, s, 0, 0); ctx.clip(clip); ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalAlpha = fade;
       ctx.drawImage(big, bx0, by0, zw, zh);
+      if (lamps.length) drawLamps(t, bx0, by0, zw / BW);
       ctx.drawImage(grc, 0, 0);
       ctx.globalCompositeOperation = "screen";
       ctx.drawImage(layer, 0, 0);
@@ -163,6 +241,7 @@
       nextMet -= dt;
       if (nextMet <= 0) { meteor(W * rnd(.2, .85), skyH * rnd(.08, .4)); nextMet = rnd(20, 45); }
       for (var i = mets.length - 1; i >= 0; i--) { mets[i].t += dt; if (mets[i].t > mets[i].dur) mets.splice(i, 1); }
+      stepWindows(dt);
       // 星星閃爍不用每格都畫：沒有流星、沒在移動時，一秒畫 30 次就夠（省電）
       if (!art.classList.contains("has-glass")) TILT.frame(dt); // 下雨時玻璃那邊回報就好
       var st = TILT.state(now);
@@ -187,6 +266,11 @@
     g.off = cleanup;
     window.__night = function () { return { w: W, h: H, fade: fade, px: px, py: py, meteors: mets.length, nextMeteor: nextMet }; };
     window.__nightMeteor = function () { meteor(W * .6, skyH * .25); }; // 測試用
+    window.__nightLamps = function (t) { // 測試用：有幾盞燈、各種幾盞、熄掉的窗戶、某個時間點每盞的亮暗
+      var by = {}; lamps.forEach(function (L) { by[L.t] = (by[L.t] || 0) + 1; });
+      return { n: lamps.length, by: by, off: wins.filter(function (L) { return L.want; }).length,
+        mods: t == null ? null : lamps.map(function (L) { return Math.round(lampMod(L, t) * 100) / 100; }) };
+    };
     window.__nightTilt = function (gamma, beta) { window.__tilt(gamma, beta); }; // 測試用：假裝手機傾斜
   }
 
