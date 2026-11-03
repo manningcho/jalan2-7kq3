@@ -192,9 +192,9 @@
     // ---------- 畫 ----------
     var fade = 0, at0 = "", mv = { mx: 0, my: 0, zs: 1 };
     function draw(now) {
-      // 跟後面的景色移一樣多（晚上的夜景入夜時是慢慢放大的，霧也跟著）
+      // 跟後面的景色移一樣多、放大一樣多（白天、黃昏、夜景都是傾斜開著就放大好，霧也一樣）
       var st = window.TILT ? TILT.state(now) : { x: 0, y: 0, on: 0 };
-      var zoom = st.on * (art.classList.contains("has-night") && window.NIGHT ? NIGHT.fade() : 1);
+      var zoom = st.on;
       if (window.TILT) mv = TILT.offset(W, H, dpr, zoom, st);
       var key = mv.zs.toFixed(4) + " " + mv.mx.toFixed(1) + " " + mv.my.toFixed(1);
       if (key !== at0) { at0 = key; mkDirty = true; }
