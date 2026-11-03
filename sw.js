@@ -7,7 +7,7 @@
 // 下面兩段由 make-sw.sh 自動產生：新增或換掉 img/ 的圖之後跑一次 ./make-sw.sh（make-lq.sh 會順便跑）。
 
 // <make-sw>
-var VERSION = "2b2f5d0468";
+var VERSION = "7cdbf22fef";
 var FONT_CSS = "https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap";
 var ASSETS = [
   "./",
@@ -86,7 +86,7 @@ var ASSETS = [
 var SITE = "trip-site-" + VERSION, FONTS = "trip-fonts";
 // 「插畫跟著當地時間」的圖（白天版、夜景、星空）：選單打開時網頁自己下載存進這裡；不跟著版本清掉，下載過一次就一直在
 var TIME = "trip-time";
-function isTimeFile(path) { return /-(day|night)\.jpg$|-night-sky\.png$|\/img\/sky-[^/]*\.jpg$/.test(path); }
+function isTimeFile(path) { return /-(day|night)\.jpg$|-night-sky\.png$|-night-lights\.jpg$|\/img\/sky-[^/]*\.jpg$/.test(path); }
 
 self.addEventListener("install", function (e) {
   // 一個一個存：網路不穩時有幾個失敗也沒關係，之後看到再補存

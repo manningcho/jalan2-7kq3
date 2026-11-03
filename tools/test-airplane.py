@@ -108,7 +108,8 @@ try:
         print("  offline %s %s:" % (day, at), ev("""(async()=>{ const im=document.querySelector('image.a-kb'), src=im.getAttribute('href');
           const ok=await new Promise(r=>{const i=new Image();i.onload=()=>r(i.naturalWidth>0);i.onerror=()=>r(false);i.src=src;});
           const nightOk = document.querySelector('canvas.night-sky') ? 'night canvas' : 'no night canvas';
-          return src+' '+(ok?'loaded':'FAILED')+', '+nightOk; })()"""), "(want %s)" % want)
+          const lamps = document.querySelector('canvas.night-sky') && window.__nightLamps ? ', lamps '+window.__nightLamps().n : '';
+          return src+' '+(ok?'loaded':'FAILED')+', '+nightOk+lamps; })()"""), "(want %s)" % want)
     if SHOT:
         ev("location.hash='d1220'; new Promise(r=>setTimeout(r,1200))")
         shot = call("Page.captureScreenshot", {"format": "png"}); open(SHOT, "wb").write(base64.b64decode(shot["result"]["data"]))
