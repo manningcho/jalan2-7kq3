@@ -190,7 +190,8 @@
     for (var i = 0; i < N; i++) { var dd = makeDrop(rnd(0, W), rnd(0, H), size()); dd.pop = 1; drops.push(dd); }
 
     // ---------- 畫 ----------
-    var fade = 0, at0 = "", mv = { mx: 0, my: 0, zs: 1 };
+    var fade = opts && opts.instant ? 1 : 0, at0 = "", // instant：插畫換時段時本來就在下雨，霧直接是滿的（不然會先清楚一下再起霧）
+        mv = { mx: 0, my: 0, zs: 1 };
     function draw(now) {
       // 跟後面的景色移一樣多、放大一樣多（白天、黃昏、夜景都是傾斜開著就放大好，霧也一樣）
       var st = window.TILT ? TILT.state(now) : { x: 0, y: 0, on: 0 };
