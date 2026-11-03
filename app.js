@@ -357,23 +357,28 @@
     var w = sndWx[city], a = sndAsk[city];
     return !!(T.wx || {})[city] && !!window.fetch && navigator.onLine && !(w && Date.now() - w.at < 900000) && !(a && Date.now() - a < 300000);
   }
-  function sndWeather(city) { // 查那個城市現在的天氣；查完（或失敗）都會再選一次聲音
+  // 查那個城市現在的天氣；查完（或失敗）都會再選一次聲音。同一個城市正在查的話就共用那一次：
+  // 原本霧和聲音同時要查，聲音看到「已經有人在查」就不等了，照時間播蟲鳴，查回來是下雨也沒人叫它換
+  // （2026/11/03 使用者：雅加達晚上明明下雨、起霧了，卻是蟲鳴）
+  var sndPend = {};
+  function sndWeather(city) {
+    if (sndPend[city]) return sndPend[city];
     var ll = T.wx[city];
     sndAsk[city] = Date.now();
-    return fetch("https://api.open-meteo.com/v1/forecast?latitude=" + ll[0] + "&longitude=" + ll[1] + "&current=weather_code,is_day,precipitation&daily=sunrise,sunset&forecast_days=1&timezone=auto")
+    return sndPend[city] = fetch("https://api.open-meteo.com/v1/forecast?latitude=" + ll[0] + "&longitude=" + ll[1] + "&current=weather_code,is_day,precipitation&daily=sunrise,sunset&forecast_days=1&timezone=auto")
       .then(function (r) { return r.json(); }).then(function (j) {
         var c = j.current || {}, dl = j.daily || {};
         var hm = function (s) { var m = /T(\d+):(\d+)/.exec(s || ""); return m ? +m[1] * 60 + +m[2] : null; }; // 當地時間 "2026-12-16T05:31" → 331 分
         sndWx[city] = { at: Date.now(), day: c.is_day === 1, sr: hm(dl.sunrise && dl.sunrise[0]), ss: hm(dl.sunset && dl.sunset[0]), rain: c.precipitation > 0 || (c.weather_code >= 51 && c.weather_code <= 99 && c.weather_code !== 71 && c.weather_code !== 73 && c.weather_code !== 75) };
-      }).catch(function () {});
+      }).catch(function () {}).then(function () { delete sndPend[city]; sndPick(); });
   }
   function sndApply() { // 要查天氣就先查（最多等 2 秒），查到再選，免得先播錯的那段又馬上換掉
     if (!soundOn || !sndCtx) return;
-    var city = sndCity();
-    if (!city || !sndNeedWx(city)) return sndPick();
+    var city = sndCity(), pend = city && (sndPend[city] || (sndNeedWx(city) && sndWeather(city)));
+    if (!pend) return sndPick();
     var done = false, go = function () { if (!done) { done = true; sndPick(); } };
-    sndWeather(city).then(go, go);
-    setTimeout(go, 2000);
+    pend.then(go, go);
+    setTimeout(go, 2000); // 等太久就先照時間播，查回來 sndWeather 會再選一次
   }
   function sndPick() { // 選好該播哪一段，跟現在的不一樣就交叉淡化過去
     if (!soundOn || !sndCtx) return;
@@ -1121,7 +1126,7 @@
   var RAIN_FORCE = /[?&]rain=1/.test(location.search);
   // 試看網址沒指定哪一天時，直接開 12/16（普禾加多，有火山的那張）
   if (RAIN_FORCE && !location.hash && history.replaceState) history.replaceState(null, "", location.pathname + location.search + "#d1216");
-  function setGlass(d) {
+  function setGlass(d, instant) { // instant：頁面開著換時段時，本來就有霧
     if (!window.GLASS) return;
     GLASS.stop();
     var art = d && app.querySelector(".hero-art"), p = d && (T.photos || {})[d.art];
@@ -1133,7 +1138,7 @@
       var im = art.querySelector("image.a-kb"), shown = im && im.getAttribute("href"), dayPh = ART.photo(d.art, "day");
       var isDay = !!(shown && dayPh && dayPh.src !== p.src && shown === dayPh.src);
       var src = nightOn ? nightOn.src : (shown || p.src), top = nightOn ? nightOn.top : ART.topColor(d.art, isDay ? "day" : null);
-      GLASS.start(art, src, top, ART.FRAME, { motion: document.documentElement.classList.contains("motion") }); // 不出「用手指擦擦玻璃」：當成小彩蛋
+      GLASS.start(art, src, top, ART.FRAME, { motion: document.documentElement.classList.contains("motion"), instant: !!instant }); // 不出「用手指擦擦玻璃」：當成小彩蛋
     };
     if (RAIN_FORCE) return go();
     if (/[?&]rain=0/.test(location.search)) return; // 試看網址 ?rain=0：當地下雨也不起霧
@@ -1326,6 +1331,50 @@
     nightOn = p.night;
     NIGHT.start(art, p.night, { frame: ART.FRAME });
   }
+  // ---------- 頁面開著時，時段到了插畫自己換（2026/11/03 使用者：停在同一頁跨過日落，聲音換了插畫沒換） ----------
+  // 每 30 秒（和切回網頁時）看一次時段；變了就先把新時段的圖載好，新的插畫放在原位，
+  // 舊的（連同夜景、傾斜、霧的畫布先定格成一張）疊在上面 2.5 秒淡出；大字的顏色也一起慢慢換。入夜時夜景照原本的方式淡入
+  var heroDay = null, heroKey = "";
+  function liveSlot() {
+    var d = heroDay;
+    if (!d || document.hidden) return;
+    var key = timeSlot(d.city, d.art), old = app.querySelector(".hero-art");
+    if (key === heroKey || !old || old.dataset.leaving) return;
+    heroKey = key;
+    var ph = ART.photo(d.art, key), pre = new Image();
+    pre.onload = pre.onerror = function () {
+      if (!old.isConnected || heroDay !== d) return; // 載圖的時候換頁了
+      var sec = old.parentNode, tmp = document.createElement("div");
+      tmp.innerHTML = hero(d.word, d.art, wxHtml(d), key);
+      var nw = tmp.querySelector(".hero-art"), hw = tmp.querySelector(".hw"), ohw = sec.querySelector(".hw");
+      if (!nw) return;
+      var nart = nw.querySelector("svg.art");
+      if (nart) nart.style.animation = "none"; // 不播剛進頁面時往上滑進來的動畫，原地換
+      var hadGlass = old.classList.contains("has-glass");
+      old.querySelectorAll("canvas").forEach(function (c) { // 定格：停掉以後原本的畫布會被拿掉
+        var k = document.createElement("canvas");
+        k.width = c.width; k.height = c.height; k.className = c.className; k.style.cssText = c.style.cssText;
+        try { k.getContext("2d").drawImage(c, 0, 0); } catch (e) {}
+        c.parentNode.replaceChild(k, c);
+      });
+      old.querySelectorAll(".glass-hint").forEach(function (el) { el.remove(); });
+      var oi = old.querySelector("image.a-kb"), oa = oi && oi.getAnimations ? oi.getAnimations()[0] : null;
+      old.dataset.leaving = "1";
+      sec.insertBefore(nw, old);
+      old.style.cssText += ";position:absolute;left:" + nw.offsetLeft + "px;top:" + nw.offsetTop + "px;width:" + nw.offsetWidth + "px;pointer-events:none;transition:opacity 2.5s ease";
+      fadeIn(nw);
+      var ni = nw.querySelector("image.a-kb"), na = ni && ni.getAnimations ? ni.getAnimations()[0] : null;
+      if (oa && na && oa.currentTime != null) na.currentTime = oa.currentTime; // 慢慢推近的動畫接著走，兩張才疊得剛好
+      if (ohw && hw && hw.style.color) { ohw.style.transition = "color 2.5s ease"; ohw.style.color = hw.style.color; }
+      setTilt(d); setNight(d); setGlass(d, hadGlass); // 都是找第一個 .hero-art，也就是新的那張
+      requestAnimationFrame(function () { requestAnimationFrame(function () { old.style.opacity = "0"; }); });
+      setTimeout(function () { old.remove(); }, 2700);
+    };
+    pre.src = ph && ph.src || "";
+  }
+  setInterval(liveSlot, 30000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) liveSlot(); });
+  window.__liveSlot = function () { liveSlot(); return heroKey; }; // 給 tools 的測試
   // 圖片載完才淡入；已經在快取裡的就直接顯示，不重播
   function fadeIn(root) {
     root.querySelectorAll(".fade:not(.is-loaded)").forEach(function (el) {
@@ -1879,6 +1928,7 @@
     setTilt(d); // 傾斜手機時插畫跟著微微移動（白天、晚上、下雨都是）
     setNight(d); // 那個城市現在是晚上：插畫換成夜景、天空有星星（要在玻璃之前，下雨時霧是用夜景做的）
     setGlass(d); // 那個城市現在在下雨：插畫起霧、有雨滴
+    heroDay = d || null; heroKey = d ? timeSlot(d.city, d.art) : ""; // 頁面開著時插畫跟著時段換（liveSlot）
     if (d) wxRefresh(d);
     syncDial(h);
     startTicker();
