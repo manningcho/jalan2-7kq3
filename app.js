@@ -329,7 +329,7 @@
   // ---------- 背景聲音：跟著城市、當地天氣和白天晚上換（錄音都是 CC0，見 sound.js）。預設關；打開過會記住 ----------
   // 選哪一段：那個城市「現在」在下雨 → 雨聲；現在是晚上 → 夜晚蟲鳴（峇里島例外，晚上還是海浪）；其他 → 城市的基本聲音。
   // 只有每日行程頁會換：用那一天的城市。首頁、選單、交通這些頁面固定播海浪（網站的招牌聲音，首頁的圖幾乎都有海；2026/10/31 使用者決定）。
-  // 天氣：Open-Meteo 的「現在」天氣，每個城市 15 分鐘查一次；沒網路查不到就只看當地時間（18:00–6:00 算晚上）。
+  // 天氣：Open-Meteo 的「現在」天氣，每個城市 15 分鐘查一次（只用來看有沒有下雨）；晚上跟插畫一樣照當地日出日落算（rawSlot）。
   // 換段時 3 秒交叉淡化；不用的那段停掉、放掉記憶體。
   // iPhone 不准網頁自己出聲，一定要使用者點一下：記住「開」的話，等第一次點畫面才開始播。
   // 切到背景就暫停；念印尼文時先調小，念完再恢復。iPhone 側邊的靜音鍵打開時聽不到（系統規定）。
@@ -341,15 +341,14 @@
     var h = (location.hash || "").replace(/^#/, ""), d = T.days.filter(function (x) { return dayId(x) === h; })[0];
     return d ? d.city : "";
   }
-  function sndLocalHour(city) {
-    try { return +new Date().toLocaleString("en-GB", { timeZone: city === "bali" ? "Asia/Makassar" : city === "tw" ? "Asia/Taipei" : "Asia/Jakarta", hour: "2-digit", hourCycle: "h23" }); }
-    catch (e) { return new Date().getHours(); }
-  }
   function sndScene() {
     var city = sndCity();
     if (!city) return "waves";
     var w = sndWx[city], fresh = w && Date.now() - w.at < 3600000;
-    var night = NIGHT_FORCE || /[?&]time=night/.test(location.search) || (fresh ? !w.day : (function (h) { return h >= 18 || h < 6; })(sndLocalHour(city)));
+    // 晚上：跟插畫的夜景同一套（rawSlot：照當地日出日落，每分鐘重算）。原本用天氣查到的「是不是白天」，
+    // 那是查的那一刻的答案，最多 15 分鐘（查不到時一小時）都不會變；沒查到又一律 18 點到 6 點，
+    // 插畫已經是夜景了聲音還沒換（2026/11/03 使用者：前一天就遇到）
+    var night = NIGHT_FORCE || /[?&]time=night/.test(location.search) || rawSlot(city) === "night";
     if ((fresh && w.rain) || RAIN_FORCE) return "rain"; // 試看網址 ?rain=1、?night=1 時聲音也跟著
     if (night && city !== "bali") return "night";
     return SND_BASE[city] || "waves";
