@@ -7,7 +7,7 @@
 // 下面兩段由 make-sw.sh 自動產生：新增或換掉 img/ 的圖之後跑一次 ./make-sw.sh（make-lq.sh 會順便跑）。
 
 // <make-sw>
-var VERSION = "4ce5891b2d";
+var VERSION = "8b22c1dff3";
 var FONT_CSS = "https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap";
 var ASSETS = [
   "./",
@@ -88,13 +88,18 @@ var SITE = "trip-site-" + VERSION, FONTS = "trip-fonts";
 var TIME = "trip-time";
 function isTimeFile(path) { return /-(day|night)\.jpg$|-night-sky\.png$|-night-lights\.jpg$|\/img\/sky-[^/]*\.jpg$/.test(path); }
 
+// 網頁、程式、樣式：少一個就打不開，一定要全部存到才換新版
+function isCore(u) { return u === "./" || /\.(html|js|css)$/.test(u); }
+
 self.addEventListener("install", function (e) {
-  // 一個一個存：網路不穩時有幾個失敗也沒關係，之後看到再補存
-  e.waitUntil(Promise.all([
-    caches.open(SITE).then(function (c) {
-      return Promise.all(ASSETS.map(function (u) { return c.add(u).catch(function () {}); }));
-    }).then(warmFonts)
-  ]).then(function () { return self.skipWaiting(); }));
+  // 核心檔有一個沒存到，這次安裝就算失敗：手機繼續用舊的那份（舊的不會被刪），下次打開網站再試。
+  // 插畫、聲音一個一個存，失敗也沒關係，之後看到再補存。
+  e.waitUntil(caches.open(SITE).then(function (c) {
+    return Promise.all(ASSETS.map(function (u) {
+      var p = c.add(u);
+      return isCore(u) ? p : p.catch(function () {});
+    }));
+  }).then(warmFonts).then(function () { return self.skipWaiting(); }));
 });
 
 self.addEventListener("activate", function (e) {
@@ -109,7 +114,8 @@ self.addEventListener("fetch", function (e) {
   if (req.method !== "GET") return;
   var url = new URL(req.url);
   if (url.origin === self.location.origin) {
-    if (isTimeFile(url.pathname)) e.respondWith(cacheFirst(req, TIME));
+    // 網頁下載新版時段圖時（網址帶 ?v=），直接抓網路，不要回存著的舊圖；存進 trip-time 由網頁自己做
+    if (isTimeFile(url.pathname)) e.respondWith(url.searchParams.has("v") || req.cache === "no-store" ? fetch(req) : cacheFirst(req, TIME));
     else if (req.mode === "navigate" || /\.(html|js|css)$/.test(url.pathname) || /\/$/.test(url.pathname)) e.respondWith(networkFirst(e));
     else e.respondWith(cachedThenRefresh(e));
   } else if (/(^|\.)fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)) {
@@ -117,7 +123,7 @@ self.addEventListener("fetch", function (e) {
   }
 });
 
-// 先抓網路，3 秒沒回應或沒網路就用存的
+// 先抓網路，3 秒沒回應、沒網路、或網站暫時壞掉（5xx）就用存的；沒存過才把網站的錯誤原樣給出去
 function networkFirst(e) {
   var req = e.request;
   return caches.open(SITE).then(function (cache) {
@@ -128,11 +134,11 @@ function networkFirst(e) {
     e.waitUntil(net.catch(function () {}));
     var late = new Promise(function (r) { setTimeout(function () { r(null); }, 3000); });
     return Promise.race([net, late]).catch(function () { return null; }).then(function (res) {
-      if (res) return res;
+      if (res && res.status < 500) return res; // 正常的回應（包括 404）照給
       return cache.match(req, { ignoreSearch: true }).then(function (hit) {
         if (hit) return hit;
-        if (req.mode === "navigate") return cache.match("./").then(function (home) { return home || net; });
-        return net; // 沒存過：只好繼續等網路
+        if (req.mode === "navigate") return cache.match("./").then(function (home) { return home || res || net; });
+        return res || net; // 沒存過：給網站的錯誤，或繼續等網路
       });
     });
   });

@@ -334,7 +334,7 @@
   // iPhone 不准網頁自己出聲，一定要使用者點一下：記住「開」的話，等第一次點畫面才開始播。
   // 切到背景就暫停；念印尼文時先調小，念完再恢復。iPhone 側邊的靜音鍵打開時聽不到（系統規定）。
   var SND_BASE = { bali: "waves", tw: "waves", pwt: "birds", jkt: "city", yk: "city" };
-  var soundOn = false, sndCtx = null, sndMaster = null, sndCur = null, sndKey = "", SND_VOL = 0.7, sndWx = {}, sndAsk = {};
+  var soundOn = false, sndCtx = null, sndMaster = null, sndCur = null, sndAll = [], sndKey = "", SND_VOL = 0.7, sndWx = {}, sndAsk = {};
   try { soundOn = localStorage.getItem("trip-sound") === "on"; } catch (e) {}
   function sndVol(v, sec) { if (sndMaster) sndMaster.gain.setTargetAtTime(v, sndCtx.currentTime, sec || 0.4); }
   function sndCity() { // 每日頁的城市；不是每日頁就回傳空字串（固定播海浪）
@@ -384,14 +384,23 @@
     if (!soundOn || !sndCtx) return;
     var key = sndScene();
     if (key === sndKey) return;
-    var old = sndCur, t = sndCtx.currentTime;
     sndKey = key;
-    sndCur = SOUND.loop(sndCtx, sndMaster, "snd/" + key + ".m4a");
-    var mine = sndCur;
+    var mine = sndCur = SOUND.loop(sndCtx, sndMaster, "snd/" + key + ".m4a");
+    sndAll.push(mine);
+    var drop = function (s) { var i = sndAll.indexOf(s); if (i >= 0) sndAll.splice(i, 1); };
     mine.ready.then(function () {
-      if (sndCur !== mine) return;
+      if (sndCur !== mine) { drop(mine); mine.stop(); return; } // 還沒載好就又換城市了：這段不用播
       mine.out.gain.setTargetAtTime(1, sndCtx.currentTime, 1); // 新的慢慢進來（約 3 秒）
-      if (old) { old.out.gain.setTargetAtTime(0, sndCtx.currentTime, 1); setTimeout(function () { old.stop(); }, 5000); }
+      // 其他還在播的、還在載的全部收掉（快速連換城市時，前面可能不只一段）
+      sndAll.slice().forEach(function (s) {
+        if (s === mine) return;
+        drop(s);
+        s.out.gain.setTargetAtTime(0, sndCtx.currentTime, 1);
+        setTimeout(function () { s.stop(); }, 5000);
+      });
+    }, function () { // 沒載到（沒網路）：舊的繼續播，下次再試
+      drop(mine);
+      if (sndCur === mine) sndKey = "";
     });
   }
   function startSound() {
@@ -1254,7 +1263,8 @@
     var one = function (i) {
       if (i >= todo.length) return Promise.resolve();
       var f = todo[i], start = done;
-      return fetch(f[0], { cache: "no-store" }).then(function (res) {
+      // ?v=大小：讓 sw.js 知道這次要網路上的新圖，不要回存著的舊圖（存的時候還是存在沒有 ?v 的網址）
+      return fetch(f[0] + "?v=" + f[1], { cache: "no-store" }).then(function (res) {
         if (!res.ok) throw new Error(res.status);
         var type = res.headers.get("Content-Type") || "";
         var finish = function (blob) {
@@ -1940,15 +1950,33 @@
     cvStart();
     cvLoadRest();
   }
+  // 讀使用者打的數字。台灣習慣「1,500.5」，印尼習慣「1.500,5」：
+  // 兩種符號都有，後面那個是小數點；只有一種、出現好幾次，是千分位；只出現一次、後面不是剛好 3 位數，是小數點；
+  // 只出現一次、後面剛好 3 位數（1,500 或 1.500）分不出來：idStyle（印尼寫法）時逗號是小數點，否則句點是小數點。
+  function parseNum(s, idStyle) {
+    s = String(s || "").replace(/[^\d.,]/g, "");
+    var dot = s.lastIndexOf("."), com = s.lastIndexOf(","), dec = -1;
+    if (dot >= 0 && com >= 0) dec = Math.max(dot, com);
+    else if (dot >= 0 || com >= 0) {
+      var ch = dot >= 0 ? "." : ",", at = Math.max(dot, com);
+      if (s.indexOf(ch) === at) { // 只出現一次
+        var tail = s.length - at - 1;
+        if (tail !== 3) dec = at;
+        else if (idStyle ? ch === "," : ch === ".") dec = at; // 分不出來：印尼文 1,500＝1.5；其他 1.500＝1.5
+      }
+    }
+    var whole = (dec >= 0 ? s.slice(0, dec) : s).replace(/[.,]/g, ""), frac = dec >= 0 ? s.slice(dec + 1).replace(/[.,]/g, "") : "";
+    return +(whole + (frac ? "." + frac : "")) || 0;
+  }
   function convert(from) {
     var a = document.getElementById("idr"), b = document.getElementById("twd");
     if (!a || !b) return;
     var r = T.rate.twd;
     if (from === "idr") {
-      var n = +a.value.replace(/[^\d]/g, "");
+      var n = Math.round(parseNum(a.value, true)); // 印尼盾欄一律照印尼寫法（畫面上就是 100.000）
       b.value = n ? (n / r).toFixed(n / r < 100 ? 1 : 0) : "";
     } else {
-      var m = +b.value.replace(/[^\d.]/g, "");
+      var m = parseNum(b.value, lang === "id");
       a.value = m ? Math.round(m * r).toLocaleString("id-ID") : "";
     }
   }
