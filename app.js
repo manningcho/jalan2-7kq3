@@ -399,7 +399,7 @@
         setTimeout(function () { s.stop(); }, 5000);
       });
     }, function () { // 沒載到（沒網路）：舊的繼續播，下次再試
-      drop(mine);
+      drop(mine); mine.stop(); // stop 也會把這段的音量節點斷開
       if (sndCur === mine) sndKey = "";
     });
   }
@@ -1973,7 +1973,8 @@
     if (!a || !b) return;
     var r = T.rate.twd;
     if (from === "idr") {
-      var n = Math.round(parseNum(a.value, true)); // 印尼盾欄一律照印尼寫法（畫面上就是 100.000）
+      // 印尼盾欄是整數欄：只看數字，句點逗號都當千分位。不能用 parseNum：100.000 刪掉一個 0 變 100.00，會被當成 100
+      var n = +a.value.replace(/[^\d]/g, "");
       b.value = n ? (n / r).toFixed(n / r < 100 ? 1 : 0) : "";
     } else {
       var m = parseNum(b.value, lang === "id");
