@@ -408,9 +408,11 @@
   function startSound() {
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC || !window.SOUND) return;
-    if (!sndCtx) { sndCtx = new AC(); sndMaster = sndCtx.createGain(); sndMaster.gain.value = 0; sndMaster.connect(sndCtx.destination); }
-    if (sndCtx.state !== "running") { var p = sndCtx.resume(), chk = function () { sndCheck(); }; Promise.resolve(p).then(chk, chk); }
-    else sndCheck();
+    if (!sndCtx) {
+      sndCtx = new AC(); sndMaster = sndCtx.createGain(); sndMaster.gain.value = 0; sndMaster.connect(sndCtx.destination);
+      if (sndCtx.addEventListener) sndCtx.addEventListener("statechange", sndCheck); // 真的開始播（或被系統停掉）時馬上知道
+    }
+    sndResume();
     sndApply();
     sndVol(SND_VOL, 0.8); // 慢慢淡入
   }
@@ -424,6 +426,15 @@
     SND_EV.forEach(function (ev) { document[on ? "addEventListener" : "removeEventListener"](ev, sndKick, true); });
   }
   function sndCheck() { sndArm(!!(soundOn && sndCtx && sndCtx.state !== "running")); } // 開著卻沒在播：等下一次點
+  // 先掛上「下一次點再試」，再叫聲音開始；真的 running 才拿掉。
+  // 不能等 resume() 回覆才掛：iPhone 切回前景時 resume() 有時一直不回（WebKit bug 281566），那樣就永遠不會再試
+  function sndResume() {
+    if (sndCtx.state === "running") return sndCheck();
+    sndArm(!!soundOn);
+    var p, chk = function () { sndCheck(); };
+    try { p = sndCtx.resume(); } catch (e) {}
+    Promise.resolve(p).then(chk, chk);
+  }
   function stopSound() {
     sndArm(false);
     if (!sndMaster) return;
@@ -437,7 +448,7 @@
   document.addEventListener("visibilitychange", function () {
     if (!sndCtx || !soundOn) return;
     if (document.hidden) sndCtx.suspend();
-    else { var p = sndCtx.resume(), chk = function () { sndCheck(); }; Promise.resolve(p).then(chk, chk); sndApply(); } // iPhone 切回來有時開不回去：等下一次點
+    else { sndResume(); sndApply(); } // iPhone 切回來有時開不回去：等下一次點
   });
 
   function setPrefsOpen(open) {
@@ -1255,22 +1266,33 @@
     timeDialog('<p class="time-h">' + esc(u("dlTitle")) + '</p><p class="time-p">' + esc(fill(u("timeAsk"), { mb: mb(need) })) + "</p>" +
       '<span class="time-btns"><button type="button" class="time-no" data-time-cancel="1">' + esc(u("timeCancel")) + '</button><button type="button" class="time-go" data-time-go="1">' + esc(u("timeGo")) + "</button></span>");
   }
-  var timeBusy = false, timeKill = null, TIME_STALL = 20000;
+  var timeBusy = false, timeKill = null, timeGen = 0, TIME_STALL = 20000;
   function timeDownload() {
     if (timeBusy) return;
     timeBusy = true;
+    // 每一輪下載有自己的編號：取消後馬上可以重新下載，舊一輪晚到的回呼不能改到新一輪的狀態
+    var gen = ++timeGen, ended = false;
     var todo = timePack().filter(function (f) { return timeReady[f[0]] !== f[1]; });
     var total = todo.reduce(function (a, f) { return a + f[1]; }, 0), done = 0;
     // 手機網路卡住時 fetch 可能永遠不回：按「取消」或 20 秒沒有任何進度就停下（已經下載好的檔案留著）
     var dead = null, ctl = null, rd = null, stall = 0, killed;
     var killP = new Promise(function (r, no) { killed = no; });
     killP.catch(function () {}); // 只拿來和下載比快，不用另外處理
+    // 收尾只做一次。取消／逾時當下就收尾，不等手上那張存完（存檔 cache.put 中止不了，存完的是完整的圖）
+    var end = function () {
+      if (ended) return false;
+      ended = true; clearTimeout(stall);
+      if (gen !== timeGen) return false;
+      timeKill = null; timeBusy = false;
+      return true;
+    };
     var kill = function (why) {
       if (dead) return;
-      dead = why; clearTimeout(stall); timeKill = null;
+      dead = why;
       try { if (ctl) ctl.abort(); } catch (e) {}
       try { if (rd) rd.cancel().catch(function () {}); } catch (e) {}
       killed(new Error(why));
+      fail();
     };
     var alive = function () { clearTimeout(stall); stall = setTimeout(function () { kill("stall"); }, TIME_STALL); }; // 有進度就重新算 20 秒
     timeKill = kill;
@@ -1301,7 +1323,7 @@
         var finish = function (blob) {
           if (dead) throw new Error(dead); // 被取消了：這個沒下載完整，不存
           done = start + f[1]; show();
-          return cacheP.then(function (c) { return c && c.put(f[0], new Response(blob, { headers: { "Content-Type": type } })); })
+          return cacheP.then(function (c) { if (dead) throw new Error(dead); return c && c.put(f[0], new Response(blob, { headers: { "Content-Type": type } })); }) // 等快取打開時被取消了：不存
             .then(function () { timeReady[f[0]] = f[1]; saveTime(); });
         };
         if (!res.body || !res.body.getReader) return Promise.race([killP, res.blob()]).then(finish);
@@ -1318,19 +1340,20 @@
         return pump();
       }).then(function () { return one(i + 1); });
     };
+    function fail() {
+      if (!end()) return;
+      timeMark(timeOn);
+      if (dead === "user") { timeClose(); timeNote(timeShown() ? timeStatus() : "", timeShown()); return; } // 使用者按取消：直接關掉
+      timeDialog('<p class="time-h">' + esc(u("timeFailTitle")) + '</p><p class="time-p">' + esc(u(dead === "stall" ? "timeStall" : "timeFail")) + '</p><span class="time-btns"><button type="button" class="time-go" data-time-cancel="1">' + esc(u("timeOk")) + "</button></span>");
+    }
     one(0).then(function () {
-      clearTimeout(stall); timeKill = null;
-      timeBusy = false; timeOn = true; saveTime(); timeMark(true);
+      if (dead || !end()) return;
+      timeOn = true; saveTime(); timeMark(true);
       render(); // 先換成現在時段的圖（彈窗在網頁最外層，不會被重畫掉）
       // 不自己關：讓使用者按「好」（2026/11/02 使用者）
       timeDialog('<p class="time-h">' + esc(u("timeDoneTitle")) + ' ✦</p><p class="time-p">' + esc(fill(u("timeDone"), { mb: mb(timeBytes()) })) + "</p>" +
         '<span class="time-btns"><button type="button" class="time-go" data-time-cancel="1">' + esc(u("timeOk")) + "</button></span>");
-    }, function () {
-      clearTimeout(stall); timeKill = null;
-      timeBusy = false; timeMark(timeOn);
-      if (dead === "user") { timeClose(); timeNote(timeShown() ? timeStatus() : "", timeShown()); return; } // 使用者按取消：直接關掉
-      timeDialog('<p class="time-h">' + esc(u("timeFailTitle")) + '</p><p class="time-p">' + esc(u(dead === "stall" ? "timeStall" : "timeFail")) + '</p><span class="time-btns"><button type="button" class="time-go" data-time-cancel="1">' + esc(u("timeOk")) + "</button></span>");
-    });
+    }, fail);
   }
   function timeSlot(city, art) {
     var f = /[?&]time=(day|dusk|night)/.exec(location.search);
