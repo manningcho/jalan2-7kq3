@@ -83,6 +83,8 @@
     timeFailTitle: ["下載失敗", "Gagal mengunduh", "Download failed"],
     timeFail: ["可能沒有網路。有網路時再按一次「開」。", "Mungkin tidak ada internet. Coba \"Nyala\" lagi nanti.", "Maybe no internet. Tap \"On\" again later."],
     timeOk: ["好", "Oke", "OK"],
+    timeStop: ["取消", "Batal", "Cancel"],
+    timeStall: ["網路好像卡住了。已下載的會留著，有網路時再按一次「開」補完。", "Internet sepertinya macet. Yang sudah diunduh tetap tersimpan; tekan \"Nyala\" lagi nanti.", "The connection seems stuck. What's downloaded is kept; tap \"On\" again later to finish."],
     timeClear: ["刪除", "Hapus", "Delete"],
     tiltLabel: ["傾斜手機（插畫跟著晃）", "Miringkan HP (gambar ikut bergerak)", "Tilt your phone (the picture moves)"],
     tiltDenied: ["手機沒有允許讀取傾斜。iPhone 按過「取消」之後暫時不會再問：把 Safari 從背景完全滑掉再打開，再按一次「開」就會再問。",
@@ -407,26 +409,35 @@
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC || !window.SOUND) return;
     if (!sndCtx) { sndCtx = new AC(); sndMaster = sndCtx.createGain(); sndMaster.gain.value = 0; sndMaster.connect(sndCtx.destination); }
-    if (sndCtx.state !== "running") sndCtx.resume();
+    if (sndCtx.state !== "running") { var p = sndCtx.resume(), chk = function () { sndCheck(); }; Promise.resolve(p).then(chk, chk); }
+    else sndCheck();
     sndApply();
     sndVol(SND_VOL, 0.8); // 慢慢淡入
   }
+  // iPhone（WebKit）只在手指放開（pointerup／touchend／click）或按鍵時允許開聲音，pointerdown 不算。
+  // 所以一直聽著這幾種事件，聲音真的在播（running）才拿掉；沒開成就等下一次點（2026/11/04 Codex 檢查）
+  var sndArmed = false, SND_EV = ["pointerup", "touchend", "click", "keydown"];
+  function sndKick() { if (!soundOn) return sndArm(false); if (!sndCtx || sndCtx.state !== "running") startSound(); else sndArm(false); }
+  function sndArm(on) {
+    if (on === sndArmed) return;
+    sndArmed = on;
+    SND_EV.forEach(function (ev) { document[on ? "addEventListener" : "removeEventListener"](ev, sndKick, true); });
+  }
+  function sndCheck() { sndArm(!!(soundOn && sndCtx && sndCtx.state !== "running")); } // 開著卻沒在播：等下一次點
   function stopSound() {
+    sndArm(false);
     if (!sndMaster) return;
     sndVol(0, 0.25);
     setTimeout(function () { if (!soundOn && sndCtx) sndCtx.suspend(); }, 1200);
   }
-  if (soundOn) { // 記住是開的：第一次點畫面就開始
-    var sndKick = function () { document.removeEventListener("pointerdown", sndKick, true); document.removeEventListener("keydown", sndKick, true); if (soundOn) startSound(); };
-    document.addEventListener("pointerdown", sndKick, true);
-    document.addEventListener("keydown", sndKick, true);
-  }
+  if (soundOn) sndArm(true); // 記住是開的：第一次點畫面（手指放開時）就開始
   setInterval(sndApply, 60000); // 天黑、天亮、天氣變了都會跟著換
   window.addEventListener("hashchange", function () { setTimeout(sndApply, 50); }); // 換到別的城市那天
   window.__sound = function () { return { on: soundOn, state: sndCtx && sndCtx.state, vol: sndMaster && +sndMaster.gain.value.toFixed(2), scene: sndKey, city: sndCity(), wx: sndWx[sndCity()] || null }; }; // 給 tools 的測試看狀態
   document.addEventListener("visibilitychange", function () {
     if (!sndCtx || !soundOn) return;
-    if (document.hidden) sndCtx.suspend(); else { sndCtx.resume(); sndApply(); }
+    if (document.hidden) sndCtx.suspend();
+    else { var p = sndCtx.resume(), chk = function () { sndCheck(); }; Promise.resolve(p).then(chk, chk); sndApply(); } // iPhone 切回來有時開不回去：等下一次點
   });
 
   function setPrefsOpen(open) {
@@ -1244,13 +1255,28 @@
     timeDialog('<p class="time-h">' + esc(u("dlTitle")) + '</p><p class="time-p">' + esc(fill(u("timeAsk"), { mb: mb(need) })) + "</p>" +
       '<span class="time-btns"><button type="button" class="time-no" data-time-cancel="1">' + esc(u("timeCancel")) + '</button><button type="button" class="time-go" data-time-go="1">' + esc(u("timeGo")) + "</button></span>");
   }
-  var timeBusy = false;
+  var timeBusy = false, timeKill = null, TIME_STALL = 20000;
   function timeDownload() {
     if (timeBusy) return;
     timeBusy = true;
     var todo = timePack().filter(function (f) { return timeReady[f[0]] !== f[1]; });
     var total = todo.reduce(function (a, f) { return a + f[1]; }, 0), done = 0;
-    timeDialog('<p class="time-h">' + esc(u("dlTitle")) + '</p><span class="time-bar"><i style="width:0%"></i></span><p class="time-p time-num"></p>');
+    // 手機網路卡住時 fetch 可能永遠不回：按「取消」或 20 秒沒有任何進度就停下（已經下載好的檔案留著）
+    var dead = null, ctl = null, rd = null, stall = 0, killed;
+    var killP = new Promise(function (r, no) { killed = no; });
+    killP.catch(function () {}); // 只拿來和下載比快，不用另外處理
+    var kill = function (why) {
+      if (dead) return;
+      dead = why; clearTimeout(stall); timeKill = null;
+      try { if (ctl) ctl.abort(); } catch (e) {}
+      try { if (rd) rd.cancel().catch(function () {}); } catch (e) {}
+      killed(new Error(why));
+    };
+    var alive = function () { clearTimeout(stall); stall = setTimeout(function () { kill("stall"); }, TIME_STALL); }; // 有進度就重新算 20 秒
+    timeKill = kill;
+    alive();
+    timeDialog('<p class="time-h">' + esc(u("dlTitle")) + '</p><span class="time-bar"><i style="width:0%"></i></span><p class="time-p time-num"></p>' +
+      '<span class="time-btns"><button type="button" class="time-no" data-time-stop="1">' + esc(u("timeStop")) + "</button></span>");
     var show = function () {
       if (!timeDlg) return;
       var bar = timeDlg.querySelector(".time-bar i"), num = timeDlg.querySelector(".time-num");
@@ -1261,23 +1287,31 @@
     var cacheP = window.caches ? caches.open("trip-time") : Promise.resolve(null);
     // 一個一個下載，邊下載邊更新進度
     var one = function (i) {
+      if (dead) return Promise.reject(new Error(dead));
       if (i >= todo.length) return Promise.resolve();
       var f = todo[i], start = done;
+      alive();
+      ctl = window.AbortController ? new AbortController() : null; rd = null;
       // ?v=大小：讓 sw.js 知道這次要網路上的新圖，不要回存著的舊圖（存的時候還是存在沒有 ?v 的網址）
-      return fetch(f[0] + "?v=" + f[1], { cache: "no-store" }).then(function (res) {
+      return Promise.race([killP, fetch(f[0] + "?v=" + f[1], ctl ? { cache: "no-store", signal: ctl.signal } : { cache: "no-store" })]).then(function (res) {
+        if (dead) throw new Error(dead);
         if (!res.ok) throw new Error(res.status);
+        alive();
         var type = res.headers.get("Content-Type") || "";
         var finish = function (blob) {
+          if (dead) throw new Error(dead); // 被取消了：這個沒下載完整，不存
           done = start + f[1]; show();
           return cacheP.then(function (c) { return c && c.put(f[0], new Response(blob, { headers: { "Content-Type": type } })); })
             .then(function () { timeReady[f[0]] = f[1]; saveTime(); });
         };
-        if (!res.body || !res.body.getReader) return res.blob().then(finish);
-        var rd = res.body.getReader(), parts = [];
+        if (!res.body || !res.body.getReader) return Promise.race([killP, res.blob()]).then(finish);
+        rd = res.body.getReader();
+        var parts = [];
         var pump = function () {
-          return rd.read().then(function (r) {
+          return Promise.race([killP, rd.read()]).then(function (r) {
+            if (dead) throw new Error(dead);
             if (r.done) return finish(new Blob(parts, { type: type }));
-            parts.push(r.value); done = Math.min(start + f[1], done + r.value.length); show();
+            parts.push(r.value); done = Math.min(start + f[1], done + r.value.length); show(); alive();
             return pump();
           });
         };
@@ -1285,14 +1319,17 @@
       }).then(function () { return one(i + 1); });
     };
     one(0).then(function () {
+      clearTimeout(stall); timeKill = null;
       timeBusy = false; timeOn = true; saveTime(); timeMark(true);
       render(); // 先換成現在時段的圖（彈窗在網頁最外層，不會被重畫掉）
       // 不自己關：讓使用者按「好」（2026/11/02 使用者）
       timeDialog('<p class="time-h">' + esc(u("timeDoneTitle")) + ' ✦</p><p class="time-p">' + esc(fill(u("timeDone"), { mb: mb(timeBytes()) })) + "</p>" +
         '<span class="time-btns"><button type="button" class="time-go" data-time-cancel="1">' + esc(u("timeOk")) + "</button></span>");
     }, function () {
+      clearTimeout(stall); timeKill = null;
       timeBusy = false; timeMark(timeOn);
-      timeDialog('<p class="time-h">' + esc(u("timeFailTitle")) + '</p><p class="time-p">' + esc(u("timeFail")) + '</p><span class="time-btns"><button type="button" class="time-go" data-time-cancel="1">' + esc(u("timeOk")) + "</button></span>");
+      if (dead === "user") { timeClose(); timeNote(timeShown() ? timeStatus() : "", timeShown()); return; } // 使用者按取消：直接關掉
+      timeDialog('<p class="time-h">' + esc(u("timeFailTitle")) + '</p><p class="time-p">' + esc(u(dead === "stall" ? "timeStall" : "timeFail")) + '</p><span class="time-btns"><button type="button" class="time-go" data-time-cancel="1">' + esc(u("timeOk")) + "</button></span>");
     });
   }
   function timeSlot(city, art) {
@@ -2014,6 +2051,9 @@
       timeClearAll();
     } else if (t.dataset.timeCancel) {
       timeClose();
+    } else if (t.dataset.timeStop) {
+      if (timeKill) timeKill("user"); // 下載到一半按取消
+      else timeClose();
     } else if (t.dataset.tilt) {
       // 要在點擊當下問，iPhone 才會跳出「允許取用動作與方向」；被拒絕就停在「關」
       var want = t.dataset.tilt === "on", dbg = /[?&]debug=1/.test(location.search);
