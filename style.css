@@ -509,7 +509,7 @@ button.tilt-chip.is-in { pointer-events: auto; cursor: pointer; }
 }
 .dial-cv { display: block; width: var(--cr, 250px); height: var(--ch, 96px); }
 .dial-item svg { position: absolute; left: 0; top: 0; width: var(--cr, 250px); height: var(--ch, 96px); overflow: visible; pointer-events: none; }
-/* level labels (Chinese "keep text horizontal" option): counter-rotated by app.js so they stay upright */
+/* card names: counter-rotated by app.js so they stay level however the card turns */
 .dial-lab { position: absolute; pointer-events: none; transform-origin: 50% 50%; }
 /* only the wedge itself takes taps, so neighbouring cards' boxes never steal them */
 .dial-hit { fill: transparent; pointer-events: fill; }
