@@ -501,13 +501,16 @@ button.tilt-chip.is-in { pointer-events: auto; cursor: pointer; }
 .dial-hint text { fill: #fff; font-size: 13px; font-weight: 700; letter-spacing: .04em; }
 .dial-items { position: absolute; left: 0; top: 0; }
 /* each card: a box whose left-centre is the rivet, rotated to its angle and clipped to its wedge (so taps only land on the card) */
+/* size comes from app.js (--cr outer radius, --ch card height): bigger on bigger screens */
 .dial-item {
-  position: absolute; left: 0; top: -48px; width: 250px; height: 96px; display: block;
+  position: absolute; left: 0; top: calc(var(--ch, 96px) / -2); width: var(--cr, 250px); height: var(--ch, 96px); display: block;
   transform-origin: 0 50%; opacity: 0; text-decoration: none; will-change: transform, opacity;
   pointer-events: none; -webkit-tap-highlight-color: transparent; -webkit-user-drag: none;
 }
-.dial-cv { display: block; width: 250px; height: 96px; }
-.dial-item svg { position: absolute; left: 0; top: 0; width: 250px; height: 96px; overflow: visible; pointer-events: none; }
+.dial-cv { display: block; width: var(--cr, 250px); height: var(--ch, 96px); }
+.dial-item svg { position: absolute; left: 0; top: 0; width: var(--cr, 250px); height: var(--ch, 96px); overflow: visible; pointer-events: none; }
+/* level labels (Chinese "keep text horizontal" option): counter-rotated by app.js so they stay upright */
+.dial-lab { position: absolute; pointer-events: none; transform-origin: 50% 50%; }
 /* only the wedge itself takes taps, so neighbouring cards' boxes never steal them */
 .dial-hit { fill: transparent; pointer-events: fill; }
 .dial:not(.is-open) .dial-hit, .dial-item.is-off .dial-hit { pointer-events: none; }
