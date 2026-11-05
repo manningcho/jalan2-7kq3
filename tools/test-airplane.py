@@ -102,6 +102,12 @@ try:
       Object.keys(by).sort().forEach(k=>{ if (by[k].loaded||by[k].error) out.push(k+': loaded '+by[k].loaded+', FAILED '+by[k].error); });
       return out; })()""")
     print("airplane mode:"); [print("  " + x) for x in res] if isinstance(res, list) else print(res)
+    # 沒網路時：轉盤打得開，8 張扇形插畫都讀得到（2026/11/06 Codex 複測：原本只切換頁面，沒檢查轉盤）
+    call("Page.navigate", {"url": base + "index.html?airplane=1#days"}); time.sleep(3)
+    print("  offline dial:", ev("""(async()=>{ document.querySelector('.dial-btn').click(); await new Promise(r=>setTimeout(r,1500));
+      const urls=Object.values(TRIP.dialArt||{}), res=await Promise.all(urls.map(u=>new Promise(r=>{const i=new Image();i.onload=()=>r(i.naturalWidth>0);i.onerror=()=>r(false);i.src=u;})));
+      const bad=urls.filter((u,k)=>!res[k]);
+      return (document.querySelector('.dial.is-open')?'open':'NOT OPEN')+', art '+(urls.length-bad.length)+'/'+urls.length+(bad.length?' FAILED '+bad.join(' '):' loaded'); })()"""))
     # 沒網路時：晚上要是夜景、白天要是白天版，圖都要讀得到
     for day, at, want in [(d, at, want) for d in ("d1214", "d1215", "d1216", "d1223", "d1224", "d1225", "d1226", "d1227", "d1228", "d1229", "d1230", "d1231") for at, want in (("20:00", "night"), ("11:00", "day"))]:
         call("Page.navigate", {"url": base + "index.html?airplane=1&at=%s#%s" % (at, day)}); time.sleep(3)

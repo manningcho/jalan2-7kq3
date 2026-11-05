@@ -1633,6 +1633,7 @@
     });
     dial.addEventListener("pointermove", function (e) {
       if (!drag || e.pointerId !== drag.id) return;
+      if (!dialOpen) { drag = null; return; } // 轉到一半就收起來了（按 Esc、點背景）：不能再把卡片排回來（2026/11/06 Codex 複測）
       if (!e.buttons) { endDrag(e); return; } // 沒按著卻在動＝已經在瀏覽器外面放開了，照放開對齊格子
       if (!drag.moved) {
         if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
@@ -1652,6 +1653,7 @@
     });
     function endDrag(e) {
       if (!drag || e.pointerId !== drag.id) return;
+      if (!dialOpen) { drag = null; return; } // 已經收起來了：對齊格子會把卡片的透明度設回來，所以只清掉手勢
       if (drag.moved) {
         if (e.timeStamp - drag.t > 80) drag.v = 0; // 停住才放手就不算甩
         var aim = drag.rot + Math.max(-D_STEP, Math.min(D_STEP, drag.v * 100)); // 甩一下最多多轉一格
@@ -1665,6 +1667,9 @@
     }
     dial.addEventListener("pointerup", endDrag);
     dial.addEventListener("pointercancel", endDrag);
+    var endDragNow = function () { if (drag) endDrag({ pointerId: drag.id, timeStamp: performance.now() }); }; // 轉到一半切到背景或視窗失焦：照放開對齊
+    window.addEventListener("blur", endDragNow);
+    document.addEventListener("visibilitychange", function () { if (document.hidden) endDragNow(); });
     // 拖曳完放手不算點擊；點目前這頁就只收起來
     dial.addEventListener("click", function (e) {
       if (dial.dataset.justDragged) { e.preventDefault(); e.stopPropagation(); return; }
@@ -1791,6 +1796,7 @@
     im.onload = function () {
       (im.decode ? im.decode() : Promise.resolve()).catch(function () {}).then(function () { im.ready = true; drawCards(); });
     };
+    im.onerror = function () { if (dialImgs[src] === im) delete dialImgs[src]; }; // 下載失敗（沒網路又還沒存進手機）：下次打開再試（2026/11/06 Codex 複測）
     im.src = src;
     return im;
   }
@@ -1995,6 +2001,17 @@
   var warmTimer = null;
   // 螢幕大小變了（轉橫、視窗拉大）：照新的大小重建卡片
   function syncGeom() { if (dialGeom()) dialLang = null; }
+  // 轉盤開著的時候大小變了，照新的大小重開一次；關著的話下次打開才重建（2026/11/06 Codex 複測：原本要收起再開才換尺寸，卡片會超出螢幕）
+  var geomTimer = null;
+  function dialResize() {
+    clearTimeout(geomTimer);
+    geomTimer = setTimeout(function () {
+      if (!dial || !dialOpen || !dialGeom()) return;
+      dialLang = null;
+      closeDial(true);
+      openDial();
+    }, 200);
+  }
   function warmDial() {
     if (dial && !dialOpen) syncGeom();
     if (!dial || dialOpen || dialLang === lang || warmTimer) return;
@@ -2256,6 +2273,7 @@
   });
   window.addEventListener("hashchange", function () { prefsOpen = false; render(); window.scrollTo(0, 0); });
   window.addEventListener("resize", function () { fit(); placeSays(); fitClock(); });
+  window.addEventListener("resize", dialResize); // 獨立一個：上面任何一個出錯也不影響轉盤換尺寸
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fit(); placeSays(); });
   if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", function () { placeSays(); fitClock(); }); // 字型晚到，字寬會變
   render();
