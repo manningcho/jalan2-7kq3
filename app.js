@@ -1790,7 +1790,7 @@
     if (h.charAt(0) === "#") { var n = parseInt(h.slice(1), 16); return "rgba(" + (n >> 16) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")"; }
     return h.replace(/[\d.]+\)$/, a + ")");
   }
-  // 海報式（2026/11/05 使用者選的 A）：插畫鋪滿卡片外側三分之二，名字放在插畫上的名牌裡（扇形最寬、離大拇指最遠的地方，見 drawLabel()），
+  // 海報式（2026/11/05 使用者選的 A）：插畫鋪滿卡片外側三分之二，名字水平印在插畫上（扇形最寬、離大拇指最遠的地方，見 drawLabel()），
   // 內側淡入卡片底色，是大拇指放的地方。原本「內側色塊寫字、外側放圖」，使用者轉的時候眼睛一直盯著字、完全沒看到圖
   function drawCards() {
     if (!dial || !dialItems.length || !window.Path2D) return;
@@ -1825,39 +1825,35 @@
       drawLabel(dialLabs[i], pad(i + 1), u(x[1]), cur, p, dpr);
     });
   }
-  // 圓角矩形路徑（canvas 的 roundRect 舊版 iPhone 沒有）
-  function rrect(c, x, y, w, h, r) {
-    c.beginPath(); c.moveTo(x + r, y);
-    c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
-    c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
-  }
-  // 名字：編號一行、名字一行，放在一塊實心的圓角名牌上，水平印在 0.84 半徑處（反向轉的動作在 setCardTf()）。
-  // 2026/11/06 使用者：字直接印在插畫上，跟圖疊在一起不好認 → 名牌跟著深淺色用卡片底色和字色，目前這頁金框金字。
-  // 名牌最寬到卡片在那個半徑的寬度，字太長就縮小。小畫布四周留邊給陰影，字用 middle 對齊（iPhone 的字比 Chrome 高，貼著裁會切掉字底）
+  // 名字：編號一行、名字一行，水平印在插畫上 0.84 半徑處（扇形最寬、離大拇指最遠；反向轉的動作在 setCardTf()）。
+  // 2026/11/06 使用者：字直接印在插畫上不好認，加方框（名牌）又很突兀 → 照地圖在衛星照片上標字的做法：
+  // 白字外面一圈緊貼字形的柔和深色描邊，再加一層淡淡的陰影，不用方框也看得清楚；深淺色都一樣，目前這頁用亮金色。
+  // 字太長放不下（斜的卡片會壓到邊框）就縮小。小畫布四周留邊給描邊和陰影，字用 middle 對齊（iPhone 的字比 Chrome 高，貼著裁會切掉字底）
   function drawLabel(lab, no, name, cur, p, dpr) {
     if (!lab) return;
-    var r = C_R * .84, sNo = Math.round(10 * C_K), sName = Math.round(14.5 * C_K), gap = Math.round(2 * C_K);
-    var px = Math.round(8 * C_K), py = Math.round(5 * C_K), m = 5;
+    var r = C_R * .84, sNo = Math.round(11 * C_K), sName = Math.round(15.5 * C_K), gap = Math.round(2 * C_K);
     var c = lab.getContext("2d"), fNo = "600 " + sNo + "px " + p.mono, fName = "800 " + sName + "px " + p.body;
     c.font = fName;
-    var w = c.measureText(name).width, avail = 2 * r * Math.sin(C_HALF) - px * 2 - 4;
+    var w = c.measureText(name).width, avail = 2 * r * Math.sin(C_HALF) - sName * .7;
     if (w > avail) { sName = Math.floor(sName * avail / w); fName = "800 " + sName + "px " + p.body; c.font = fName; w = c.measureText(name).width; }
     c.font = fNo; w = Math.max(w, c.measureText(no).width);
-    var hNo = Math.round(sNo * 1.3), hName = Math.round(sName * 1.3);
-    var pw = Math.ceil(w) + px * 2, ph = hNo + gap + hName + py * 2, W = pw + m * 2, H = ph + m * 2;
+    var pd = Math.round(sName * .6), hNo = Math.round(sNo * 1.3), hName = Math.round(sName * 1.3);
+    var W = Math.ceil(w) + pd * 2, H = hNo + gap + hName + pd * 2;
     lab.style.width = W + "px"; lab.style.height = H + "px";
     lab.style.left = Math.round(r - W / 2) + "px"; lab.style.top = Math.round(C_MID - H / 2) + "px";
     lab.width = W * dpr; lab.height = H * dpr;
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
-    var plate = fade(c, p.card, .92);
-    c.save();
-    c.shadowColor = "rgba(0,0,0,.28)"; c.shadowBlur = 6 * dpr; c.shadowOffsetY = 1.5 * dpr; // 陰影不跟著縮放，要自己乘裝置像素比
-    rrect(c, m, m, pw, ph, Math.round(8 * C_K)); c.fillStyle = plate; c.fill();
-    c.restore();
-    if (cur) { rrect(c, m + .75, m + .75, pw - 1.5, ph - 1.5, Math.round(8 * C_K)); c.lineWidth = 1.5; c.strokeStyle = p.gold; c.stroke(); }
-    c.textAlign = "center"; c.textBaseline = "middle";
-    c.font = fNo; c.fillStyle = cur ? p.gold : p.muted; c.fillText(no, W / 2, m + py + hNo / 2);
-    c.font = fName; c.fillStyle = cur ? p.gold : p.ink; c.fillText(name, W / 2, m + py + hNo + gap + hName / 2);
+    c.textAlign = "center"; c.textBaseline = "middle"; c.lineJoin = "round"; c.miterLimit = 2;
+    var col = cur ? "#f2c86e" : "#fff";
+    var halo = function (t, y, size) {
+      c.save();
+      c.shadowColor = "rgba(0,0,0,.5)"; c.shadowBlur = size * .45 * dpr; // 陰影不跟著縮放，要自己乘裝置像素比
+      c.lineWidth = size * .32; c.strokeStyle = "rgba(12,14,22,.72)"; c.strokeText(t, W / 2, y);
+      c.restore();
+      c.fillStyle = col; c.fillText(t, W / 2, y);
+    };
+    c.font = fNo; halo(no, pd + hNo / 2, sNo);
+    c.font = fName; halo(name, pd + hNo + gap + hName / 2, sName);
   }
   function fillDial() {
     var cur = dialSection((location.hash || "").replace(/^#/, ""));
