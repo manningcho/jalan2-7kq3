@@ -1790,14 +1790,14 @@
     if (h.charAt(0) === "#") { var n = parseInt(h.slice(1), 16); return "rgba(" + (n >> 16) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")"; }
     return h.replace(/[\d.]+\)$/, a + ")");
   }
-  // 海報式（2026/11/05 使用者選的 A）：插畫鋪滿卡片外側三分之二，名字水平印在插畫上（扇形最寬、離大拇指最遠的地方），
+  // 海報式（2026/11/05 使用者選的 A）：插畫鋪滿卡片外側三分之二，名字放在插畫上的名牌裡（扇形最寬、離大拇指最遠的地方，見 drawLabel()），
   // 內側淡入卡片底色，是大拇指放的地方。原本「內側色塊寫字、外側放圖」，使用者轉的時候眼睛一直盯著字、完全沒看到圖
   function drawCards() {
     if (!dial || !dialItems.length || !window.Path2D) return;
     if (!cardPath) cardPath = new Path2D(C_CARD);
     var p = dialPaint(), dpr = Math.min(3, Math.max(1, Math.ceil(window.devicePixelRatio || 1))), pk = JSON.stringify(p);
     dialItems.forEach(function (el, i) {
-      var x = DIAL[i], cur = el.classList.contains("is-cur"), src = (T.menuArt || {})[x[0]], im = src ? dialImg(src) : null;
+      var x = DIAL[i], cur = el.classList.contains("is-cur"), src = (T.dialArt || T.menuArt || {})[x[0]], im = src ? dialImg(src) : null;
       var ready = !!(im && im.ready), fonts = !!(dialFonts && dialFonts.ready);
       var key = [pk, cur, dialLang, dpr, ready, fonts, C_R].join("|");
       if (cardKeys[i] === key) return; // 沒變就不重畫
@@ -1818,9 +1818,6 @@
       var g = c.createRadialGradient(0, C_MID, C_R * .36, 0, C_MID, C_R * .54); // 內側：插畫淡入卡片底色
       g.addColorStop(0, base); g.addColorStop(1, fade(c, base, 0));
       c.fillStyle = g; c.fillRect(0, 0, C_R, C_H);
-      var t = c.createRadialGradient(0, C_MID, C_R * .64, 0, C_MID, C_R); // 外側：名字底下淡淡的深色帶
-      t.addColorStop(0, "rgba(10,12,20,0)"); t.addColorStop(.5, "rgba(10,12,20,.3)"); t.addColorStop(1, "rgba(10,12,20,.22)");
-      c.fillStyle = t; c.fillRect(0, 0, C_R, C_H);
       c.lineWidth = cur ? 5 : 2; // 線畫在邊上、只留裡面那一半
       c.strokeStyle = cur ? p.gold : p.line;
       c.stroke(cardPath);
@@ -1828,28 +1825,39 @@
       drawLabel(dialLabs[i], pad(i + 1), u(x[1]), cur, p, dpr);
     });
   }
-  // 名字：編號一行、名字一行，水平印在 0.84 半徑處（反向轉的動作在 setCardTf()）。印在插畫上，所以深淺色都用白字加陰影，
-  // 目前這頁用亮金色。字太長放不下（斜一點的卡片會壓到邊框）就縮小。
-  // 小畫布四周多留空間：iPhone 的字比 Chrome 高，原本照字的大小剛好裁，字底會被切掉（2026/11/05 使用者在手機上看到）
+  // 圓角矩形路徑（canvas 的 roundRect 舊版 iPhone 沒有）
+  function rrect(c, x, y, w, h, r) {
+    c.beginPath(); c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+  }
+  // 名字：編號一行、名字一行，放在一塊實心的圓角名牌上，水平印在 0.84 半徑處（反向轉的動作在 setCardTf()）。
+  // 2026/11/06 使用者：字直接印在插畫上，跟圖疊在一起不好認 → 名牌跟著深淺色用卡片底色和字色，目前這頁金框金字。
+  // 名牌最寬到卡片在那個半徑的寬度，字太長就縮小。小畫布四周留邊給陰影，字用 middle 對齊（iPhone 的字比 Chrome 高，貼著裁會切掉字底）
   function drawLabel(lab, no, name, cur, p, dpr) {
     if (!lab) return;
-    var r = C_R * .84, sNo = Math.round(11 * C_K), sName = Math.round(15.5 * C_K), gap = Math.round(3 * C_K);
+    var r = C_R * .84, sNo = Math.round(10 * C_K), sName = Math.round(14.5 * C_K), gap = Math.round(2 * C_K);
+    var px = Math.round(8 * C_K), py = Math.round(5 * C_K), m = 5;
     var c = lab.getContext("2d"), fNo = "600 " + sNo + "px " + p.mono, fName = "800 " + sName + "px " + p.body;
     c.font = fName;
-    var w = c.measureText(name).width, avail = 2 * (r - 25) * Math.sin(C_HALF) - 12;
+    var w = c.measureText(name).width, avail = 2 * r * Math.sin(C_HALF) - px * 2 - 4;
     if (w > avail) { sName = Math.floor(sName * avail / w); fName = "800 " + sName + "px " + p.body; c.font = fName; w = c.measureText(name).width; }
     c.font = fNo; w = Math.max(w, c.measureText(no).width);
-    var pd = Math.round(sName * .45), hNo = Math.round(sNo * 1.25), hName = Math.round(sName * 1.3);
-    var W = Math.ceil(w) + pd * 2, H = hNo + gap + hName + pd * 2;
+    var hNo = Math.round(sNo * 1.3), hName = Math.round(sName * 1.3);
+    var pw = Math.ceil(w) + px * 2, ph = hNo + gap + hName + py * 2, W = pw + m * 2, H = ph + m * 2;
     lab.style.width = W + "px"; lab.style.height = H + "px";
     lab.style.left = Math.round(r - W / 2) + "px"; lab.style.top = Math.round(C_MID - H / 2) + "px";
     lab.width = W * dpr; lab.height = H * dpr;
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var plate = fade(c, p.card, .92);
+    c.save();
+    c.shadowColor = "rgba(0,0,0,.28)"; c.shadowBlur = 6 * dpr; c.shadowOffsetY = 1.5 * dpr; // 陰影不跟著縮放，要自己乘裝置像素比
+    rrect(c, m, m, pw, ph, Math.round(8 * C_K)); c.fillStyle = plate; c.fill();
+    c.restore();
+    if (cur) { rrect(c, m + .75, m + .75, pw - 1.5, ph - 1.5, Math.round(8 * C_K)); c.lineWidth = 1.5; c.strokeStyle = p.gold; c.stroke(); }
     c.textAlign = "center"; c.textBaseline = "middle";
-    c.shadowColor = "rgba(0,0,0,.7)"; c.shadowBlur = 6 * dpr; c.shadowOffsetY = dpr; // 陰影不跟著縮放，要自己乘裝置像素比
-    c.fillStyle = cur ? "#f2c86e" : "#fff";
-    c.font = fNo; c.globalAlpha = .85; c.fillText(no, W / 2, pd + hNo / 2);
-    c.font = fName; c.globalAlpha = 1; c.fillText(name, W / 2, pd + hNo + gap + hName / 2);
+    c.font = fNo; c.fillStyle = cur ? p.gold : p.muted; c.fillText(no, W / 2, m + py + hNo / 2);
+    c.font = fName; c.fillStyle = cur ? p.gold : p.ink; c.fillText(name, W / 2, m + py + hNo + gap + hName / 2);
   }
   function fillDial() {
     var cur = dialSection((location.hash || "").replace(/^#/, ""));
