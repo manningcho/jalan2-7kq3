@@ -31,11 +31,11 @@ window.TRIP = {
     days: "img/m-days.jpg", "food-jkt": "img/m-food.jpg", stay: "img/m-stay.jpg", transport: "img/m-transport.jpg", info: "img/m-info.jpg",
     learn: "img/m-learn.jpg", money: "img/m-money.jpg", pack: "img/m-pack.jpg"
   },
-  // 快速前往轉盤的卡片用：同一張 Codex 原圖（~/.codex/generated_images 裡的 1254px）縮成 512px。
-  // 卡片放大後，選單用的 168px 小圖會糊（2026/11/06 使用者）
+  // 快速前往轉盤的卡片用：Codex 照 tools/fan-template.png 畫的扇形專用直式插畫（1024×1536，主題和畫風照選單小插畫），
+  // 裁出扇形那一條（尖端在下方中央、左右各 12.5°）縮成 454×1024。2026/11/06 使用者：正方形的圖只鋪得到卡片外側，靠近按鈕那截空著很可惜
   dialArt: {
-    days: "img/m-days-dial.jpg", "food-jkt": "img/m-food-dial.jpg", stay: "img/m-stay-dial.jpg", transport: "img/m-transport-dial.jpg", info: "img/m-info-dial.jpg",
-    learn: "img/m-learn-dial.jpg", money: "img/m-money-dial.jpg", pack: "img/m-pack-dial.jpg"
+    days: "img/m-days-fan.jpg", "food-jkt": "img/m-food-fan.jpg", stay: "img/m-stay-fan.jpg", transport: "img/m-transport-fan.jpg", info: "img/m-info-fan.jpg",
+    learn: "img/m-learn-fan.jpg", money: "img/m-money-fan.jpg", pack: "img/m-pack-fan.jpg"
   },
   // 插畫：OpenAI Codex 生成（2026/10），1280×924 JPG；top 是圖片上緣 20% 的平均天空色，大字和漸層用它才不會有色差
   // 封面輪播：第一張是原本的婆羅浮屠，後面 6 張是可以存成手機桌布的插畫（wall/，1179×2556）

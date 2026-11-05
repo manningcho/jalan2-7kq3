@@ -1810,14 +1810,21 @@
       c.clip(cardPath);
       c.fillStyle = p.bg;
       c.fillRect(0, 0, C_R, C_H);
-      if (ready) { // 圖的上方朝外，上緣稍微超出卡片
-        var S = Math.round(C_R * .66), rc = C_R - S / 2 + C_R * .03;
-        c.save(); c.translate(rc, C_MID); c.rotate(Math.PI / 2); c.drawImage(im, -S / 2, -S / 2, S, S); c.restore();
+      var tall = ready && im.naturalHeight > im.naturalWidth * 1.2;
+      if (tall) {
+        // 扇形專用的直式插畫（Codex 照 tools/fan-template.png 畫、裁出扇形那一條）：尖端對準按鈕中心，上緣到卡片外緣，整張鋪滿
+        var hh = C_R * 1.02, ww = hh * im.naturalWidth / im.naturalHeight;
+        c.save(); c.translate(0, C_MID); c.rotate(Math.PI / 2); c.drawImage(im, -ww / 2, -hh, ww, hh); c.restore(); // 圖的上方朝外
+      } else {
+        if (ready) { // 正方形的選單插畫：鋪在外側三分之二，上緣稍微超出卡片
+          var S = Math.round(C_R * .66), rc = C_R - S / 2 + C_R * .03;
+          c.save(); c.translate(rc, C_MID); c.rotate(Math.PI / 2); c.drawImage(im, -S / 2, -S / 2, S, S); c.restore();
+        }
+        var base = cur ? p.goldSoft : p.card;
+        var g = c.createRadialGradient(0, C_MID, C_R * .36, 0, C_MID, C_R * .54); // 內側：插畫淡入卡片底色
+        g.addColorStop(0, base); g.addColorStop(1, fade(c, base, 0));
+        c.fillStyle = g; c.fillRect(0, 0, C_R, C_H);
       }
-      var base = cur ? p.goldSoft : p.card;
-      var g = c.createRadialGradient(0, C_MID, C_R * .36, 0, C_MID, C_R * .54); // 內側：插畫淡入卡片底色
-      g.addColorStop(0, base); g.addColorStop(1, fade(c, base, 0));
-      c.fillStyle = g; c.fillRect(0, 0, C_R, C_H);
       c.lineWidth = cur ? 5 : 2; // 線畫在邊上、只留裡面那一半
       c.strokeStyle = cur ? p.gold : p.line;
       c.stroke(cardPath);
