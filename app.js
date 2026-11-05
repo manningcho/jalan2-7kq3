@@ -1535,7 +1535,7 @@
     dial = document.createElement("div");
     dial.className = "dial";
     C_R = 0; dialGeom(); // 先算好尺寸（提示弧線和卡片都要用）
-    dial.innerHTML = '<div class="dial-scrim" aria-hidden="true"></div><div class="dial-hub">' +
+    dial.innerHTML = '<div class="dial-scrim" aria-hidden="true"></div><div class="dial-ghost" aria-hidden="true">' + DIAL_IC + '</div><div class="dial-hub">' +
       '<svg class="dial-hint" viewBox="-300 -300 600 600" aria-hidden="true"><path id="dialArc" d="' + hintArc() + '" fill="none"/><path class="dial-hint-band" d=""/>' +
       '<text text-anchor="middle"><textPath href="#dialArc" startOffset="50%" text-anchor="middle"></textPath></text></svg>' +
       '<nav class="dial-items" inert></nav>' +
@@ -1571,7 +1571,27 @@
       }
       hub.style.transition = "none";
       hub.style.transform = "translate(" + (mv.bx + dx) + "px," + (mv.by + dy) + "px)";
+      var b = btn.getBoundingClientRect();
+      showGhost(b.left + b.width / 2 < window.innerWidth / 2);
     }, true);
+    // 吸附提示（2026/11/06 試做）：拖的時候，放開會停的那個角落浮出一個虛線小圓圈（裡面淡淡的小花），
+    // 越過中線就換到另一邊、彈一下；放開時小花飛進圓圈，圓圈放大淡掉
+    var ghost = dial.querySelector(".dial-ghost"), ghostLeft = null;
+    function showGhost(left) {
+      var on = ghost.classList.contains("is-on");
+      if (on && left === ghostLeft) return;
+      ghostLeft = left;
+      ghost.classList.toggle("is-left", left);
+      ghost.classList.remove("is-done", "is-pop");
+      if (on) { void ghost.offsetWidth; ghost.classList.add("is-pop"); } // 換邊：重播彈一下的動畫
+      ghost.classList.add("is-on");
+    }
+    function hideGhost() {
+      if (!ghost.classList.contains("is-on")) return;
+      ghost.classList.remove("is-on", "is-pop");
+      ghost.classList.add("is-done");
+      ghostLeft = null;
+    }
     function hubShift() {
       var t = getComputedStyle(hub).transform;
       if (!t || t === "none" || !window.DOMMatrix) return [0, 0];
@@ -1593,6 +1613,7 @@
       hub.style.transition = "transform .38s cubic-bezier(.2, .9, .3, 1.15)";
       hub.style.transform = "none";
       dial.classList.remove("is-moving");
+      hideGhost();
       btn.dataset.moved = "1";
       setTimeout(function () { delete btn.dataset.moved; }, 0);
     }

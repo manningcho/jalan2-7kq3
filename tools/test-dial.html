@@ -167,6 +167,18 @@ f.onload=async function(){ try {
   b0=btn.getBoundingClientRect(); bx=b0.left+28; by=b0.top+28;
   bp('pointerdown',bx,by); for (var k=1;k<=10;k++){ await sleep(16); bp('pointermove',bx+k*30,by); } bp('pointerup',bx+300,by); btn.click(); await settle();
   ok('drag back to the right', !d.querySelector('.dial').classList.contains('is-left') && w.localStorage.getItem('trip-dial-side')==='right' && btn.getBoundingClientRect().right > 300, Math.round(btn.getBoundingClientRect().right));
+  // ---- snap hint: while dragging, a ring shows the corner the button will land in, and it follows across the midline (2026/11/06)
+  var gh=d.querySelector('.dial-ghost');
+  b0=btn.getBoundingClientRect(); bx=b0.left+28; by=b0.top+28;
+  bp('pointerdown',bx,by); for (var k=1;k<=4;k++){ await sleep(16); bp('pointermove',bx-k*10,by); }
+  var g1=gh.className;
+  for (var k=1;k<=12;k++){ await sleep(16); bp('pointermove',bx-40-k*25,by); }
+  var g2=gh.className;
+  for (var k=11;k>=0;k--){ await sleep(16); bp('pointermove',bx-40-k*25,by); }
+  var g3=gh.className;
+  bp('pointerup',bx-40,by); btn.click(); await settle();
+  var g4=gh.className;
+  ok('snap hint: ring in the corner it will land in, moves across the midline, hides on release', /is-on/.test(g1)&&!/is-left/.test(g1) && /is-on/.test(g2)&&/is-left/.test(g2) && /is-on/.test(g3)&&!/is-left/.test(g3)&&/is-pop/.test(g3) && !/is-on/.test(g4) && !d.querySelector('.dial').classList.contains('is-left'), g1+' | '+g2+' | '+g3+' | '+g4);
   // ---- desktop: the mouse is often released outside the browser, so the page never gets pointerup (2026/11/05)
   function mp(type,x,y,b,el){ (el||btn).dispatchEvent(new w.PointerEvent(type,{pointerId:1,pointerType:'mouse',isPrimary:true,button:type==='pointermove'?-1:0,buttons:b,clientX:x,clientY:y,bubbles:true,cancelable:true})); }
   var dl=d.querySelector('.dial');

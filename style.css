@@ -484,6 +484,24 @@ button.tilt-chip.is-in { pointer-events: auto; cursor: pointer; }
 }
 .dial.is-left .dial-hub { right: auto; left: calc(max(16px, env(safe-area-inset-left, 0px)) + 28px); }  /* left-handed: bottom-left corner */
 .dial.is-moving .dial-btn { cursor: grabbing; transform: scale(1.08); box-shadow: 0 14px 30px rgba(10, 14, 25, .38); }
+/* snap hint while dragging the button: a dashed ring (with a faint flower) in the corner it will land in */
+.dial-ghost {
+  position: fixed; z-index: 41; width: 56px; height: 56px; box-sizing: border-box; border-radius: 50%;
+  right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  display: grid; place-items: center; color: var(--ink); border: 2px dashed currentColor; pointer-events: none;
+  opacity: 0; transform: scale(.6); transition: opacity .2s ease, transform .25s cubic-bezier(.2, .9, .3, 1.2);
+}
+.dial-ghost::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: currentColor; opacity: .1; }
+.dial-ghost svg { width: 26px; height: 26px; opacity: .45; }
+.dial-ghost.is-left { right: auto; left: max(16px, env(safe-area-inset-left, 0px)); }
+.dial-ghost.is-on { opacity: .6; transform: scale(1); }
+.dial-ghost.is-done { opacity: 0; transform: scale(1.3); transition: opacity .35s ease .12s, transform .45s ease; }
+@media (prefers-reduced-motion: no-preference) {
+  .dial-ghost.is-on { animation: ghost-breath 1.6s ease-in-out .3s infinite; }
+  .dial-ghost.is-pop { animation: ghost-pop .45s cubic-bezier(.2, .9, .3, 1.3), ghost-breath 1.6s ease-in-out .5s infinite; }
+}
+@keyframes ghost-breath { 50% { transform: scale(1.08); } }
+@keyframes ghost-pop { 0% { transform: scale(.45); opacity: .2; } 60% { transform: scale(1.2); opacity: .9; } 100% { transform: scale(1); } }
 .dial-btn {
   position: absolute; z-index: 30; left: -28px; top: -28px; width: 56px; height: 56px; padding: 0; border: 0; border-radius: 50%;
   display: grid; place-items: center; cursor: pointer; background: var(--ink); color: var(--paper);
