@@ -142,7 +142,7 @@ f.onload=async function(){ try {
   // ---- left-handed: drag the button to the bottom-left corner
   go('d1221'); await sleep(300);
   var b0=btn.getBoundingClientRect(), bx=b0.left+28, by=b0.top+28;
-  function bp(type,x,y){ btn.dispatchEvent(new w.PointerEvent(type,{pointerId:11,pointerType:'touch',isPrimary:true,clientX:x,clientY:y,bubbles:true,cancelable:true})); }
+  function bp(type,x,y){ btn.dispatchEvent(new w.PointerEvent(type,{pointerId:11,pointerType:'touch',isPrimary:true,button:type==='pointermove'?-1:0,buttons:type==='pointerup'?0:1,clientX:x,clientY:y,bubbles:true,cancelable:true})); }
   bp('pointerdown',bx,by); for (var k=1;k<=10;k++){ await sleep(16); bp('pointermove',bx-k*30,by-k*3); } bp('pointerup',bx-300,by-30); btn.click(); await settle();
   ok('drag button to the left: snaps to bottom-left and remembers', d.querySelector('.dial').classList.contains('is-left') && w.localStorage.getItem('trip-dial-side')==='left' && btn.getBoundingClientRect().left<40, Math.round(btn.getBoundingClientRect().left));
   ok('dragging the button does not open the dial', !d.querySelector('.dial').classList.contains('is-open'));
@@ -166,6 +166,24 @@ f.onload=async function(){ try {
   b0=btn.getBoundingClientRect(); bx=b0.left+28; by=b0.top+28;
   bp('pointerdown',bx,by); for (var k=1;k<=10;k++){ await sleep(16); bp('pointermove',bx+k*30,by); } bp('pointerup',bx+300,by); btn.click(); await settle();
   ok('drag back to the right', !d.querySelector('.dial').classList.contains('is-left') && w.localStorage.getItem('trip-dial-side')==='right' && btn.getBoundingClientRect().right > 300, Math.round(btn.getBoundingClientRect().right));
+  // ---- desktop: the mouse is often released outside the browser, so the page never gets pointerup (2026/11/05)
+  function mp(type,x,y,b,el){ (el||btn).dispatchEvent(new w.PointerEvent(type,{pointerId:1,pointerType:'mouse',isPrimary:true,button:type==='pointermove'?-1:0,buttons:b,clientX:x,clientY:y,bubbles:true,cancelable:true})); }
+  var dl=d.querySelector('.dial');
+  b0=btn.getBoundingClientRect(); bx=b0.left+28; by=b0.top+28;
+  mp('pointerdown',bx,by,1); for (var k=1;k<=10;k++){ await sleep(16); mp('pointermove',bx-k*30,by-k*3,1); }
+  var c1=ctr(); mp('pointerdown',c1[0],c1[1],1); mp('pointerup',c1[0],c1[1],0); await sleep(20); btn.click(); await settle();
+  ok('release lost, then click the button: snaps to bottom-left first', dl.classList.contains('is-left') && !dl.classList.contains('is-moving') && btn.getBoundingClientRect().left<40 && w.localStorage.getItem('trip-dial-side')==='left', Math.round(btn.getBoundingClientRect().left)+' '+dl.className);
+  var hl2=[258.75,236.25,213.75,191.25].map(function(a){ var e=at(ptL(a)); var it=e&&e.closest('.dial-item'); return it?it.dataset.k.replace('-jkt',''):'-'; }).join(',');
+  ok('release lost, then click the button: opens fanned up-right', dl.classList.contains('is-open') && hl2==='days,food,stay,transport', hl2);
+  d.querySelector('.dial-scrim').click(); await settle();
+  b0=btn.getBoundingClientRect(); bx=b0.left+28; by=b0.top+28;
+  mp('pointerdown',bx,by,1); for (var k=1;k<=3;k++){ await sleep(16); mp('pointermove',bx+k*10,by,1); }
+  var b1=btn.getBoundingClientRect(); mp('pointerup',bx+30,by,0); btn.click(); await settle();
+  ok('next drag starts where the button is (no jump off-screen)', Math.abs(b1.left+b1.width/2-(bx+30))<2 && Math.abs(b1.top+b1.height/2-by)<2 && dl.classList.contains('is-left'), Math.round(b1.left+b1.width/2)+','+Math.round(b1.top+b1.height/2)+' vs '+Math.round(bx+30)+','+Math.round(by));
+  b0=btn.getBoundingClientRect(); bx=b0.left+28; by=b0.top+28;
+  mp('pointerdown',bx,by,1); for (var k=1;k<=10;k++){ await sleep(16); mp('pointermove',bx+k*30,by,1); }
+  await sleep(30); mp('pointermove',200,300,0,d.body); await settle();
+  ok('release lost, then the mouse moves without a button: snaps to bottom-right', !dl.classList.contains('is-left') && !dl.classList.contains('is-moving') && btn.getBoundingClientRect().right>300 && w.localStorage.getItem('trip-dial-side')==='right', Math.round(btn.getBoundingClientRect().right)+' '+dl.className);
   d.querySelector('.prefs-btn').click(); await sleep(200);
   d.querySelector('[data-lang="en"]').click(); await sleep(1800);
   ok('rebuilt ahead of time after language switch', d.querySelector('.dial-item').getAttribute('aria-label')==='Days' && d.querySelector('.dial-item canvas').width>0);

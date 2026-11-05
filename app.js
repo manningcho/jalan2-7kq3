@@ -585,14 +585,18 @@
     if (!app.querySelector("[data-cv]") || !T.covers || T.covers.length < 2) return;
     cvTimer = setInterval(function () { if (!document.hidden && !wpOpen && !cvDrag) cvShow(cvCur + 1); }, 5000);
   }
-  // 手指左右滑：上下滑照常捲動頁面
+  // 手指左右滑：上下滑照常捲動頁面。
+  // 電腦上滑鼠在瀏覽器外面才放開時網頁收不到 pointerup，輪播會一直跟著滑鼠走、也不再自動換張：
+  // 所以滑鼠沒按著卻在動、視窗失去焦點、切到背景、下一次按下時，都照放開收尾（2026/11/05，跟小花按鈕同一個問題）
   document.addEventListener("pointerdown", function (e) {
+    if (cvDrag && cvDrag.on) cvFinish(0); // 上一次滑到一半沒收到放開
     var r = e.target.closest && e.target.closest("[data-cv]");
     if (!r || (e.pointerType === "mouse" && e.button !== 0)) return;
     cvDrag = { id: e.pointerId, x: e.clientX, y: e.clientY, on: false, w: r.getBoundingClientRect().width };
   });
   document.addEventListener("pointermove", function (e) {
     if (!cvDrag || e.pointerId !== cvDrag.id) return;
+    if (!e.buttons) { cvFinish(0); return; } // 沒按著卻在動＝已經在別處放開了
     var dx = e.clientX - cvDrag.x, dy = e.clientY - cvDrag.y;
     if (!cvDrag.on) {
       if (!(cvT && cvT.lock === "x") && Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { cvDrag = null; return; }
@@ -602,18 +606,24 @@
     cvDrag.lx = e.clientX;
     cvShow(cvCur, dx * 360 / cvDrag.w);
   });
-  function cvEnd(e) {
-    if (!cvDrag || e.pointerId !== cvDrag.id) return;
+  // 收尾：滑超過 18% 就換張，不然彈回來。x＝放開的位置；沒有（被取消、沒收到放開）就用最後一次的位置
+  function cvFinish(x) {
     var d = cvDrag; cvDrag = null;
-    if (!d.on) return;
-    var dx = (e.type === "pointercancel" || !e.clientX ? (d.lx || d.x) : e.clientX) - d.x; // 被取消時沒有座標，用最後一次的位置
+    if (!d || !d.on) return;
+    var dx = (x || d.lx || d.x) - d.x;
     cvShow(cvCur + (dx < -d.w * .18 ? 1 : dx > d.w * .18 ? -1 : 0));
     cvStart(); // 手動換過就重新計時 5 秒
     cvMoved = true;
     setTimeout(function () { cvMoved = false; }, 0);
   }
+  function cvEnd(e) {
+    if (!cvDrag || e.pointerId !== cvDrag.id) return;
+    cvFinish(e.type === "pointerup" ? e.clientX : 0);
+  }
   document.addEventListener("pointerup", cvEnd);
   document.addEventListener("pointercancel", cvEnd);
+  window.addEventListener("blur", function () { cvFinish(0); });
+  document.addEventListener("visibilitychange", function () { if (document.hidden) cvFinish(0); });
   // iPhone Safari：只靠 CSS 的 touch-action: pan-y，手指稍微斜一點就會被當成上下捲動、輪播卡住。
   // 所以手指一開始移動就判斷方向：偏左右就擋掉這次捲動（第一下 touchmove 就要擋，晚了 Safari 不理），偏上下才讓頁面捲。
   var cvT = null;
@@ -1487,6 +1497,7 @@
   var dialLeft = false;
   try { dialLeft = localStorage.getItem("trip-dial-side") === "left"; } catch (e) {}
   function scrAng(th) { return dialLeft ? 180 - th : th; }
+  var settleMove = function () {}; // buildDial 裡換成真的：把拖到一半、沒收到放開的按鈕吸回角落
   var DIAL_IC = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor"><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(90 12 12)"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(180 12 12)"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(270 12 12)"/></g><circle cx="12" cy="12" r="2.3" fill="var(--ink)"/></svg>';
   function dialSection(h) {
     if (/^d12\d\d$/.test(h) || h === "days") return "days";
@@ -1524,44 +1535,61 @@
       if (btn.dataset.moved) return; // 剛拖完按鈕，不算點擊
       dialOpen ? closeDial() : openDial();
     });
-    // 按住小花拖到另一邊，放開吸到最近的下角，記在這支手機上
+    // 按住小花拖到另一邊，放開吸到最近的下角，記在這支手機上。
+    // 電腦上滑鼠常常拖過頭、在瀏覽器外面才放開，網頁就收不到 pointerup：只等它的話按鈕會卡在半路，
+    // 在那裡打開的扇形方向是錯的，下一次拖還會從錯的位置算、跳出畫面（2026/11/05 使用者回報）。
+    // 所以這幾種情況也當成「已經放開」收尾：滑鼠沒按著卻在動、視窗失去焦點、再按一次按鈕、要打開轉盤
     var mv = null;
     btn.addEventListener("pointerdown", function (e) {
+      if (mv && mv.on) { finishMove(); return; } // 上一次拖曳沒收到放開：這一下只把按鈕吸回角落
       if (dialOpen || (e.pointerType === "mouse" && e.button !== 0)) return;
-      mv = { id: e.pointerId, x: e.clientX, y: e.clientY, on: false };
+      var at = hubShift(); // 按鈕還在滑回角落的途中就被抓住：從看到的位置接著拖，不會跳
+      mv = { id: e.pointerId, x: e.clientX, y: e.clientY, bx: at[0], by: at[1], on: false };
+      try { btn.setPointerCapture(e.pointerId); } catch (err) {} // 一按下就鎖定，滑鼠一開始移很快也不會跑掉
     });
-    btn.addEventListener("pointermove", function (e) {
+    // 聽在整個視窗上：瀏覽器把指標放掉、事件改送到別的地方時也收得到
+    window.addEventListener("pointermove", function (e) {
       if (!mv || e.pointerId !== mv.id) return;
+      if (!e.buttons) { finishMove(); return; } // 沒按著卻在動＝已經在別處放開了
       var dx = e.clientX - mv.x, dy = e.clientY - mv.y;
       if (!mv.on) {
         if (Math.hypot(dx, dy) < 8) return;
         mv.on = true;
-        try { btn.setPointerCapture(e.pointerId); } catch (err) {}
         dial.classList.add("is-moving");
       }
       hub.style.transition = "none";
-      hub.style.transform = "translate(" + dx + "px," + dy + "px)";
-    });
-    function endMove(e) {
-      if (!mv || e.pointerId !== mv.id) return;
-      if (mv.on) {
-        var before = btn.getBoundingClientRect();
-        setDialSide(before.left + before.width / 2 < window.innerWidth / 2);
-        hub.style.transform = "none";
-        var after = btn.getBoundingClientRect();
-        // 從放手的位置滑到新的角落
-        hub.style.transform = "translate(" + (before.left - after.left) + "px," + (before.top - after.top) + "px)";
-        void hub.offsetWidth;
-        hub.style.transition = "transform .38s cubic-bezier(.2, .9, .3, 1.15)";
-        hub.style.transform = "none";
-        dial.classList.remove("is-moving");
-        btn.dataset.moved = "1";
-        setTimeout(function () { delete btn.dataset.moved; }, 0);
-      }
-      mv = null;
+      hub.style.transform = "translate(" + (mv.bx + dx) + "px," + (mv.by + dy) + "px)";
+    }, true);
+    function hubShift() {
+      var t = getComputedStyle(hub).transform;
+      if (!t || t === "none" || !window.DOMMatrix) return [0, 0];
+      var m = new DOMMatrix(t);
+      return [m.m41, m.m42];
     }
-    btn.addEventListener("pointerup", endMove);
-    btn.addEventListener("pointercancel", endMove);
+    // 收尾：吸到最近的下角，從現在的位置滑過去
+    function finishMove() {
+      var m = mv;
+      mv = null;
+      if (!m || !m.on) return;
+      var before = btn.getBoundingClientRect();
+      setDialSide(before.left + before.width / 2 < window.innerWidth / 2);
+      hub.style.transition = "none";
+      hub.style.transform = "none";
+      var after = btn.getBoundingClientRect();
+      hub.style.transform = "translate(" + (before.left - after.left) + "px," + (before.top - after.top) + "px)";
+      void hub.offsetWidth;
+      hub.style.transition = "transform .38s cubic-bezier(.2, .9, .3, 1.15)";
+      hub.style.transform = "none";
+      dial.classList.remove("is-moving");
+      btn.dataset.moved = "1";
+      setTimeout(function () { delete btn.dataset.moved; }, 0);
+    }
+    settleMove = finishMove;
+    function endMove(e) { if (mv && e.pointerId === mv.id) finishMove(); }
+    window.addEventListener("pointerup", endMove, true);
+    window.addEventListener("pointercancel", endMove, true);
+    window.addEventListener("blur", function () { finishMove(); });
+    document.addEventListener("visibilitychange", function () { if (document.hidden) finishMove(); });
     dial.querySelector(".dial-scrim").addEventListener("click", function () { closeDial(); });
     // 拖曳轉盤：在卡片或旁邊暗色背景上都可以拖；手指移動超過 6px 才算轉，沒移動就照常點選（點背景＝收起）
     var drag = null;
@@ -1572,6 +1600,7 @@
     });
     dial.addEventListener("pointermove", function (e) {
       if (!drag || e.pointerId !== drag.id) return;
+      if (!e.buttons) { endDrag(e); return; } // 沒按著卻在動＝已經在瀏覽器外面放開了，照放開對齊格子
       if (!drag.moved) {
         if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 6) return;
         drag.moved = true;
@@ -1803,6 +1832,7 @@
   }
   function openDial() {
     if (!dial || dialOpen) return;
+    settleMove(); // 按鈕拖到一半沒收到放開：先吸到角落、決定左右，扇形才會朝對的方向打開
     dialOpen = true;
     fillDial();
     // 每張卡先縮在按鈕裡、往回轉 150°，接著一張接一張一邊轉一邊長大到定位
@@ -1898,6 +1928,7 @@
     if (show && !dial) buildDial();
     document.documentElement.classList.toggle("has-dial", show);
     if (!dial) return;
+    settleMove();
     closeDial(true);
     dial.hidden = !show;
     dial.querySelector(".dial-btn").setAttribute("aria-label", u("dial"));

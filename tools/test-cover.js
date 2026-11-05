@@ -11,7 +11,7 @@
   ok('changes by itself after 5 s', cur() === 1 && tag() === 'sizihwan · kaohsiung', cur() + ' ' + tag() + ' ' + col());
   // swipe left
   const r = cv().getBoundingClientRect(), y = r.top + r.height / 2, x0 = r.left + r.width * .75;
-  const pe = (t, x, yy) => cv().dispatchEvent(new PointerEvent(t, { pointerId: 5, pointerType: 'touch', isPrimary: true, clientX: x, clientY: yy, bubbles: true }));
+  const pe = (t, x, yy) => cv().dispatchEvent(new PointerEvent(t, { pointerId: 5, pointerType: 'touch', isPrimary: true, button: t === 'pointermove' ? -1 : 0, buttons: t === 'pointerup' ? 0 : 1, clientX: x, clientY: yy, bubbles: true }));
   pe('pointerdown', x0, y); for (let k = 1; k <= 8; k++) { await sleep(16); pe('pointermove', x0 - k * 25, y + 2); } pe('pointerup', x0 - 200, y + 2);
   cv().click(); await sleep(700);
   ok('swipe left goes to the next picture (and the swipe does not open the viewer)', cur() === 2 && !document.querySelector('.wp'), cur() + ' ' + tag());
@@ -52,5 +52,20 @@
   ok('menu reel includes the wallpaper tip', [...document.querySelectorAll('.tick-i')].some(p => /桌布/.test(p.textContent)));
   location.hash = 'home'; await sleep(600);
   ok('back on the cover it starts again from the first picture', cur() === 0);
+  // desktop: the mouse is often released outside the browser, so the page never gets pointerup (2026/11/05)
+  const r2 = cv().getBoundingClientRect(), y2 = r2.top + r2.height / 2, x2 = r2.left + r2.width * .75;
+  const mp = (t, x, yy, b, el) => (el || cv()).dispatchEvent(new PointerEvent(t, { pointerId: 1, pointerType: 'mouse', isPrimary: true, button: t === 'pointermove' ? -1 : 0, buttons: b, clientX: x, clientY: yy, bubbles: true }));
+  const slide = () => [...cv().querySelectorAll('.cv-slide')][cur()].style.transform;
+  mp('pointerdown', x2, y2, 1); for (let k = 1; k <= 8; k++) { await sleep(16); mp('pointermove', x2 - k * 25, y2, 1); }
+  mp('pointermove', 40, 40, 0, document.body); await sleep(700);
+  ok('release lost, then the mouse moves without a button: goes to the next picture', cur() === 1 && slide() === 'translateX(0px)', cur() + ' ' + slide());
+  for (let k = 1; k <= 5; k++) { mp('pointermove', 40 + k * 60, 40, 0, document.body); await sleep(16); }
+  await sleep(100);
+  ok('release lost: hovering afterwards does not drag the pictures', slide() === 'translateX(0px)', slide());
+  await sleep(5300);
+  ok('release lost: still changes by itself afterwards', cur() === 2, cur());
+  mp('pointerdown', x2 - 150, y2, 1); for (let k = 1; k <= 8; k++) { await sleep(16); mp('pointermove', x2 - 150 + k * 25, y2, 1); }
+  mp('pointerdown', 20, 20, 1, document.body); mp('pointerup', 20, 20, 0, document.body); await sleep(700);
+  ok('release lost, then a click elsewhere: settles on the previous picture', cur() === 1 && slide() === 'translateX(0px)' && !document.querySelector('.wp'), cur() + ' ' + slide());
   return log;
 })()

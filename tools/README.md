@@ -16,8 +16,8 @@ tools/run.sh perf       # 量第一次打開的速度（不算在 all 裡）
 |---|---|
 | `run.sh` | 一鍵執行上面的測試 |
 | `cdp.py` | 很小的 Chrome 除錯介面工具：打開網址、（可選）放慢 CPU 和網速、執行一段 JS、可截圖。`NET=下載Mbps,延遲ms`、`WIN=寬,高` 用環境變數設定（新版無頭 Chrome 視窗最窄 500px，所以寬度改用模擬手機螢幕設定；2026/10/30 以前用 `WIN=320` 量的其實都是 500px）。`SWIPES='選擇器|dx,dy;dx,dy'` 用手指在元素中間滑，每次滑完印出 `SWIPE_JS` 的值（Chrome 的觸控，不是 iPhone Safari） |
-| `test-dial.html` | 轉盤的 54 項自動測試（在無頭 Chrome 的模擬時鐘裡跑） |
-| `test-cover.js` | 封面輪播和桌布浮層的 20 項測試（真實時鐘） |
+| `test-dial.html` | 轉盤的 58 項自動測試（在無頭 Chrome 的模擬時鐘裡跑） |
+| `test-cover.js` | 封面輪播和桌布浮層的 24 項測試（真實時鐘） |
 | `test-airplane.py` | 飛航模式：Chrome 只能透過一個可開關的代理上網，先讓網站存好，再把網路全部切斷（含 Google 字型）、清掉瀏覽器暫存，逐頁檢查 |
 | `perf.js` | 量畫面出現時間、下載量、背景存了多少 |
 | `night-lights.py` | 不是測試：從夜景圖把燈火拆成只有燈光的圖，出標編號的預覽（做法見 HANDOFF「夜景的燈火會動」）。需要 Pillow、numpy、scipy |

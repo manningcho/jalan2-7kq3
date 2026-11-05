@@ -8,13 +8,13 @@ PORT=$(( 9700 + RANDOM % 200 ))
 serve() { python3 -m http.server $PORT --bind 127.0.0.1 >/dev/null 2>&1 & SRV=$!; sleep 1; }
 stop() { kill $SRV 2>/dev/null; }
 
-dial() {   # 快速前往轉盤：點擊範圍、拖曳、甩動、無限轉、滑鼠、觸控板、左右手、頁尾不被擋……（約 54 項）
+dial() {   # 快速前往轉盤：點擊範圍、拖曳、甩動、無限轉、滑鼠、觸控板、左右手、頁尾不被擋、放開遺失……（約 58 項）
   echo "== 轉盤測試"; serve
   "$CHROME" --headless=new --disable-gpu --user-data-dir=$(mktemp -d) --window-size=500,900 --virtual-time-budget=150000 \
     --dump-dom "http://127.0.0.1:$PORT/tools/test-dial.html" 2>/dev/null | sed -n '/<pre id="out">/,/END/p' | grep "PASS\|FAIL\|ERR" > /tmp/trip-dial.txt
   stop; echo "$(grep -c PASS /tmp/trip-dial.txt) 項通過，$(grep -c 'FAIL\|ERR' /tmp/trip-dial.txt) 項失敗"; grep "FAIL\|ERR" /tmp/trip-dial.txt
 }
-cover() {  # 封面輪播與桌布浮層（20 項，真實時鐘）
+cover() {  # 封面輪播與桌布浮層（24 項，真實時鐘）
   echo "== 封面輪播測試"; serve
   python3 tools/cdp.py "http://127.0.0.1:$PORT/index.html#home" 1 2500 tools/test-cover.js | python3 -c 'import json,sys;l=json.load(sys.stdin);print(sum(x.startswith("PASS") for x in l),"項通過");[print(x) for x in l if not x.startswith("PASS")]'
   stop
