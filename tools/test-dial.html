@@ -66,9 +66,10 @@ f.onload=async function(){ try {
   ok('back where it started after 20 + 20', vis()==='days,food,stay,transport', vis());
   // dragging on the dimmed backdrop beside the cards also turns, and does not close
   async function dragAt(r, from, to){ var p0=pt(from,r), el=at(p0); pe('pointerdown', el, p0); for (var i=1;i<=10;i++){ await sleep(16); pe('pointermove', el, pt(from+(to-from)*i/10, r)); } await sleep(150); pe('pointerup', el, pt(to,r)); el.click(); return el; }
-  var bg=await dragAt(300, 200, 245); await settle();
-  ok('drag on backdrop turns 2 steps', vis()==='stay,transport,info,learn' && d.querySelector('.dial').classList.contains('is-open'), (bg&&bg.className)+' '+vis());
-  await dragAt(300, 245, 200); await settle();
+  var CR=d.querySelector('.dial-item').offsetWidth; // outer radius of the fan (grows with the screen)
+  var bg=await dragAt(CR+25, 200, 245); await settle();
+  ok('drag on backdrop turns 2 steps', vis()==='stay,transport,info,learn' && d.querySelector('.dial').classList.contains('is-open') && bg && !bg.closest('.dial-item'), (bg&&bg.className)+' '+vis()+' R='+CR);
+  await dragAt(CR+25, 245, 200); await settle();
   ok('drag on backdrop back', vis()==='days,food,stay,transport', vis());
   // mouse
   PT='mouse';
