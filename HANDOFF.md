@@ -39,6 +39,7 @@
   - 餐廳頁切換城市頁籤時，上方大字和頁籤包在 `.keep` 裡、不重播動畫，只有列表重新出現。
   - 交通圖示 car / train / flight / boat / walk 是 Codex 重畫的 SVG（`ICON`），線寬 1.8、`currentColor`。
 - `style.css`：海報風格（顆粒紙、大字疊在缺角圖框上）。動畫掛在 `<html class="motion">`，一律開啟：沒有開關，也刻意不跟系統的「減少動態效果」（使用者自己的 Mac 有開，但想看動畫）。
+  - **iOS 26 Safari 的上下兩條邊（新增全螢幕浮層一定要照做）**：固定位置（`position: fixed`）的東西只鋪到「狀態列下緣」和「底部浮動工具列上緣」之間，但網頁本身會畫到兩條邊後面、從後面透出來。上面用 `body::before` 往上多延伸 120px 蓋住；下面每個全螢幕浮層都往下多延伸 50vh：有內容的用 `::after`（`top: 100%; height: 50vh`，`.driver`、`.jump`、`.callbox`），只有遮罩的直接 `inset: 0 0 -50vh`（`.dial-scrim`、`.wp-scrim`）。日期面板的延伸塗紙色（接住貼底的面板），其他沿用自己的底色。不透明的「給司機看」另外有備援：卡片淡入完（0.35 秒）後用 `:root:has(.driver) #app { visibility: hidden }` 把底下的頁面藏起來。延伸出去的部分在畫面外，不會多出捲動範圍、電腦上也看不到（2026/11/06 使用者回報「給司機看」底部露出頁面；Mac 上沒有 iPhone 模擬器，是把浮層底邊往上抬 150px 模擬工具列後面來比對）。
 - `build-preview.py`：把所有檔案合成 `dist/preview.html`，給 claude.ai 預覽用。GitHub 上不需要。
 
 ## 朋友建議的四項（2026/10/30）

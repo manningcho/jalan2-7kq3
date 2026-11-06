@@ -43,7 +43,9 @@ body {
   font-family: var(--f-body); font-size: 18px; line-height: 1.6;
 }
 /* cover the status-bar area: newer iPhone Safari draws the page behind it and may report a 0 safe area,
-   so this strip also reaches 120px above the top edge */
+   so this strip also reaches 120px above the top edge.
+   Same at the bottom: iOS 26 Safari's floating toolbar sits below the area fixed boxes fill, and the page shows through it,
+   so every full-screen layer reaches 50vh further down (.driver, .jump, .callbox, .dial-scrim, .wp-scrim) */
 body::before { content: ""; position: fixed; left: 0; right: 0; top: -120px; height: calc(120px + env(safe-area-inset-top, 0px)); z-index: 10; background: var(--paper); pointer-events: none; }
 /* overlay open (app.js barTint): the strip turns the "paper + scrim" colour at once and sits above the scrim, so iOS 26 Safari tints its status bar in step */
 .bar-tinted body::before { background: var(--bar-top); z-index: 47; }
@@ -442,6 +444,8 @@ button.tilt-chip.is-in { pointer-events: auto; cursor: pointer; }
 /* ---------- jump to another day (bottom sheet) ---------- */
 .jump-open { overflow: hidden; }
 .jump { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-end; justify-content: center; background: rgba(10, 12, 20, .45); }
+/* under iOS 26's floating toolbar (see body::before): the sheet's colour carries on below it, scrim at the sides on wide screens */
+.jump::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 50vh; background: linear-gradient(var(--paper), var(--paper)) 50% 0 / min(100%, 600px) 100% no-repeat, rgba(10, 12, 20, .45); }
 .jump-sheet {
   width: 100%; max-width: 600px; max-height: 82vh; overflow-y: auto; overscroll-behavior: contain;
   padding: 14px max(16px, env(safe-area-inset-right, 0px)) calc(22px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
@@ -473,7 +477,7 @@ button.tilt-chip.is-in { pointer-events: auto; cursor: pointer; }
 /* ---------- quick menu: a floating button that opens like a fan of swatch cards you can spin ---------- */
 .has-dial .wrap { padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }  /* keep the pager clear of the button */
 .jump-open .dial, :root:has(.driver) .dial { display: none; }
-.dial-scrim { position: fixed; inset: 0; z-index: 41; background: rgba(10, 12, 20, .46); opacity: 0; pointer-events: none; transition: opacity .25s ease; touch-action: none; }
+.dial-scrim { position: fixed; inset: 0 0 -50vh; z-index: 41; background: rgba(10, 12, 20, .46); opacity: 0; pointer-events: none; transition: opacity .25s ease; touch-action: none; }
 .dial.is-open .dial-scrim { opacity: 1; pointer-events: auto; }
 /* the hub is a zero-size point at the button's centre (the rivet); every card pivots around it */
 .dial-hub {
@@ -539,6 +543,10 @@ button.tilt-chip.is-in { pointer-events: auto; cursor: pointer; }
   position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: var(--paper);
   padding: calc(24px + env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
 }
+/* under iOS 26's floating toolbar (see body::before); 2026/11/06 user: the page peeked out below the driver card */
+.driver::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 50vh; background: inherit; }
+/* backup: once the card has popped in (.35s), hide the page under it, so even if Safari skips the part above nothing shows through */
+:root:has(.driver) #app { visibility: hidden; transition: visibility 0s .35s; }
 .driver-in { width: 100%; max-width: 560px; display: flex; flex-direction: column; gap: 8px; }
 .driver .star { width: 52px; height: 52px; margin-bottom: 12px; }
 .drv-ask { margin: 0; font-family: var(--f-display); font-size: 26px; color: var(--blue); }
@@ -615,7 +623,7 @@ button.tilt-chip.is-in { pointer-events: auto; cursor: pointer; }
 /* ---------- wallpaper viewer ---------- */
 .wp-open { overflow: hidden; }
 .wp { position: fixed; inset: 0; z-index: 45; display: flex; align-items: center; justify-content: center; touch-action: none; }
-.wp-scrim { position: absolute; inset: 0; background: rgba(8, 10, 18, .82); }
+.wp-scrim { position: absolute; inset: 0 0 -50vh; background: rgba(8, 10, 18, .82); } /* reaches under iOS 26's floating toolbar (see body::before) */
 .motion .wp-scrim { animation: fadein .25s ease both; }
 .wp-fig { position: relative; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .wp-img {
@@ -649,6 +657,7 @@ button.tilt-chip.is-in { pointer-events: auto; cursor: pointer; }
 .stay-phone { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
 .stay-phone .call { min-height: 36px; padding: 0 12px; font-size: 14px; }
 .callbox { position: fixed; inset: 0; z-index: 45; display: flex; align-items: flex-end; justify-content: center; background: rgba(10, 12, 20, .5); }
+.callbox::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 50vh; background: inherit; } /* under iOS 26's floating toolbar (see body::before) */
 .motion .callbox { animation: fadein .2s ease both; }
 .callbox-card {
   width: 100%; max-width: 480px; margin: 0 12px calc(12px + env(safe-area-inset-bottom, 0px)); padding: 20px 18px 14px;
