@@ -1189,7 +1189,11 @@
   // 剪影是 Codex 畫的 img/xmas-sleigh.png（黑色剪影、麋鹿朝左），後面拖一串金粉（xmas-gold-1、-4）；程式只管飛的路線、顏色和時機。
   // 進頁面 3–6 秒先飛一台，之後每 25–40 秒一台；點天空（地平線以上）會從那裡飛過去。跟夜景點天空有流星一樣當小彩蛋，不出提示。
   // 黃昏、白天是插畫遠山那種深藍剪影；晚上更深、加一圈淡淡的月光。下雨起霧時不飛。
-  var SLEIGH_W = .27, SLEIGH_AR = 128 / 420, SLEIGH_DUR = 6600; // 雪橇寬＝插畫寬的 27%；圖的高寬比；飛過整張插畫幾毫秒
+  // 麋鹿的腳會跑（2026/11/07 使用者問腳能不能動）：Codex 畫的奔跑分鏡，切格、用雪橇對齊後排成一條（一格 420 寬），飛的時候每 90ms 換一格。
+  // 試看兩種：a＝一張 6 格的分鏡圖；b＝Codex 做 GIF 時畫的 8 格（身體固定、只換腳）。網址 ?gallop=a／b 切換，?gallop=off 是原本不會動的剪影
+  var GALLOP = { a: { src: "img/xmas-sleigh-run-a.png", n: 6, ar: 135 / 420 }, b: { src: "img/xmas-sleigh-run-b.png", n: 8, ar: 132 / 420 } };
+  var RUN = GALLOP[(/[?&]gallop=(\w+)/.exec(location.search) || [])[1] || "b"] || null, RUN_MS = 90;
+  var SLEIGH_W = .27, SLEIGH_AR = RUN ? RUN.ar : 128 / 420, SLEIGH_DUR = 6600; // 雪橇寬＝插畫寬的 27%；圖的高寬比；飛過整張插畫幾毫秒
   var sleighOn = null;
   function setSleigh(d) {
     if (sleighOn) { sleighOn.stop(); sleighOn = null; }
@@ -1206,7 +1210,7 @@
     // 剪影是用遮罩上色的：遮罩圖還沒載好時，有的瀏覽器會先畫出一整塊深色方塊，所以圖載好、解碼完才開始飛（金粉沒載到只是看不到）
     var pre = new Image();
     pre.onload = function () { (pre.decode ? pre.decode() : Promise.resolve()).catch(function () {}).then(function () { g.ready = true; }); };
-    pre.src = "img/xmas-sleigh.png";
+    pre.src = RUN ? RUN.src : "img/xmas-sleigh.png";
     ["img/xmas-gold-1.png", "img/xmas-gold-4.png"].forEach(function (s) { new Image().src = s; });
     var art = function () { return app.querySelector(".hero-art"); }; // 頁面開著換時段時會換成新的一張（liveSlot），每次都重找
     function sky(fx) { // 這一欄的地平線高度（0–1）：有夜景資料就用它算出來的，沒有就當 40%
@@ -1272,7 +1276,11 @@
       var el = document.createElement("i");
       el.className = "sleigh is-" + (night ? "night" : timeSlot(d.city, d.art));
       el.innerHTML = "<span></span>"; // 剪影用遮罩上色；晚上的月光邊（drop-shadow）要加在外面這層才不會被遮罩切掉
+      var sp = el.firstChild, lastF = -1;
+      if (RUN) { sp.style.webkitMaskImage = sp.style.maskImage = "url(" + RUN.src + ")"; sp.style.webkitMaskSize = sp.style.maskSize = RUN.n * 100 + "% 100%"; }
       el.style.width = sw.toFixed(1) + "px"; el.style.height = sh.toFixed(1) + "px";
+      if (RUN) sp.style.webkitMaskPosition = sp.style.maskPosition = "0% 0";
+      el.style.transform = "translate(" + (x0 - sw / 2).toFixed(1) + "px," + (y0 - sh / 2).toFixed(1) + "px)"; // 第一格畫面出來前先停在框外起點，不會在左上角閃一下
       box.appendChild(el);
       g.flying = true;
       var t0 = 0, lastDust = 0;
@@ -1288,6 +1296,10 @@
         var p = (now - t0) / SLEIGH_DUR;
         if (p >= 1) { el.remove(); g.flying = false; return; }
         var q = pos(p), bob = Math.sin((now - t0) / 1000 * 6.283 * 1.6) * Math.max(.8, sh * .045); // 麋鹿跑步一上一下
+        if (RUN) { // 換到第幾格：遮罩圖往左移一格
+          var f = Math.floor((now - t0) / RUN_MS) % RUN.n;
+          if (f !== lastF) { lastF = f; sp.style.webkitMaskPosition = sp.style.maskPosition = (f / (RUN.n - 1) * 100).toFixed(3) + "% 0"; }
+        }
         el.style.transform = "translate(" + (q.x - sw / 2).toFixed(1) + "px," + (q.y - sh / 2 + bob).toFixed(1) + "px) rotate(" + q.ang.toFixed(2) + "deg)" + (dir > 0 ? " scaleX(-1)" : "");
         // 金粉：從禮物袋後面一顆顆灑出來，慢慢往下飄、一閃一閃、淡掉
         if (now - lastDust > 85) {
