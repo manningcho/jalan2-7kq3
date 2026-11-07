@@ -9,7 +9,7 @@ PORT=$(( 9700 + RANDOM % 200 ))
 serve() { python3 -m http.server $PORT --bind 127.0.0.1 >/dev/null 2>&1 & SRV=$!; sleep 1; }
 stop() { kill $SRV 2>/dev/null; }
 
-dial() {   # 快速前往轉盤：點擊範圍、拖曳、甩動、無限轉、滑鼠、觸控板、左右手、頁尾不被擋、放開遺失、吸附提示、開著轉橫……（約 62 項）
+dial() {   # 快速前往轉盤：點擊範圍、拖曳、甩動、無限轉、滑鼠、觸控板、左右手、頁尾不被擋、放開遺失、吸附提示、開著轉橫、聖誕帽……（約 68 項）
   echo "== 轉盤測試"; serve
   "$CHROME" --headless=new --disable-gpu --user-data-dir=$(mktemp -d) --window-size=500,900 --virtual-time-budget=150000 \
     --dump-dom "http://127.0.0.1:$PORT/tools/test-dial.html" > /tmp/trip-dial-dom.txt 2>/dev/null

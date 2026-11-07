@@ -7,7 +7,7 @@
 // 下面兩段由 make-sw.sh 自動產生：新增或換掉 img/ 的圖之後跑一次 ./make-sw.sh（make-lq.sh 會順便跑）。
 
 // <make-sw>
-var VERSION = "2fd4afea56";
+var VERSION = "cb82f277c2";
 var FONT_CSS = "https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap";
 var ASSETS = [
   "./",
@@ -83,6 +83,18 @@ var ASSETS = [
   "img/melati-4.png",
   "img/melati-5.png",
   "img/melati-6.png",
+  "img/xmas-gold-1.png",
+  "img/xmas-gold-2.png",
+  "img/xmas-gold-3.png",
+  "img/xmas-gold-4.png",
+  "img/xmas-hat.png",
+  "img/xmas-paper-dark.png",
+  "img/xmas-paper.png",
+  "img/xmas-sleigh.png",
+  "img/xmas-snow-1.png",
+  "img/xmas-snow-2.png",
+  "img/xmas-snow-3.png",
+  "img/xmas-snow-4.png",
   "snd/birds.m4a",
   "snd/city.m4a",
   "snd/night.m4a",

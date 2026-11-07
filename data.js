@@ -357,7 +357,7 @@ window.TRIP = {
       ]
     },
     {
-      date: "2026-12-24", city: "yk", word: "borobudur", art: "stupa",
+      date: "2026-12-24", city: "yk", word: "borobudur", art: "stupa", xmas: true, // 聖誕兩天：飄雪花和金粉、小花戴聖誕帽、天空飛過雪橇、背景淡淡的聖誕花紋
       title: ["婆羅浮屠", "Candi Borobudur", "Borobudur"],
       items: [
         { time: "9:00", t: ["出發去婆羅浮屠", "Berangkat ke Borobudur", "Leave for Borobudur"], place: "villa" },
@@ -382,7 +382,7 @@ window.TRIP = {
       ]
     },
     {
-      date: "2026-12-25", city: "bali", word: "bali", art: "gate",
+      date: "2026-12-25", city: "bali", word: "bali", art: "gate", xmas: true,
       title: ["飛往峇里島", "Terbang ke Bali", "Fly to Bali"],
       items: [
         { time: "10:00", kind: "stay", t: ["退房出門", "Check-out, berangkat", "Check out and leave"], place: "villa",

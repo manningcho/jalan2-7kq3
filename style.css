@@ -422,6 +422,49 @@ button { font: inherit; color: inherit; }
 @keyframes fall { to { transform: translateY(calc(100vh + 48px)) rotate(var(--rot)); } }
 @keyframes sway { from { transform: translateX(-16px) rotate(-25deg); } to { transform: translateX(16px) rotate(25deg); } }
 
+/* ---------- Christmas (12/24, 12/25): falling snow and gold dust, same layer as the jasmine (Codex-drawn flakes) ---------- */
+.petals.is-snow .petal i { animation-name: snow-sway; }
+.petals.is-snow .petal.is-gold img { animation: twinkle var(--tw) ease-in-out infinite alternate; }
+/* white snow on light paper needs a cool edge to show up (like the jasmine's warm one); gold gets a darker gold edge */
+:root .petals.is-snow .petal img { filter: drop-shadow(0 0 1px rgba(52, 76, 128, .55)) drop-shadow(0 1px 2px rgba(52, 76, 128, .3)); }
+:root .petals.is-snow .petal.is-gold img { filter: drop-shadow(0 0 1px rgba(110, 76, 8, .5)); }
+:root[data-theme="dark"] .petals.is-snow .petal img { filter: drop-shadow(0 0 2px rgba(220, 230, 255, .25)); }
+:root[data-theme="dark"] .petals.is-snow .petal.is-gold img { filter: drop-shadow(0 0 2px rgba(232, 191, 106, .45)); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .petals.is-snow .petal img { filter: drop-shadow(0 0 2px rgba(220, 230, 255, .25)); }
+  :root:not([data-theme="light"]) .petals.is-snow .petal.is-gold img { filter: drop-shadow(0 0 2px rgba(232, 191, 106, .45)); }
+}
+@keyframes snow-sway { from { transform: translateX(calc(var(--sx) * -1)) rotate(-30deg); } to { transform: translateX(var(--sx)) rotate(30deg); } }
+@keyframes twinkle { from { opacity: .3; transform: scale(.82); } to { opacity: 1; transform: scale(1.06); } }
+
+/* ---------- Christmas: faint doodles printed on the paper on the two days' pages (Codex-drawn motifs arranged into a 420px tile) ---------- */
+.xmas-bg body { background-image: url(img/xmas-paper.png); background-size: 420px 420px; }
+:root.xmas-bg[data-theme="dark"] body { background-image: url(img/xmas-paper-dark.png); }
+@media (prefers-color-scheme: dark) { :root.xmas-bg:not([data-theme="light"]) body { background-image: url(img/xmas-paper-dark.png); } }
+
+/* ---------- Christmas: the corner flower wears a Santa hat (Codex-drawn); it swings with the button (app.js hatStep) ----------
+   pivot = the middle of the fur brim (62% 72% of the picture); taps go to the button underneath as before */
+.dial-hat {
+  position: absolute; left: -1px; top: -12px; width: 50px; height: 33px; display: none; pointer-events: none;
+  transform-origin: 62% 72%; transform: scaleX(1) rotate(12deg); transition: transform .35s ease, left .35s ease;
+}
+.dial.is-xmas .dial-hat { display: block; }
+.dial.is-left .dial-hat { left: -5px; transform: scaleX(-1) rotate(12deg); } /* left-handed corner: mirrored (the tip still droops toward the middle of the screen); switching sides it turns around */
+.dial-hat img { display: block; width: 100%; height: 100%; transform-origin: 62% 72%; filter: drop-shadow(0 1px 1.5px rgba(10, 14, 25, .35)); -webkit-user-drag: none; user-select: none; -webkit-user-select: none; }
+.dial-hat.is-on { animation: hat-on .5s cubic-bezier(.3, 1.35, .5, 1) both; }
+@keyframes hat-on { from { translate: 0 -36px; opacity: 0; } 35% { opacity: 1; } to { translate: 0 0; opacity: 1; } }
+
+/* ---------- Christmas: Santa's sleigh crossing the sky of the two days' illustrations (Codex silhouette; app.js sleighRun) ----------
+   sits above the night canvas, under the weather and the giant word; clipped to the notched frame by an SVG mask set in app.js */
+.sky-fly { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+.sleigh { position: absolute; left: 0; top: 0; display: block; color: #2b3157; opacity: .9; will-change: transform; }
+.sleigh span { position: absolute; inset: 0; background: currentColor; -webkit-mask: url(img/xmas-sleigh.png) center / 100% 100% no-repeat; mask: url(img/xmas-sleigh.png) center / 100% 100% no-repeat; }
+.sleigh.is-day { color: #2f3f66; opacity: .8; }
+.sleigh.is-night { color: #0a0f26; opacity: 1; filter: drop-shadow(0 0 1.5px rgba(196, 210, 255, .55)); } /* a darker shape with a thin moonlit edge */
+.sl-dust { position: absolute; display: block; pointer-events: none; background: url(img/xmas-gold-4.png) center / contain no-repeat; animation: sl-dust 1.6s ease-out forwards; }
+.sl-dust.is-spark { background-image: url(img/xmas-gold-1.png); }
+@keyframes sl-dust { 0% { opacity: 0; transform: scale(.4); } 15% { opacity: 1; transform: scale(1); } 55% { opacity: .85; } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.45) rotate(80deg); } }
+
 /* ---------- rainy days: fogged glass with raindrops over the day illustration (glass.js); side swipes wipe, vertical drags still scroll ---------- */
 .glass { position: absolute; left: 0; top: 0; z-index: 2; width: 100%; height: 100%; touch-action: none; /* 手指在玻璃上只擦霧，不捲動頁面（2026/11/02 使用者：擦的時候頁面跟著滑） */ -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
 .hero-art.has-glass .a-kb { animation: none; } /* 要比 .motion .a-kb 更明確才蓋得過（2026/11/02 踩過：推近動畫照跑，霧和插畫錯開，太陽變兩個） */

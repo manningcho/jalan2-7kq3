@@ -54,6 +54,7 @@
     tipDragOther: ["在其他頁按住 {ic} 可以拖到另一邊，左手也好按", "Di halaman lain, tahan {ic} lalu geser ke sisi lain", "On other pages, hold {ic} and drag it to the other side"],
     tipJump: ["換日按鈕中間的 {cal} 可以直接跳到任何一天", "Ketuk {cal} di antara tombol hari untuk lompat ke hari mana saja", "Tap {cal} between the day buttons to jump to any day"],
     tipDriver: ["「給司機看」會把地點放大，直接拿手機給司機看", "\"Tunjukkan ke sopir\" menampilkan alamat besar-besar untuk sopir", "\"Show the driver\" puts the place in big letters for the driver"],
+    tipXmas: ["聖誕快樂的印尼文是 Selamat Natal（瑟拉瑪 那達）", "Selamat Natal! Dalam bahasa Mandarin: 聖誕快樂 (shèngdàn kuàilè)", "Merry Christmas! In Indonesian it's Selamat Natal"],
     tipCopy: ["電話號碼旁的「複製」可以直接複製號碼", "Ketuk \"Salin\" untuk menyalin nomor", "Tap \"Copy\" to copy a number"],
     tipSpeak: ["點 {spk} 可以聽印尼文怎麼唸，再點一次停止", "Ketuk {spk} untuk mendengar cara bacanya", "Tap {spk} to hear how it sounds"],
     foodMore: ["還有想去的店，再丟出來，之後幫你加進清單", "Ada tempat lain yang ingin dikunjungi? Kabari saja, nanti kami tambahkan ke daftar", "Want to go somewhere else? Just let us know and we'll add it to the list"],
@@ -920,7 +921,8 @@
       '<p class="dh-tz">' + SPARK + esc(tzNote(d.city)) + "</p></section>" +
       // 小花線只當「這一頁到底了」的記號：小花線＋提示輪播放在換日按鈕下面，當整頁的結尾（跟其他頁一樣）
       '<ol class="flow">' + items + "</ol>" + pager +
-      footNotes([u("tipJump"), u("tipWx")].concat(d.items.some(function (it) { return it.place || it.options; }) ? [u("tipDriver")] : [], commonTips())) + "</main>";
+      // 聖誕兩天：輪播第一條是「聖誕快樂＝Selamat Natal」
+      footNotes((d.xmas ? [u("tipXmas")] : []).concat([u("tipJump"), u("tipWx")], d.items.some(function (it) { return it.place || it.options; }) ? [u("tipDriver")] : [], commonTips())) + "</main>";
   }
 
   // ---------- 餐廳 ----------
@@ -1144,24 +1146,197 @@
   // 圖是 Codex 畫的 img/melati-1..6.png：1–3 盛開的花（正面、斜、側），4–5 花苞，6 一片花瓣。
   // 盛開的花出現機會多一點。
   var MELATI = [1, 1, 2, 2, 3, 3, 4, 5, 6];
-  function setPetals(on) {
+  // ---------- 聖誕兩天（12/24、12/25）：飄雪花和金粉 ----------
+  // 圖是 Codex 畫的 img/xmas-snow-1..4.png（樹枝狀雪花、寬瓣雪花、簡單雪花、軟軟的雪球）、xmas-gold-1..4.png（四芒閃光、小星星、金箔、金粉小點）。
+  // 那兩頁一定飄；真的到了 12/24、12/25（看這支手機的日期），整個網站每一頁都飄（2026/11/06 使用者：雪花跟小金粉全網頁就好）。
+  // 網址加 ?xmas=1 假裝今天是聖誕節（試看用）
+  var XMAS_FORCE = /[?&]xmas=1/.test(location.search);
+  function xmasNow() { var t = todayStr().slice(5); return XMAS_FORCE || t === "12-24" || t === "12-25"; }
+  var SNOW = [1, 1, 1, 2, 2, 3, 3, 3, 4], GOLD = [1, 1, 2, 2, 3, 4, 4];
+  // kind：null 不飄、"melati" 茉莉花、"snow" 雪花和金粉
+  function setFall(kind) {
     var box = document.querySelector(".petals");
-    if (!on) { if (box) box.remove(); return; }
-    if (box) return; // 已經在飄（例如 12/19 換到 12/20、換語言），就讓它繼續
-    var html = "";
-    for (var i = 0; i < 12; i++) {
-      var dur = 10 + Math.random() * 8; // 每朵落下 10–18 秒，起點和大小都不同
-      var n = MELATI[Math.floor(Math.random() * MELATI.length)];
-      html += '<span class="petal" style="--x:' + (Math.random() * 100).toFixed(1) + "%;--dur:" + dur.toFixed(1) + "s;--delay:" + (-Math.random() * dur).toFixed(1) +
-        "s;--rot:" + (Math.random() < .5 ? -1 : 1) * Math.round(180 + Math.random() * 360) + 'deg"><i style="--s:' + (18 + Math.random() * 10).toFixed(1) +
-        "px;--sw:" + (2.5 + Math.random() * 2).toFixed(1) + "s;--o:" + (.75 + Math.random() * .25).toFixed(2) + '"><img src="img/melati-' + n + '.png" alt=""></i></span>';
+    if (box && box.dataset.kind === kind) return; // 已經在飄同一種（例如 12/19 換到 12/20、換語言），就讓它繼續
+    if (box) box.remove();
+    if (!kind) return;
+    var html = "", pick = function (a) { return a[Math.floor(Math.random() * a.length)]; };
+    if (kind === "melati") {
+      for (var i = 0; i < 12; i++) {
+        var dur = 10 + Math.random() * 8; // 每朵落下 10–18 秒，起點和大小都不同
+        var n = pick(MELATI);
+        html += '<span class="petal" style="--x:' + (Math.random() * 100).toFixed(1) + "%;--dur:" + dur.toFixed(1) + "s;--delay:" + (-Math.random() * dur).toFixed(1) +
+          "s;--rot:" + (Math.random() < .5 ? -1 : 1) * Math.round(180 + Math.random() * 360) + 'deg"><i style="--s:' + (18 + Math.random() * 10).toFixed(1) +
+          "px;--sw:" + (2.5 + Math.random() * 2).toFixed(1) + "s;--o:" + (.75 + Math.random() * .25).toFixed(2) + '"><img src="img/melati-' + n + '.png" alt=""></i></span>';
+      }
+    } else {
+      // 遠近：近的大、落得快、比較清楚；遠的小、慢、淡。金粉比雪花小，一閃一閃，慢慢翻轉
+      for (var k = 0; k < 18; k++) {
+        var gold = k % 5 < 2, near = Math.random(), sz = gold ? 8 + near * 8 : 10 + near * 14, du = (gold ? 20 : 18) - near * 7;
+        html += '<span class="petal is-' + (gold ? "gold" : "snow") + '" style="--x:' + (Math.random() * 100).toFixed(1) + "%;--dur:" + du.toFixed(1) + "s;--delay:" + (-Math.random() * du).toFixed(1) +
+          "s;--rot:" + (Math.random() < .5 ? -1 : 1) * Math.round((gold ? 200 : 90) + Math.random() * (gold ? 340 : 180)) + 'deg"><i style="--s:' + sz.toFixed(1) +
+          "px;--sw:" + (3 + Math.random() * 2.5).toFixed(1) + "s;--sx:" + (6 + near * 8).toFixed(1) + "px;--o:" + ((gold ? .7 : .55) + near * (gold ? .3 : .45)).toFixed(2) +
+          ";--tw:" + (.9 + Math.random() * 1.4).toFixed(2) + 's"><img src="img/xmas-' + (gold ? "gold-" + pick(GOLD) : "snow-" + pick(SNOW)) + '.png" alt=""></i></span>';
+      }
     }
     box = document.createElement("div");
-    box.className = "petals";
+    box.className = "petals" + (kind === "snow" ? " is-snow" : "");
+    box.dataset.kind = kind;
     box.setAttribute("aria-hidden", "true");
     box.innerHTML = html;
     document.body.appendChild(box);
   }
+  // ---------- 聖誕兩天：插畫的天空偶爾飛過聖誕老人的雪橇 ----------
+  // 剪影是 Codex 畫的 img/xmas-sleigh.png（黑色剪影、麋鹿朝左），後面拖一串金粉（xmas-gold-1、-4）；程式只管飛的路線、顏色和時機。
+  // 進頁面 3–6 秒先飛一台，之後每 25–40 秒一台；點天空（地平線以上）會從那裡飛過去。跟夜景點天空有流星一樣當小彩蛋，不出提示。
+  // 黃昏、白天是插畫遠山那種深藍剪影；晚上更深、加一圈淡淡的月光。下雨起霧時不飛。
+  var SLEIGH_W = .27, SLEIGH_AR = 128 / 420, SLEIGH_DUR = 6600; // 雪橇寬＝插畫寬的 27%；圖的高寬比；飛過整張插畫幾毫秒
+  var sleighOn = null;
+  function setSleigh(d) {
+    if (sleighOn) { sleighOn.stop(); sleighOn = null; }
+    if (d && d.xmas) sleighOn = sleighRun(d);
+  }
+  // 路線：y(p) = y0 − 爬升 × e(p) − 中間拱一點；e 是 0→1 的爬升進度。pc＝0：一路慢慢爬；pc＞0：先平飛，飛過 pc 這個進度才往上爬
+  function climb(p, pc) {
+    if (!pc) return { e: p, de: 1 };
+    var u = Math.max(0, Math.min(1, (p - pc) / (1 - pc)));
+    return { e: u * u * (3 - 2 * u), de: 6 * u * (1 - u) / (1 - pc) };
+  }
+  function sleighRun(d) {
+    var g = { dead: false, timer: 0, raf: 0, flying: false, seen: true, io: null, ready: false };
+    // 剪影是用遮罩上色的：遮罩圖還沒載好時，有的瀏覽器會先畫出一整塊深色方塊，所以圖載好、解碼完才開始飛（金粉沒載到只是看不到）
+    var pre = new Image();
+    pre.onload = function () { (pre.decode ? pre.decode() : Promise.resolve()).catch(function () {}).then(function () { g.ready = true; }); };
+    pre.src = "img/xmas-sleigh.png";
+    ["img/xmas-gold-1.png", "img/xmas-gold-4.png"].forEach(function (s) { new Image().src = s; });
+    var art = function () { return app.querySelector(".hero-art"); }; // 頁面開著換時段時會換成新的一張（liveSlot），每次都重找
+    function sky(fx) { // 這一欄的地平線高度（0–1）：有夜景資料就用它算出來的，沒有就當 40%
+      var n = (T.photos[d.art] || {}).night, hz = n && n.hz;
+      return hz ? hz[Math.max(0, Math.min(hz.length - 1, Math.floor(fx * hz.length)))] : .4;
+    }
+    function layer(a) {
+      var box = a.querySelector(".sky-fly");
+      if (box) return box;
+      box = document.createElement("div");
+      box.className = "sky-fly";
+      box.setAttribute("aria-hidden", "true");
+      // 照缺角圖框的形狀裁：飛到右邊缺角那一段也不會露到框外
+      var m = 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 260" preserveAspectRatio="none"><path d="' + ART.FRAME + '"/></svg>') + '")';
+      box.style.webkitMaskImage = m; box.style.maskImage = m;
+      a.insertBefore(box, a.querySelector(".hero-over")); // 疊在夜景畫布上面、天氣的字下面；大字（z-index 1）也在它上面
+      return box;
+    }
+    // 自己飛的路線（往左）：照雪橇整趟會掃過的範圍，避開天氣的字、大字伸進插畫的那截、地面（夜景資料的地平線＝塔頂、樹梢）。
+    // 婆羅浮屠那張從天氣字下面飛得過；峇里島那張天氣字和廟門塔頂之間比雪橇還矮，就讓雪橇飛遠一點（小一點）、
+    // 在中間平飛過廟門再往左上爬。從大的雪橇開始試，這個大小能飛的路線裡隨機挑一條
+    function pickPath(a, W, H) {
+      var ar = a.getBoundingClientRect(), ov = a.querySelector(".hero-over"), hw = a.parentNode && a.parentNode.querySelector(".hw"), wb = null, top = 3;
+      if (ov && ov.offsetHeight) { var r = ov.getBoundingClientRect(); wb = [r.left - ar.left - 5, r.top - ar.top - 3, r.right - ar.left + 5, r.bottom - ar.top + 3]; }
+      if (hw) top = Math.max(top, hw.getBoundingClientRect().bottom - ar.top + 2);
+      // [爬升, 從哪裡開始爬, 中間拱多少]：先平飛的那幾種不拱（峇里島那張平飛時上下只剩幾 px）
+      var shapes = [[.14, 0, .02], [.08, 0, .02], [.03, 0, .01], [.16, .35, 0], [.16, .55, 0], [.09, .45, 0], [.06, .5, 0]];
+      for (var si = 0, scales = [1, .86, .74, .64, .56]; si < scales.length; si++) {
+        var s = scales[si], sw = W * SLEIGH_W * s, sh = sw * SLEIGH_AR, x0 = W + sw * .6, x1 = -sw * .6, ok = [];
+        shapes.forEach(function (sp) {
+          for (var y0 = H * .4; y0 - sh / 2 >= top - H * .16; y0 -= H * .005) {
+            var good = true;
+            for (var i = 0; i <= 40 && good; i++) {
+              var p = i / 40, x = x0 + (x1 - x0) * p, y = y0 - H * sp[0] * climb(p, sp[1]).e - H * sp[2] * Math.sin(Math.PI * p);
+              var L = x - sw / 2, R = x + sw / 2, T0 = y - sh / 2, B = y + sh / 2;
+              if (R < 0 || L > W) continue; // 還在框外
+              if (T0 < top) good = false; // 鑽到大字後面
+              else if (wb && R > wb[0] && L < wb[2] && B > wb[1] && T0 < wb[3]) good = false; // 壓到天氣的字
+              for (var c = Math.max(0, L); good && c <= Math.min(W, R); c += W / 64) if (B > sky(c / W) * H - H * .015) good = false; // 碰到地面
+            }
+            if (good) ok.push({ y0: y0, rise: sp[0], pc: sp[1], arch: sp[2], s: s });
+          }
+        });
+        if (ok.length) { var pk = ok[Math.floor(Math.random() * ok.length)]; pk.n = ok.length; return pk; }
+      }
+      return { y0: H * .3, rise: .14, pc: 0, arch: .02, s: 1, n: 0 }; // 都找不到（很窄的螢幕、字很大）：照舊飛，頂多經過天氣字下面
+    }
+    // (fx, fy)：要飛過的位置（插畫寬高的比例），沒給就照 pickPath 挑
+    function fly(fx, fy) {
+      var a = art();
+      if (g.dead || g.flying || !g.ready || !a || a.classList.contains("has-glass") || document.hidden) return false;
+      var W = a.clientWidth, H = a.clientHeight;
+      if (!W || !H) return false;
+      var box = layer(a), night = a.classList.contains("has-night");
+      // 自己飛的一律往左（朝著夕陽），路線用 pickPath 挑；點天空的就從點的位置飛過去：點右半邊從右邊飛進來，點左半邊從左邊
+      var dir = fx == null ? -1 : (fx > .5 ? -1 : 1), pk = fx == null ? pickPath(a, W, H) : { s: 1, rise: .1, pc: 0, arch: .02 };
+      var sw = W * SLEIGH_W * pk.s, sh = sw * SLEIGH_AR, rise = pk.rise, pc = pk.pc, arch = pk.arch, y0 = pk.y0;
+      var x0 = dir < 0 ? W + sw * .6 : -sw * .6, x1 = dir < 0 ? -sw * .6 : W + sw * .6;
+      if (fx != null) { // 點的位置要在路線上經過：x 照比例算出那一刻，倒推起點的高度
+        var tc = Math.max(.15, Math.min(.85, (fx * W - x0) / (x1 - x0)));
+        y0 = Math.max(sh * .7, fy * H) + H * rise * tc;
+      } else g.pick = { y0: +(y0 / H).toFixed(3), rise: rise, pc: pc, arch: arch, s: pk.s, n: pk.n };
+      var el = document.createElement("i");
+      el.className = "sleigh is-" + (night ? "night" : timeSlot(d.city, d.art));
+      el.innerHTML = "<span></span>"; // 剪影用遮罩上色；晚上的月光邊（drop-shadow）要加在外面這層才不會被遮罩切掉
+      el.style.width = sw.toFixed(1) + "px"; el.style.height = sh.toFixed(1) + "px";
+      box.appendChild(el);
+      g.flying = true;
+      var t0 = 0, lastDust = 0;
+      function pos(p) { // 爬升（整趟爬 rise 個插畫高）、中間再拱一點點；機頭跟著路線的斜度抬起來
+        var c = climb(p, pc), y = y0 - H * rise * c.e - H * arch * Math.sin(Math.PI * p);
+        var vy = -H * rise * c.de - H * arch * Math.PI * Math.cos(Math.PI * p);
+        return { x: x0 + (x1 - x0) * p, y: y, ang: -dir * Math.atan2(-vy, Math.abs(x1 - x0)) * 180 / Math.PI };
+      }
+      function step(now) {
+        g.raf = 0;
+        if (g.dead || !el.isConnected) { el.remove(); g.flying = false; return; }
+        if (!t0) t0 = now;
+        var p = (now - t0) / SLEIGH_DUR;
+        if (p >= 1) { el.remove(); g.flying = false; return; }
+        var q = pos(p), bob = Math.sin((now - t0) / 1000 * 6.283 * 1.6) * Math.max(.8, sh * .045); // 麋鹿跑步一上一下
+        el.style.transform = "translate(" + (q.x - sw / 2).toFixed(1) + "px," + (q.y - sh / 2 + bob).toFixed(1) + "px) rotate(" + q.ang.toFixed(2) + "deg)" + (dir > 0 ? " scaleX(-1)" : "");
+        // 金粉：從禮物袋後面一顆顆灑出來，慢慢往下飄、一閃一閃、淡掉
+        if (now - lastDust > 85) {
+          lastDust = now;
+          var rx = -dir * sw * .44, ry = sh * .12, r = q.ang * Math.PI / 180;
+          var dx = q.x + rx * Math.cos(r) - ry * Math.sin(r), dy = q.y + bob + rx * Math.sin(r) + ry * Math.cos(r);
+          var s = Math.max(4, sw * (.035 + Math.random() * .045)), b = document.createElement("b");
+          b.className = "sl-dust" + (Math.random() < .5 ? " is-spark" : "");
+          b.style.cssText = "left:" + (dx - s / 2 + (Math.random() - .5) * sh * .3).toFixed(1) + "px;top:" + (dy - s / 2 + (Math.random() - .5) * sh * .3).toFixed(1) +
+            "px;width:" + s.toFixed(1) + "px;height:" + s.toFixed(1) + "px;--dx:" + (-dir * (4 + Math.random() * 8)).toFixed(1) + "px;--dy:" + (8 + Math.random() * 12).toFixed(1) + "px";
+          b.addEventListener("animationend", function () { this.remove(); });
+          box.appendChild(b);
+        }
+        g.raf = requestAnimationFrame(step);
+      }
+      g.raf = requestAnimationFrame(step);
+      return true;
+    }
+    function plan(ms) {
+      clearTimeout(g.timer);
+      g.timer = setTimeout(function () {
+        if (g.dead) return;
+        plan(g.seen && fly() ? 25000 + Math.random() * 15000 : 4000); // 看不到插畫、切到背景、正在飛、圖還沒載好：等一下再試
+      }, ms);
+    }
+    var sec = app.querySelector(".hero");
+    if (sec && window.IntersectionObserver) { g.io = new IntersectionObserver(function (es) { g.seen = es[0].isIntersecting; }); g.io.observe(sec); }
+    plan(3000 + Math.random() * 3000);
+    return {
+      fly: fly, sky: sky,
+      stop: function () {
+        g.dead = true;
+        clearTimeout(g.timer);
+        if (g.raf) cancelAnimationFrame(g.raf);
+        if (g.io) g.io.disconnect();
+        document.querySelectorAll(".sky-fly").forEach(function (el) { el.remove(); });
+      },
+      state: function () { return { flying: g.flying, seen: g.seen, ready: g.ready, pick: g.pick || null, dust: document.querySelectorAll(".sl-dust").length }; }
+    };
+  }
+  // 點天空：雪橇從那裡飛過去。用捕捉階段先處理：飛了就不再往下傳，晚上那一下就不會同時多一顆流星（雪橇正在飛的時候，點了照常是流星）
+  document.addEventListener("click", function (e) {
+    var a = sleighOn && !prefsOpen && e.target.closest && e.target.closest(".hero-art"); // 設定選單開著時，點一下是收起選單
+    if (!a || a.classList.contains("has-glass")) return;
+    var r = a.getBoundingClientRect(), fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
+    if (fy < sleighOn.sky(fx) - .03 && sleighOn.fly(fx, fy)) e.stopPropagation();
+  }, true);
+  window.__sleigh = function (fx, fy) { return sleighOn ? sleighOn.fly(fx, fy) : null; }; // 測試用：馬上飛一台
+  window.__sleighState = function () { return sleighOn ? sleighOn.state() : null; };
   // ---------- 下雨天：每日頁插畫起霧、玻璃上有雨滴，可以用手指擦開（glass.js） ----------
   // 用的是背景聲音同一份「現在的天氣」（sndWx，15 分鐘查一次）。網址加 ?rain=1 不管天氣都會下雨（試看用）
   var RAIN_FORCE = /[?&]rain=1/.test(location.search);
@@ -1509,6 +1684,7 @@
   try { dialLeft = localStorage.getItem("trip-dial-side") === "left"; } catch (e) {}
   function scrAng(th) { return dialLeft ? 180 - th : th; }
   var settleMove = function () {}; // buildDial 裡換成真的：把拖到一半、沒收到放開的按鈕吸回角落
+  var dialHatSet = function () {}, dialHatKick = function () {}; // buildDial 裡換成真的：聖誕帽戴上／拿掉、甩一下
   var DIAL_IC = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor"><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(90 12 12)"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(180 12 12)"/><ellipse cx="12" cy="6.2" rx="3.3" ry="5.4" transform="rotate(270 12 12)"/></g><circle cx="12" cy="12" r="2.3" fill="var(--ink)"/></svg>';
   function dialSection(h) {
     if (/^d12\d\d$/.test(h) || h === "days") return "days";
@@ -1547,6 +1723,49 @@
       if (btn.dataset.moved) return; // 剛拖完按鈕，不算點擊
       dialOpen ? closeDial() : openDial();
     });
+    // ---------- 聖誕帽（12/24、12/25 兩頁）：小花戴著 Codex 畫的聖誕帽（img/xmas-hat.png） ----------
+    // 拖按鈕時帽子照慣性往後甩（往右拖、帽尖往左），放開滑回角落後晃兩下才停；打開、收起轉盤時也會被甩一下。
+    // 彈簧＋阻尼：每格看按鈕實際移動多快（拖曳、吸回角落的動畫都算），沒在動、也晃完了就停，不耗電。
+    // 帽子不接點擊（pointer-events: none），按鈕能點、能拖的範圍跟原本一樣
+    var hat = null, hA = 0, hV = 0, hX = null, hVx = 0, hRaf = 0, hLast = 0;
+    function hatRest() { hA = hV = hVx = 0; hX = null; hLast = 0; if (hat) hat.img.style.transform = ""; }
+    function hatStep(now) {
+      hRaf = 0;
+      if (!hat || dial.hidden || !dial.classList.contains("is-xmas")) { hatRest(); return; }
+      var dt = hLast ? Math.min(.034, Math.max(.001, (now - hLast) / 1000)) : .016;
+      hLast = now;
+      var b = btn.getBoundingClientRect(), x = b.left + b.width / 2;
+      var vx = hX == null ? 0 : (x - hX) / dt; // 按鈕現在的水平速度（px／秒）
+      hX = x;
+      hVx += (vx - hVx) * Math.min(1, dt * 20);
+      var aim = Math.max(-36, Math.min(36, -hVx * .05)); // 往右拖（速度正）→ 帽子往左甩（角度負）
+      hV += ((aim - hA) * 170 - hV * 8.5) * dt; // 每秒約 2 次的彈簧，阻尼小：會晃兩三下
+      hA += hV * dt;
+      hat.img.style.transform = "rotate(" + (dialLeft ? -hA : hA).toFixed(2) + "deg)"; // 在左邊時帽子整個左右鏡像，角度也跟著反過來
+      if ((mv && mv.on) || Math.abs(vx) > 2 || Math.abs(hA) > .12 || Math.abs(hV) > .6) hRaf = requestAnimationFrame(hatStep);
+      else hatRest();
+    }
+    function hatGo() { if (hat && !hRaf) hRaf = requestAnimationFrame(hatStep); }
+    dialHatKick = function (v) { if (!hat || !dial.classList.contains("is-xmas")) return; hV += v; hatGo(); };
+    dialHatSet = function (on) {
+      if (on && !hat) { // 第一次到聖誕那兩頁才放進去、才下載圖
+        var el = document.createElement("span");
+        el.className = "dial-hat";
+        el.setAttribute("aria-hidden", "true");
+        el.innerHTML = '<img src="img/xmas-hat.png" alt="" draggable="false">';
+        btn.appendChild(el);
+        hat = { el: el, img: el.firstChild };
+      }
+      var was = dial.classList.contains("is-xmas");
+      dial.classList.toggle("is-xmas", !!on);
+      if (!on) { hatRest(); return; }
+      if (!was) { // 剛戴上：從上面掉下來，落定的時候晃一下
+        hat.el.classList.remove("is-on");
+        void hat.el.offsetWidth;
+        hat.el.classList.add("is-on");
+        setTimeout(function () { dialHatKick(-150); }, 420);
+      }
+    };
     // 按住小花拖到另一邊，放開吸到最近的下角，記在這支手機上。
     // 電腦上滑鼠常常拖過頭、在瀏覽器外面才放開，網頁就收不到 pointerup：只等它的話按鈕會卡在半路，
     // 在那裡打開的扇形方向是錯的，下一次拖還會從錯的位置算、跳出畫面（2026/11/05 使用者回報）。
@@ -1573,6 +1792,7 @@
       hub.style.transform = "translate(" + (mv.bx + dx) + "px," + (mv.by + dy) + "px)";
       var b = btn.getBoundingClientRect();
       showGhost(b.left + b.width / 2 < window.innerWidth / 2);
+      hatGo(); // 聖誕帽跟著甩
     }, true);
     // 吸附提示（2026/11/06 試做）：拖的時候，放開會停的那個角落浮出一個虛線小圓圈（裡面淡淡的小花），
     // 越過中線就換到另一邊、彈一下；放開時小花飛進圓圈，圓圈放大淡掉
@@ -1614,6 +1834,7 @@
       hub.style.transform = "none";
       dial.classList.remove("is-moving");
       hideGhost();
+      hatGo(); // 滑回角落的那一下帽子也跟著甩、停下來再晃兩下
       btn.dataset.moved = "1";
       setTimeout(function () { delete btn.dataset.moved; }, 0);
     }
@@ -1929,6 +2150,7 @@
     });
     void dial.offsetWidth;
     dial.classList.add("is-open");
+    dialHatKick(230); // 聖誕帽被轉出來的扇形甩一下（小花轉成叉叉也是順時針）
     dial.querySelector(".dial-items").removeAttribute("inert");
     var b = dial.querySelector(".dial-btn");
     b.setAttribute("aria-expanded", "true");
@@ -1944,6 +2166,7 @@
     dialOpen = false;
     openToken++;
     dial.classList.remove("is-open", "is-dragging");
+    if (!now) dialHatKick(-170);
     dial.querySelector(".dial-items").setAttribute("inert", "");
     var b = dial.querySelector(".dial-btn");
     b.setAttribute("aria-expanded", "false");
@@ -2032,6 +2255,7 @@
     closeDial(true);
     dial.hidden = !show;
     dial.querySelector(".dial-btn").setAttribute("aria-label", u("dial"));
+    dialHatSet(show && T.days.some(function (x) { return x.xmas && dayId(x) === h; })); // 聖誕兩頁：小花戴聖誕帽
     if (show) warmDial();
   }
 
@@ -2125,10 +2349,12 @@
     stopSpeaking();
     fadeIn(app);
     placeSays();
-    setPetals(!!(d && d.wedding)); // 只有 12/19、12/20 飄花瓣
+    setFall(d && d.wedding ? "melati" : (d && d.xmas) || xmasNow() ? "snow" : null); // 12/19、12/20 飄茉莉花；12/24、12/25 兩頁（和真的聖誕節當天的每一頁）飄雪花和金粉
+    document.documentElement.classList.toggle("xmas-bg", !!(d && d.xmas)); // 聖誕兩頁：紙張印上淡淡的聖誕花紋
     setTilt(d); // 傾斜手機時插畫跟著微微移動（白天、晚上、下雨都是）
     setNight(d); // 那個城市現在是晚上：插畫換成夜景、天空有星星（要在玻璃之前，下雨時霧是用夜景做的）
     setGlass(d); // 那個城市現在在下雨：插畫起霧、有雨滴
+    setSleigh(d); // 聖誕兩頁：天空偶爾飛過聖誕老人的雪橇
     heroDay = d || null; heroKey = d ? timeSlot(d.city, d.art) : ""; // 頁面開著時插畫跟著時段換（liveSlot）
     if (d) wxRefresh(d);
     syncDial(h);

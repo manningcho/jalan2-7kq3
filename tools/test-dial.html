@@ -223,6 +223,26 @@ f.onload=async function(){ try {
   ok('rebuilt ahead of time after language switch', d.querySelector('.dial-item').getAttribute('aria-label')==='Days' && d.querySelector('.dial-item canvas').width>0);
   await open();
   ok('relabels in English', d.querySelector('.dial-item').getAttribute('aria-label')==='Days' && btn.getAttribute('aria-label')==='Close', d.querySelector('.dial-item').textContent+' / '+d.querySelector('.dial-hint textPath').textContent);
+  // ---- Christmas pages (12/24, 12/25): the button wears a Santa hat that takes no taps; dragging and a lost release work as before;
+  //      snow, the paper pattern and the sleigh are there, and all of it is gone again on 12/26 (2026/11/06)
+  d.querySelector('.dial-scrim').click(); await settle();
+  go('#d1224'); await sleep(900);
+  var dx1=d.querySelector('.dial'), hat=d.querySelector('.dial-hat');
+  ok('christmas: hat on the button on 12/24', dx1.classList.contains('is-xmas') && !!hat && w.getComputedStyle(hat).display!=='none', dx1.className);
+  var hb=hat.getBoundingClientRect(), under=d.elementFromPoint(hb.left+hb.width*.3, hb.top+hb.height*.25);
+  ok('christmas: the hat takes no taps', !(under&&under.closest('.dial-hat')), under&&(under.getAttribute('class')||under.tagName));
+  var c0=btn.getBoundingClientRect(), cx=c0.left+28, cy=c0.top+28;
+  mp('pointerdown',cx,cy,1); for (var k=1;k<=6;k++){ await sleep(16); mp('pointermove',cx-k*15,cy-k*6,1); }
+  await sleep(30); mp('pointermove',200,300,0,d.body); await settle();
+  ok('christmas: drag with the hat, release lost: back in the corner', !dx1.classList.contains('is-moving') && btn.getBoundingClientRect().right>300, Math.round(btn.getBoundingClientRect().right)+' '+dx1.className);
+  await open();
+  ok('christmas: opens with the hat on', dx1.classList.contains('is-open') && dx1.classList.contains('is-xmas'));
+  d.querySelector('.dial-scrim').click(); await settle();
+  var fallX=d.querySelector('.petals'), flew=w.__sleigh(.5,.2);
+  ok('christmas: snow, paper pattern and sleigh on 12/24', !!fallX && fallX.dataset.kind==='snow' && d.documentElement.classList.contains('xmas-bg') && flew===true && !!d.querySelector('.sky-fly .sleigh'), (fallX&&fallX.dataset.kind)+' '+flew);
+  go('#d1226'); await sleep(700);
+  var td=new Date(), xmasToday=td.getMonth()===11 && (td.getDate()===24 || td.getDate()===25); // 真的聖誕節當天每一頁都會飄雪
+  ok('christmas: none of it on 12/26', !dx1.classList.contains('is-xmas') && (xmasToday || !d.querySelector('.petals')) && !d.documentElement.classList.contains('xmas-bg') && w.__sleighState()===null && !d.querySelector('.sky-fly'), dx1.className);
   document.getElementById('out').textContent='DONE\n'+log.join('\n')+'\nEND';
   } catch(e) { document.getElementById('out').textContent='DONE\nERR '+e+' '+(e.stack||'')+'\n'+log.join('\n')+'\nEND'; }
 };
