@@ -1190,8 +1190,8 @@
   // 進頁面 3–6 秒先飛一台，之後每 25–40 秒一台；點天空（地平線以上）會從那裡飛過去。跟夜景點天空有流星一樣當小彩蛋，不出提示。
   // 黃昏、白天是插畫遠山那種深藍剪影；晚上更深、加一圈淡淡的月光。下雨起霧時不飛。
   // 麋鹿的腳會跑（2026/11/07 使用者問腳能不能動）：Codex 畫的奔跑分鏡，切格、用雪橇對齊後排成一條（一格 420 寬），飛的時候每 90ms 換一格。
-  // 試看兩種：a＝一張 6 格的分鏡圖；b＝Codex 做 GIF 時畫的 8 格（身體固定、只換腳）。網址 ?gallop=a／b 切換，?gallop=off 是原本不會動的剪影
-  var GALLOP = { a: { src: "img/xmas-sleigh-run-a.png", n: 6, ar: 135 / 420 }, b: { src: "img/xmas-sleigh-run-b.png", n: 8, ar: 132 / 420 } };
+  // 麋鹿奔跑：Codex 做 GIF 時畫的 8 格（身體固定、只換腳）。?gallop=off 是原本不會動的剪影
+  var GALLOP = { b: { src: "img/xmas-sleigh-run-b.png", n: 8, ar: 132 / 420 } }; // 8-frame strip (Codex "GIF" frames); the 6-frame version a was tried and dropped 2026/11/07
   var RUN = GALLOP[(/[?&]gallop=(\w+)/.exec(location.search) || [])[1] || "b"] || null, RUN_MS = 90;
   var SLEIGH_W = .27, SLEIGH_AR = RUN ? RUN.ar : 128 / 420, SLEIGH_DUR = 6600; // 雪橇寬＝插畫寬的 27%；圖的高寬比；飛過整張插畫幾毫秒
   var sleighOn = null;
