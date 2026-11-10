@@ -598,6 +598,8 @@ button.tilt-chip.is-in { pointer-events: auto; cursor: pointer; }
 .motion .no-anim .r, .motion .no-anim .hw-in span { animation: none; }
 .motion .hw-in span { animation: letter .9s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(120ms + var(--i) * 45ms); }
 .motion .hero-art .art { animation: settle 1.2s cubic-bezier(.2, .7, .2, 1) both; }
+/* first open only: hold the entrance at its first frame until the web fonts are in and the page has re-laid out (app.js, max 0.7s) */
+.motion-hold .r, .motion-hold .hw-in span, .motion-hold .hero-art .art { animation-play-state: paused; }
 .motion .star { animation: spin 26s linear infinite; }
 .motion .go-rail { animation: road .9s linear infinite; }
 .motion .go-ic svg { animation: nudge 2.4s ease-in-out infinite; }

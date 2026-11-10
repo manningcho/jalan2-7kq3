@@ -239,7 +239,9 @@ f.onload=async function(){ try {
   ok('christmas: opens with the hat on', dx1.classList.contains('is-open') && dx1.classList.contains('is-xmas'));
   d.querySelector('.dial-scrim').click(); await settle();
   var fallX=d.querySelector('.petals'), flew=w.__sleigh(.5,.2);
-  ok('christmas: snow, paper pattern and sleigh on 12/24', !!fallX && fallX.dataset.kind==='snow' && d.documentElement.classList.contains('xmas-bg') && flew===true && !!d.querySelector('.sky-fly .sleigh'), (fallX&&fallX.dataset.kind)+' '+flew);
+  // 婆羅浮屠剛好在下雨時（照當地即時天氣起霧，2026/11/10 測試當下就在下）雪橇本來就不飛：改成檢查它乖乖不飛
+  var rainy=!!d.querySelector('.hero-art.has-glass');
+  ok('christmas: snow, paper pattern and sleigh on 12/24'+(rainy?' (raining there now: sleigh stays home)':''), !!fallX && fallX.dataset.kind==='snow' && d.documentElement.classList.contains('xmas-bg') && (rainy ? flew===false && !d.querySelector('.sky-fly .sleigh') : flew===true && !!d.querySelector('.sky-fly .sleigh')), (fallX&&fallX.dataset.kind)+' '+flew+(rainy?' rain':''));
   go('#d1226'); await sleep(700);
   var td=new Date(), xmasToday=td.getMonth()===11 && (td.getDate()===24 || td.getDate()===25); // 真的聖誕節當天每一頁都會飄雪
   ok('christmas: none of it on 12/26', !dx1.classList.contains('is-xmas') && (xmasToday || !d.querySelector('.petals')) && !d.documentElement.classList.contains('xmas-bg') && w.__sleighState()===null && !d.querySelector('.sky-fly'), dx1.className);

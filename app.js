@@ -6,6 +6,9 @@
   try { var saved = localStorage.getItem("trip-lang"); if (LANGS.indexOf(saved) >= 0) lang = saved; } catch (e) {}
   // 動畫一律開啟（使用者決定拿掉開關，也不跟系統的「減少動態效果」）
   document.documentElement.classList.add("motion");
+  // 第一次打開：開場動畫（字母跳出來、卡片淡入）先停在起點，等網路字型到齊、整頁照新字型重排完再播，最多等 0.7 秒（有快取時通常只多等約 0.2 秒）。
+  // 不等的話，動畫播到一半字型才到（有快取也要約半秒），整頁重排會讓動畫頓一下（2026/11/10 使用者說一開始開會卡）
+  document.documentElement.classList.add("motion-hold");
   try { localStorage.removeItem("trip-motion"); } catch (e) {} // 以前開關留下的紀錄
 
   // 顏色：跟手機 / 淺色 / 深色，存在這支手機上
@@ -2515,6 +2518,12 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fit(); placeSays(); });
   if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", function () { placeSays(); fitClock(); }); // 字型晚到，字寬會變
   render();
+  (function () { // 放開開場動畫（見最上面 motion-hold）：render() 量大字時已經觸發要用的字型開始下載
+    var root = document.documentElement, done = false;
+    function go() { if (done) return; done = true; requestAnimationFrame(function () { root.classList.remove("motion-hold"); }); }
+    setTimeout(go, 700);
+    if (document.fonts && document.fonts.ready && document.fonts.status === "loading") document.fonts.ready.then(go, go); else go();
+  })();
   // 離線版：把整個網站存一份在手機裡（sw.js），到印尼網路不穩也打得開
   if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
     window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
